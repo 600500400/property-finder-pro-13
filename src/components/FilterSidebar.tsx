@@ -1,0 +1,178 @@
+import type { ScanFilters, SourceKey } from "@/lib/scanner/types";
+import { Download, Zap, Loader2 } from "lucide-react";
+
+const REGIONS: Array<[ScanFilters["region"], string]> = [
+  ["", "Celá ČR"], ["praha", "Praha"], ["stredocesky", "Středočeský"],
+  ["jihocesky", "Jihočeský"], ["jihomoravsky", "Jihomoravský"],
+  ["karlovarsky", "Karlovarský"], ["kralovehradecky", "Královéhradecký"],
+  ["liberecky", "Liberecký"], ["moravskoslezsky", "Moravskoslezský"],
+  ["olomoucky", "Olomoucký"], ["pardubicky", "Pardubický"],
+  ["plzensky", "Plzeňský"], ["ustecky", "Ústecký"],
+  ["vysocina", "Vysočina"], ["zlinsky", "Zlínský"],
+];
+
+const SOURCES: Array<{ key: SourceKey; label: string; badge: string; type: "api" | "html" | "browser" }> = [
+  { key: "sreality", label: "Sreality", badge: "API", type: "api" },
+  { key: "bazos", label: "Bazoš", badge: "HTML", type: "html" },
+  { key: "bezrealitky", label: "Bezrealitky", badge: "GraphQL", type: "api" },
+  { key: "hyperinzerce", label: "Hyperinzerce", badge: "BROWSER", type: "browser" },
+  { key: "realitymix", label: "RealityMix", badge: "BROWSER", type: "browser" },
+  { key: "annonce", label: "Annonce", badge: "BROWSER", type: "browser" },
+  { key: "idnes", label: "iDnes Reality", badge: "BROWSER", type: "browser" },
+];
+
+function badgeClass(type: "api" | "html" | "browser") {
+  if (type === "api") return "bg-primary/15 text-primary";
+  if (type === "html") return "bg-muted text-muted-foreground";
+  return "bg-orange-500/15 text-orange-400";
+}
+
+interface Props {
+  filters: ScanFilters;
+  setFilters: (f: ScanFilters) => void;
+  onScan: () => void;
+  onExport: () => void;
+  scanning: boolean;
+  canExport: boolean;
+}
+
+export function FilterSidebar({ filters, setFilters, onScan, onExport, scanning, canExport }: Props) {
+  const update = <K extends keyof ScanFilters>(k: K, v: ScanFilters[K]) =>
+    setFilters({ ...filters, [k]: v });
+
+  const toggleSource = (s: SourceKey) => {
+    const has = filters.sources.includes(s);
+    update("sources", has ? filters.sources.filter(x => x !== s) : [...filters.sources, s]);
+  };
+
+  return (
+    <aside className="flex h-full flex-col gap-5 overflow-y-auto border-r border-border bg-[var(--color-surface)] p-5">
+      <Section label="Typ obchodu">
+        <Select value={filters.deal_type} onChange={(v) => update("deal_type", v as ScanFilters["deal_type"])}
+          options={[["prodej", "Prodej"], ["pronajem", "Pronájem"]]} />
+      </Section>
+
+      <Section label="Typ nemovitosti">
+        <Select value={filters.property_type} onChange={(v) => update("property_type", v as ScanFilters["property_type"])}
+          options={[["ostatni", "Ostatní (garáže)"], ["byty", "Byty"], ["domy", "Domy"], ["pozemky", "Pozemky"], ["komercni", "Komerční"]]} />
+        {filters.property_type === "ostatni" && (
+          <>
+            <Label>Podkategorie (Sreality)</Label>
+            <Select value={filters.sub_type} onChange={(v) => update("sub_type", v as ScanFilters["sub_type"])}
+              options={[["garaz", "Garáž"], ["garazove_stani", "Garážové stání"], ["", "Vše"]]} />
+          </>
+        )}
+      </Section>
+
+      <Section label="Lokalita">
+        <Label>Kraj</Label>
+        <Select value={filters.region} onChange={(v) => update("region", v as ScanFilters["region"])}
+          options={REGIONS} />
+      </Section>
+
+      <Section label="Cena (Kč)">
+        <div className="grid grid-cols-2 gap-2">
+          <div>
+            <Label>Od</Label>
+            <input
+              type="number" min={0} step={10000} placeholder="0"
+              value={filters.price_min ?? ""}
+              onChange={(e) => update("price_min", e.target.value ? Number(e.target.value) : undefined)}
+              className="w-full rounded-lg border border-border bg-[var(--color-surface-2)] px-2.5 py-2 text-sm outline-none focus:border-primary"
+            />
+          </div>
+          <div>
+            <Label>Do</Label>
+            <input
+              type="number" min={0} step={10000} placeholder="bez limitu"
+              value={filters.price_max ?? ""}
+              onChange={(e) => update("price_max", e.target.value ? Number(e.target.value) : undefined)}
+              className="w-full rounded-lg border border-border bg-[var(--color-surface-2)] px-2.5 py-2 text-sm outline-none focus:border-primary"
+            />
+          </div>
+        </div>
+      </Section>
+
+      <Section label="Zdroje dat">
+        <div className="flex flex-col gap-1.5">
+          {SOURCES.map((s) => {
+            const checked = filters.sources.includes(s.key);
+            return (
+              <button
+                key={s.key}
+                type="button"
+                onClick={() => toggleSource(s.key)}
+                className={`flex items-center gap-2 rounded-lg border px-2.5 py-2 text-left text-sm transition ${
+                  checked
+                    ? "border-primary/60 bg-primary/5"
+                    : "border-border bg-[var(--color-surface-2)] hover:border-primary/40"
+                }`}
+              >
+                <span className={`h-2.5 w-2.5 rounded-full ${checked ? "bg-primary" : "border-2 border-border"}`} />
+                <span className="flex-1 text-foreground">{s.label}</span>
+                <span className={`rounded px-1.5 py-0.5 text-[9px] font-bold tracking-wider ${badgeClass(s.type)}`}>
+                  {s.badge}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+        <p className="mt-2 text-[11px] leading-relaxed text-muted-foreground">
+          🟠 BROWSER zdroje vyžadují headless prohlížeč (Firecrawl) — bude aktivováno ve fázi 2.
+        </p>
+      </Section>
+
+      <Section label="Řazení">
+        <Select value={filters.sort_by} onChange={(v) => update("sort_by", v as ScanFilters["sort_by"])}
+          options={[["source", "Dle zdroje"], ["price_asc", "Cena ↑"], ["price_desc", "Cena ↓"], ["yield", "Výnos ↓"]]} />
+      </Section>
+
+      <div className="mt-auto flex flex-col gap-2 pt-2">
+        <button
+          onClick={onScan}
+          disabled={scanning || filters.sources.length === 0}
+          className="flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-bold text-primary-foreground transition hover:opacity-90 disabled:opacity-50"
+        >
+          {scanning ? <Loader2 className="h-4 w-4 animate-spin" /> : <Zap className="h-4 w-4" />}
+          {scanning ? "Skenuji..." : "Skenovat nemovitosti"}
+        </button>
+        <button
+          onClick={onExport}
+          disabled={!canExport}
+          className="flex items-center justify-center gap-2 rounded-xl border border-primary/60 bg-transparent px-4 py-2.5 text-sm font-semibold text-primary transition hover:bg-primary/10 disabled:cursor-not-allowed disabled:border-border disabled:text-muted-foreground"
+        >
+          <Download className="h-4 w-4" /> Export CSV
+        </button>
+      </div>
+    </aside>
+  );
+}
+
+function Section({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="text-[10px] font-semibold uppercase tracking-[0.15em] text-muted-foreground">{label}</div>
+      {children}
+    </div>
+  );
+}
+
+function Label({ children }: { children: React.ReactNode }) {
+  return <label className="text-[11px] font-medium text-muted-foreground">{children}</label>;
+}
+
+function Select({ value, onChange, options }: {
+  value: string; onChange: (v: string) => void; options: Array<[string, string]>;
+}) {
+  return (
+    <select
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      className="w-full rounded-lg border border-border bg-[var(--color-surface-2)] px-2.5 py-2 text-sm text-foreground outline-none focus:border-primary"
+    >
+      {options.map(([v, label]) => (
+        <option key={v} value={v}>{label}</option>
+      ))}
+    </select>
+  );
+}
