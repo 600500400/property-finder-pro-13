@@ -5,6 +5,8 @@ import { calcYield } from "./valuation";
 import { fetchSreality } from "./sources/sreality.server";
 import { fetchBazos } from "./sources/bazos.server";
 import { fetchBezrealitky } from "./sources/bezrealitky.server";
+import { fetchIdnes, fetchRealityMix, fetchAnnonce, fetchHyperinzerce } from "./sources/firecrawl.server";
+
 
 const FilterSchema = z.object({
   deal_type: z.enum(["prodej", "pronajem"]),
@@ -37,9 +39,11 @@ const HTTP_FETCHERS: Partial<Record<SourceKey, (f: ScanFilters) => Promise<Listi
   sreality: fetchSreality,
   bazos: fetchBazos,
   bezrealitky: fetchBezrealitky,
+  idnes: fetchIdnes,
+  realitymix: fetchRealityMix,
+  annonce: fetchAnnonce,
+  hyperinzerce: fetchHyperinzerce,
 };
-
-const BROWSER_SOURCES: SourceKey[] = ["hyperinzerce", "realitymix", "annonce", "idnes"];
 
 async function timed(key: SourceKey, fn: () => Promise<Listing[]>): Promise<{
   key: SourceKey; results: Listing[]; ms: number; error: string | null;
