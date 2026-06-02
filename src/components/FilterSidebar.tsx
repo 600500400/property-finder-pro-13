@@ -118,7 +118,7 @@ export function FilterSidebar({ filters, setFilters, onScan, onExport, scanning,
           })}
         </div>
         <p className="mt-2 text-[11px] leading-relaxed text-muted-foreground">
-          🟠 BROWSER zdroje vyžadují headless prohlížeč (Firecrawl) — bude aktivováno ve fázi 2.
+          🟠 BROWSER zdroje běží přes Firecrawl (cloud headless prohlížeč) — sken je pomalejší (~10–30 s) a spotřebovává Firecrawl kredity.
         </p>
       </Section>
 
