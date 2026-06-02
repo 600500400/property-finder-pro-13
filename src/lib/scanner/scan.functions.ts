@@ -5,6 +5,8 @@ import { calcYield } from "./valuation";
 import { fetchSreality } from "./sources/sreality.server";
 import { fetchBazos } from "./sources/bazos.server";
 import { fetchBezrealitky } from "./sources/bezrealitky.server";
+import { fetchIdnes, fetchRealityMix, fetchAnnonce, fetchHyperinzerce } from "./sources/firecrawl.server";
+
 
 const FilterSchema = z.object({
   deal_type: z.enum(["prodej", "pronajem"]),
@@ -37,9 +39,11 @@ const HTTP_FETCHERS: Partial<Record<SourceKey, (f: ScanFilters) => Promise<Listi
   sreality: fetchSreality,
   bazos: fetchBazos,
   bezrealitky: fetchBezrealitky,
+  idnes: fetchIdnes,
+  realitymix: fetchRealityMix,
+  annonce: fetchAnnonce,
+  hyperinzerce: fetchHyperinzerce,
 };
-
-const BROWSER_SOURCES: SourceKey[] = ["hyperinzerce", "realitymix", "annonce", "idnes"];
 
 async function timed(key: SourceKey, fn: () => Promise<Listing[]>): Promise<{
   key: SourceKey; results: Listing[]; ms: number; error: string | null;
@@ -63,13 +67,9 @@ export const runScan = createServerFn({ method: "POST" })
     for (const src of filters.sources) {
       if (HTTP_FETCHERS[src]) {
         tasks.push(timed(src, () => HTTP_FETCHERS[src]!(filters)));
-      } else if (BROWSER_SOURCES.includes(src)) {
-        tasks.push(Promise.resolve({
-          key: src, results: [], ms: 0,
-          error: "Tento zdroj vyžaduje reálný prohlížeč (Playwright). Bude dostupný po napojení Firecrawl ve fázi 2.",
-        }));
       }
     }
+
 
     const settled = await Promise.all(tasks);
     const diagnostics: Diagnostic[] = [];
