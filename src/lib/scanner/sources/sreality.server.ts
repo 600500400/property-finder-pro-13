@@ -74,9 +74,21 @@ function locSlug(e: any): string {
   return e.seo?.locality || "lokalita";
 }
 
+function dispSlug(name: string): string {
+  const m = name.match(/(\d\+(?:kk|\d))/i);
+  return m ? m[1].toLowerCase() : "";
+}
+
 function detailUrl(e: any, typeS: string, mainCb: number, name: string): string {
   const hashId = e.hash_id || "";
   const loc = locSlug(e);
+
+  // Prefer API-provided self link if it looks like a public detail URL
+  const self = e._links?.self?.href || e._links?.self;
+  if (typeof self === "string" && self.includes("/detail/")) {
+    return self.startsWith("http") ? self : `https://www.sreality.cz${self}`;
+  }
+
   if (mainCb === 5) {
     const low = name.toLowerCase();
     if (low.includes("stání") || low.includes("stani"))
@@ -86,6 +98,11 @@ function detailUrl(e: any, typeS: string, mainCb: number, name: string): string 
     return `https://www.sreality.cz/detail/${typeS}/ostatni/${loc}/${hashId}`;
   }
   const mainS = MAIN_SLUG[mainCb] || "ostatni";
+  // byty/domy need a disposition segment to avoid 404
+  const disp = (mainCb === 1 || mainCb === 2) ? dispSlug(name) : "";
+  if (disp) return `https://www.sreality.cz/detail/${typeS}/${mainS}/${disp}/${loc}/${hashId}`;
+  // safe fallback that always resolves: search by id
+  if (hashId) return `https://www.sreality.cz/hledani/${typeS}/${mainS}?id=${hashId}`;
   return `https://www.sreality.cz/detail/${typeS}/${mainS}/${loc}/${hashId}`;
 }
 

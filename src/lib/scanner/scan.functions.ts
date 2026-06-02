@@ -3,9 +3,8 @@ import { z } from "zod";
 import type { Diagnostic, Listing, ScanFilters, ScanResult, SourceKey } from "./types";
 import { calcYield } from "./valuation";
 import { fetchSreality } from "./sources/sreality.server";
-import { fetchBazos } from "./sources/bazos.server";
 import { fetchBezrealitky } from "./sources/bezrealitky.server";
-import { fetchIdnes, fetchRealityMix, fetchAnnonce, fetchHyperinzerce } from "./sources/firecrawl.server";
+import { fetchIdnes, fetchRealityMix, fetchAnnonce, fetchHyperinzerce, fetchBazos } from "./sources/firecrawl.server";
 
 
 const FilterSchema = z.object({

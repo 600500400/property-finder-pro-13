@@ -60,6 +60,19 @@ function buildHyperinzerceUrl(f: ScanFilters): string {
   return `https://reality.hyperinzerce.cz/${deal}-${cat}/inzeraty/`;
 }
 
+function buildBazosUrl(f: ScanFilters): string {
+  const cat = f.property_type === "byty" ? "byt"
+    : f.property_type === "domy" ? "dum"
+    : f.property_type === "pozemky" ? "pozemek"
+    : "garaz";
+  const deal = f.deal_type === "pronajem" ? "pronajmu" : "prodam";
+  const qs = new URLSearchParams();
+  if (f.price_min) qs.set("cenaod", String(f.price_min));
+  if (f.price_max) qs.set("cenado", String(f.price_max));
+  const q = qs.toString();
+  return `https://reality.bazos.cz/${deal}/${cat}/${q ? "?" + q : ""}`;
+}
+
 // ---------- Generic Firecrawl-based extractor ----------
 
 const LISTING_SCHEMA = {
@@ -71,10 +84,10 @@ const LISTING_SCHEMA = {
         type: "object",
         properties: {
           title: { type: "string", description: "Název / nadpis inzerátu" },
-          url: { type: "string", description: "Absolutní URL detailu inzerátu" },
+          url: { type: "string", description: "Absolutní URL detailu inzerátu (musí začínat http nebo https)" },
           price_text: { type: "string", description: "Cena tak, jak je v inzerátu (např. '350 000 Kč', 'Dohodou')" },
           locality: { type: "string", description: "Lokalita / město / okres" },
-          image: { type: "string", description: "URL náhledového obrázku (absolutní)" },
+          image: { type: "string", description: "Absolutní URL náhledového obrázku (musí začínat http nebo https, NE data-src, NE tracking pixel, NE 1×1 placeholder)" },
         },
         required: ["title", "url"],
       },
@@ -83,7 +96,7 @@ const LISTING_SCHEMA = {
   required: ["listings"],
 } as const;
 
-const PROMPT = "Extrahuj seznam realitních inzerátů ze stránky výpisu. Pro každý inzerát najdi titulek, absolutní URL detailu, cenu (přesný text vč. měny), lokalitu a URL náhledové fotky. Vynech reklamní, doporučené a sponzorované bloky, paginaci a opakující se navigaci. Maximálně 25 položek.";
+const PROMPT = "Extrahuj seznam realitních inzerátů ze stránky výpisu. Pro každý inzerát najdi titulek, ABSOLUTNÍ URL detailu (musí začínat https://), cenu (přesný text vč. měny), lokalitu a ABSOLUTNÍ URL náhledové fotky (atribut src obrázku, NIKDY ne data-src ani 1×1 pixel). Vynech reklamní, doporučené a sponzorované bloky, paginaci a opakující se navigaci. Maximálně 25 položek.";
 
 interface ExtractedItem {
   title?: string;
@@ -93,26 +106,45 @@ interface ExtractedItem {
   image?: string;
 }
 
+function absolutize(u: string | undefined, base: string): string {
+  if (!u) return "";
+  const v = u.trim();
+  if (!v) return "";
+  if (v.startsWith("data:")) return "";
+  if (/blank\.(gif|png)|1x1|spacer\.(gif|png)/i.test(v)) return "";
+  if (v.startsWith("http://") || v.startsWith("https://")) return v;
+  if (v.startsWith("//")) return "https:" + v;
+  try {
+    const baseOrigin = new URL(base).origin;
+    if (v.startsWith("/")) return baseOrigin + v;
+    return baseOrigin + "/" + v.replace(/^\.?\//, "");
+  } catch {
+    return "";
+  }
+}
+
 async function scrapeViaFirecrawl(
   url: string,
   sourceLabel: string,
-  sourceKey: SourceKey
+  sourceKey: SourceKey,
+  opts?: { onlyMainContent?: boolean; waitFor?: number }
 ): Promise<Listing[]> {
   const fc = client();
   const result = await fc.scrape(url, {
     formats: [{ type: "json", schema: LISTING_SCHEMA as unknown as object, prompt: PROMPT }],
-    onlyMainContent: true,
-    waitFor: 1500,
+    onlyMainContent: opts?.onlyMainContent ?? false,
+    waitFor: opts?.waitFor ?? 2500,
     timeout: 60000,
   } as Parameters<typeof fc.scrape>[1]);
 
-  // SDK v2: data is on result; some shapes nest under .data
   const r = result as unknown as { json?: { listings?: ExtractedItem[] }; data?: { json?: { listings?: ExtractedItem[] } } };
   const items: ExtractedItem[] = r.json?.listings ?? r.data?.json?.listings ?? [];
 
   const out: Listing[] = [];
   for (const it of items.slice(0, 30)) {
     if (!it.url || !it.title) continue;
+    const absUrl = absolutize(it.url, url);
+    if (!absUrl) continue;
     const priceText = cleanText(it.price_text || "");
     out.push({
       source: sourceLabel,
@@ -121,8 +153,8 @@ async function scrapeViaFirecrawl(
       locality: cleanText(it.locality || ""),
       price: parsePrice(priceText),
       price_text: priceText || "Dohodou",
-      url: it.url,
-      img: it.image || "",
+      url: absUrl,
+      img: absolutize(it.image, url),
       area: "",
       invest: null,
     });
@@ -139,7 +171,10 @@ export const fetchRealityMix = (f: ScanFilters) =>
   scrapeViaFirecrawl(buildRealityMixUrl(f), "RealityMix", "realitymix");
 
 export const fetchAnnonce = (f: ScanFilters) =>
-  scrapeViaFirecrawl(buildAnnonceUrl(f), "Annonce", "annonce");
+  scrapeViaFirecrawl(buildAnnonceUrl(f), "Annonce", "annonce", { onlyMainContent: false, waitFor: 3500 });
 
 export const fetchHyperinzerce = (f: ScanFilters) =>
   scrapeViaFirecrawl(buildHyperinzerceUrl(f), "Hyperinzerce", "hyperinzerce");
+
+export const fetchBazos = (f: ScanFilters) =>
+  scrapeViaFirecrawl(buildBazosUrl(f), "Bazoš", "bazos", { onlyMainContent: false, waitFor: 2000 });
