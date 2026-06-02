@@ -67,13 +67,9 @@ export const runScan = createServerFn({ method: "POST" })
     for (const src of filters.sources) {
       if (HTTP_FETCHERS[src]) {
         tasks.push(timed(src, () => HTTP_FETCHERS[src]!(filters)));
-      } else if (BROWSER_SOURCES.includes(src)) {
-        tasks.push(Promise.resolve({
-          key: src, results: [], ms: 0,
-          error: "Tento zdroj vyžaduje reálný prohlížeč (Playwright). Bude dostupný po napojení Firecrawl ve fázi 2.",
-        }));
       }
     }
+
 
     const settled = await Promise.all(tasks);
     const diagnostics: Diagnostic[] = [];
