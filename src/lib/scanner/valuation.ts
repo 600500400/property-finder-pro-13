@@ -1,11 +1,14 @@
-import type { Investment, Ownership, PropertyType, Region } from "./types";
+import type { Investment, Ownership, PropertyType, Region, RentBasisSource } from "./types";
 import type { RentBenchmark } from "./rent-benchmark.server";
 import { okresFromLocality, OKRES_BY_SLUG } from "./okresy";
 
 // Re-export pro back-compat
 export type { RentBenchmark };
 
+// Krajská hodnota nájmu (Kč/m²/měsíc) — používá se jen pro garáže.
+const RENT_PER_M2_REGION: Record<string, number> = {
   praha: 415,
+
   stredocesky: 290,
   jihocesky: 260,
   jihomoravsky: 330,
