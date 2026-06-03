@@ -149,6 +149,7 @@ function Index() {
               {listings.length}
             </span>
           )}
+          <UserMenu />
         </div>
       </header>
 
