@@ -60,19 +60,6 @@ function buildHyperinzerceUrl(f: ScanFilters): string {
   return `https://reality.hyperinzerce.cz/${deal}-${cat}/inzeraty/`;
 }
 
-function buildBazosUrl(f: ScanFilters): string {
-  const cat = f.property_type === "byty" ? "byt"
-    : f.property_type === "domy" ? "dum"
-    : f.property_type === "pozemky" ? "pozemek"
-    : "garaz";
-  const deal = f.deal_type === "pronajem" ? "pronajmu" : "prodam";
-  const qs = new URLSearchParams();
-  if (f.price_min) qs.set("cenaod", String(f.price_min));
-  if (f.price_max) qs.set("cenado", String(f.price_max));
-  const q = qs.toString();
-  return `https://reality.bazos.cz/${deal}/${cat}/${q ? "?" + q : ""}`;
-}
-
 // ---------- Generic Firecrawl-based extractor ----------
 
 const LISTING_SCHEMA = {

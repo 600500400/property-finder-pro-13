@@ -4,7 +4,8 @@ import type { Diagnostic, Listing, ScanFilters, ScanResult, SourceKey } from "./
 import { calcYield } from "./valuation";
 import { fetchSreality } from "./sources/sreality.server";
 import { fetchBezrealitky } from "./sources/bezrealitky.server";
-import { fetchIdnes, fetchRealityMix, fetchAnnonce, fetchHyperinzerce, fetchBazos } from "./sources/firecrawl.server";
+import { fetchBazos } from "./sources/bazos.server";
+import { fetchIdnes, fetchRealityMix, fetchAnnonce, fetchHyperinzerce } from "./sources/firecrawl.server";
 
 
 const FilterSchema = z.object({
