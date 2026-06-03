@@ -14,7 +14,163 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      ai_analyses: {
+        Row: {
+          created_at: string
+          model: string
+          payload: Json
+          url: string
+          url_hash: string
+        }
+        Insert: {
+          created_at?: string
+          model: string
+          payload: Json
+          url: string
+          url_hash: string
+        }
+        Update: {
+          created_at?: string
+          model?: string
+          payload?: Json
+          url?: string
+          url_hash?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          email: string | null
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          id: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          id?: string
+        }
+        Relationships: []
+      }
+      saved_filters: {
+        Row: {
+          created_at: string
+          filters: Json
+          id: string
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          filters: Json
+          id?: string
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          filters?: Json
+          id?: string
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      scan_results: {
+        Row: {
+          count: number
+          created_at: string
+          emailed: boolean
+          id: string
+          meta: Json | null
+          results: Json
+          scheduled_scan_id: string
+          user_id: string
+        }
+        Insert: {
+          count: number
+          created_at?: string
+          emailed?: boolean
+          id?: string
+          meta?: Json | null
+          results: Json
+          scheduled_scan_id: string
+          user_id: string
+        }
+        Update: {
+          count?: number
+          created_at?: string
+          emailed?: boolean
+          id?: string
+          meta?: Json | null
+          results?: Json
+          scheduled_scan_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scan_results_scheduled_scan_id_fkey"
+            columns: ["scheduled_scan_id"]
+            isOneToOne: false
+            referencedRelation: "scheduled_scans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      scheduled_scans: {
+        Row: {
+          created_at: string
+          email: string
+          enabled: boolean
+          filters: Json
+          frequency_per_day: number
+          id: string
+          last_run_at: string | null
+          max_per_email: number
+          saved_filter_id: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          enabled?: boolean
+          filters: Json
+          frequency_per_day?: number
+          id?: string
+          last_run_at?: string | null
+          max_per_email?: number
+          saved_filter_id?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          enabled?: boolean
+          filters?: Json
+          frequency_per_day?: number
+          id?: string
+          last_run_at?: string | null
+          max_per_email?: number
+          saved_filter_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scheduled_scans_saved_filter_id_fkey"
+            columns: ["saved_filter_id"]
+            isOneToOne: false
+            referencedRelation: "saved_filters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
