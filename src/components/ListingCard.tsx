@@ -60,7 +60,8 @@ const OWNERSHIP_LABEL: Record<string, { short: string; full: string }> = {
 export function ListingCard({ listing }: { listing: Listing }) {
   const inv = listing.invest;
   const fresh = freshnessBadge(listing.published_at);
-  const rel = relativeDate(listing.published_at);
+  const dateText = fmtDate(listing.published_at);
+  const own = listing.ownership ? OWNERSHIP_LABEL[listing.ownership] : null;
   const badges = [
     ...(fresh ? [fresh] : []),
     ...(listing.badges || []).filter(b => b !== "NOVÝ" || !fresh),
@@ -101,17 +102,28 @@ export function ListingCard({ listing }: { listing: Listing }) {
 
       <div className="flex flex-1 flex-col gap-1.5 p-3">
         <h3 className="line-clamp-2 text-sm font-semibold leading-snug text-foreground">{listing.name}</h3>
-        {listing.locality && (
-          <div className="flex items-center gap-1 text-xs text-muted-foreground">
-            <MapPin className="h-3 w-3 shrink-0" />
-            <span className="truncate">{listing.locality}</span>
-          </div>
-        )}
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          {listing.locality && (
+            <span className="flex min-w-0 items-center gap-1">
+              <MapPin className="h-3 w-3 shrink-0" />
+              <span className="truncate">{listing.locality}</span>
+            </span>
+          )}
+          {own && (
+            <span
+              title={own.full}
+              className="ml-auto shrink-0 rounded border border-border bg-muted/40 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-foreground"
+            >
+              {own.short}
+            </span>
+          )}
+        </div>
         <div className="mt-auto flex items-end justify-between gap-2 pt-1">
           <span className="font-mono text-lg font-bold text-primary">{listing.price_text}</span>
-          {rel && <span className="text-[10px] text-muted-foreground">{rel}</span>}
+          {dateText && <span className="text-[10px] text-muted-foreground">{dateText}</span>}
         </div>
       </div>
+
 
       {inv && (
         <div className={`grid grid-cols-2 gap-2 border-t border-border p-3 ${verdictBg(inv.stars)}`}>
