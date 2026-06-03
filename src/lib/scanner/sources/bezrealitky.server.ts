@@ -67,8 +67,8 @@ function addrToStr(addr: any): string {
 export async function fetchBezrealitky(f: ScanFilters): Promise<Listing[]> {
   const baseVars: any = {
     offerType: [OFFER[f.deal_type] || "PRODEJ"],
-    estateType: [ESTATE[f.property_type] || "OSTATNI"],
-    limit: 30,
+    estateType: [ESTATE[f.property_type] || "BYT"],
+    limit: Math.max(1, Math.min(100, f.per_source_limit || 20)),
     order: "TIMEORDER_DESC",
   };
   const regionVars = { ...baseVars, regionOsmIds: ["R51684"] };

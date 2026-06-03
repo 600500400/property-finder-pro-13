@@ -26,6 +26,7 @@ function stripTags(s: string): string {
 
 export async function fetchBazos(f: ScanFilters): Promise<Listing[]> {
   const url = buildUrl(f);
+  const cap = Math.max(1, Math.min(100, f.per_source_limit || 20));
   const res = await fetch(url, {
     headers: {
       "User-Agent":
@@ -43,8 +44,10 @@ export async function fetchBazos(f: ScanFilters): Promise<Listing[]> {
   const out: Listing[] = [];
   let m: RegExpExecArray | null;
   while ((m = blockRe.exec(html)) !== null) {
-    if (out.length >= 20) break;
+    if (out.length >= cap) break;
     const block = m[1];
+    const badges: string[] = [];
+    if (/\btop\b/i.test(block) || /class="[^"]*top[^"]*"/i.test(block)) badges.push("TOP");
 
     const linkM = block.match(/<a href="(\/inzerat\/[^"]+)"/);
     if (!linkM) continue;
@@ -74,6 +77,7 @@ export async function fetchBazos(f: ScanFilters): Promise<Listing[]> {
       img,
       area: "",
       invest: null,
+      badges: badges.length ? badges : undefined,
     });
   }
   return out;

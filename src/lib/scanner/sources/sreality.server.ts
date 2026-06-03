@@ -22,37 +22,63 @@ const MAIN_SLUG: Record<number, string> = {
 const TYPE_SLUG: Record<number, string> = { 1: "prodej", 2: "pronajem" };
 
 function fixImg(u: string): string {
-  return (u || "").replace(/\{width\}/g, "400").replace(/\{height\}/g, "300");
+  return (u || "")
+    .replace(/\{width\}/g, "400")
+    .replace(/\{height\}/g, "300")
+    .replace(/\{fileName\}/g, "image-0.jpeg");
+}
+
+function isImgUrl(s: string): boolean {
+  if (!s || typeof s !== "string") return false;
+  if (!/^https?:\/\//.test(s)) return false;
+  if (s.includes("sdn.cz") || s.includes("szn.cz") || s.includes("sreality.cz") || s.includes("imgsr")) return true;
+  return /\.(jpe?g|png|webp|avif)(\?|$)/i.test(s);
 }
 
 function extractImage(e: any): string {
-  const links = e._links || {};
-  const sources = [
-    links.images, links.image_middle2, links.image_middle, links.gallery,
-    e.images, e.gallery, e._embedded?.images,
+  // Try documented link/embedded shapes first
+  const candidates: any[] = [
+    e._links?.images,
+    e._embedded?.images,
+    e.images,
+    e._links?.image_middle,
+    e._links?.image_middle2,
+    e._links?.image_big,
+    e._links?.gallery,
+    e.gallery,
   ];
-  for (let src of sources) {
+
+  for (let src of candidates) {
+    if (!src) continue;
     if (src && typeof src === "object" && !Array.isArray(src)) src = [src];
     if (Array.isArray(src)) {
       for (const it of src) {
-        if (it && typeof it === "object") {
-          const href = it.href || it.url || it._links?.self?.href;
-          if (href) return fixImg(href);
-        } else if (typeof it === "string" && it) return fixImg(it);
+        if (!it) continue;
+        if (typeof it === "string" && isImgUrl(it)) return fixImg(it);
+        if (typeof it === "object") {
+          const href = it.href || it.url || it.src || it._links?.self?.href;
+          if (typeof href === "string" && href) {
+            const fixed = fixImg(href);
+            if (isImgUrl(fixed)) return fixed;
+          }
+        }
       }
-    } else if (typeof src === "string" && src) return fixImg(src);
+    }
   }
-  // walk fallback
+
+  // Recursive walk fallback
   let found = "";
-  const walk = (n: any) => {
-    if (found) return;
-    if (Array.isArray(n)) n.forEach(walk);
-    else if (n && typeof n === "object") Object.values(n).forEach(walk);
-    else if (typeof n === "string" && (n.includes("sdn.cz") || n.includes("sreality")) &&
-             /\.(jpe?g|png|webp)/i.test(n)) found = n;
+  const walk = (n: any, depth = 0) => {
+    if (found || depth > 6) return;
+    if (Array.isArray(n)) n.forEach((x) => walk(x, depth + 1));
+    else if (n && typeof n === "object") Object.values(n).forEach((x) => walk(x, depth + 1));
+    else if (typeof n === "string") {
+      const fixed = fixImg(n);
+      if (isImgUrl(fixed)) found = fixed;
+    }
   };
   walk(e);
-  return fixImg(found);
+  return found;
 }
 
 function localityOf(e: any): string {
@@ -83,7 +109,6 @@ function detailUrl(e: any, typeS: string, mainCb: number, name: string): string 
   const hashId = e.hash_id || "";
   const loc = locSlug(e);
 
-  // Prefer API-provided self link if it looks like a public detail URL
   const self = e._links?.self?.href || e._links?.self;
   if (typeof self === "string" && self.includes("/detail/")) {
     return self.startsWith("http") ? self : `https://www.sreality.cz${self}`;
@@ -98,10 +123,8 @@ function detailUrl(e: any, typeS: string, mainCb: number, name: string): string 
     return `https://www.sreality.cz/detail/${typeS}/ostatni/${loc}/${hashId}`;
   }
   const mainS = MAIN_SLUG[mainCb] || "ostatni";
-  // byty/domy need a disposition segment to avoid 404
   const disp = (mainCb === 1 || mainCb === 2) ? dispSlug(name) : "";
   if (disp) return `https://www.sreality.cz/detail/${typeS}/${mainS}/${disp}/${loc}/${hashId}`;
-  // safe fallback that always resolves: search by id
   if (hashId) return `https://www.sreality.cz/hledani/${typeS}/${mainS}?id=${hashId}`;
   return `https://www.sreality.cz/detail/${typeS}/${mainS}/${loc}/${hashId}`;
 }
@@ -117,10 +140,17 @@ function priceOf(e: any): number {
   return 0;
 }
 
+function badgesOf(e: any): string[] {
+  const out: string[] = [];
+  if (e.is_topped || e.label_top || e.labelsAll?.includes?.("topped") || e.labels?.includes?.("topped")) out.push("TOP");
+  if (e.mark_as_new || e.is_new || e.labels?.includes?.("new")) out.push("NOVÝ");
+  return out;
+}
+
 export async function fetchSreality(f: ScanFilters): Promise<Listing[]> {
   const mainCb = SREALITY_CATEGORY_MAIN[f.property_type] ?? 5;
   const typeCb = SREALITY_CATEGORY_TYPE[f.deal_type] ?? 1;
-  const perPage = 60;
+  const perPage = Math.max(20, Math.min(100, f.per_source_limit || 60));
 
   const params: Record<string, string | number> = {
     category_main_cb: mainCb,
@@ -193,6 +223,7 @@ export async function fetchSreality(f: ScanFilters): Promise<Listing[]> {
       img: extractImage(e),
       area: areaM ? areaM[0] : "",
       invest: null,
+      badges: badgesOf(e),
     });
   }
   return out;
