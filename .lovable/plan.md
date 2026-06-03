@@ -1,69 +1,84 @@
-## 1. Oprava obrázků ze Sreality
+## Plán oprav
 
-**Problém:** `extractImage()` vrací první URL nalezenou rekurzivně – často trefí logo makléře (`_embedded.seller.logo`, `branding`, `company_logo`) místo fotky nemovitosti.
+### 1. Bezrealitky – GraphQL chyba (`dateCreated`)
+Pole `dateCreated` na typu `Advert` neexistuje (API ho odebralo). Oprava v `src/lib/scanner/sources/bezrealitky.server.ts`:
 
-**Řešení v `src/lib/scanner/sources/sreality.server.ts`:**
+- Odstranit `dateCreated` z `FIELDS`.
+- Zkusit alternativy přes stejný fallback mechanismus jako u obrázků: postupně vyzkoušet `publishedAt`, `createdAt`, `lastUpdate`, žádné. Použít první variantu, která neselže s field-error.
+- Datum mapovat do `published_at` podle toho, co vrátí ne-null.
 
-- Hledat **pouze** v `_embedded.images[]` (hlavní galerie), případně `_links.images[]` – nikdy ne rekurzivně přes celý objekt.
-- Pokud nalezeno: vzít první `href` a normalizovat (template `{width}/{height}` → `800/600`, ponechat query `?fl=res,...` – to Sreality CDN vyžaduje, jinak vrací 403).
-- Vynechat URL obsahující `/logo/`, `/branding/`, `seller`, `company`.
-- Pokud galerie chybí → vrátit `""` (fallback ikona domu) místo loga.
-- Také ošetřit, že některé estaty mají `_links.images` jako objekt s `image_middle/image_big` (string href) – přijmout jen pokud doména je `sdn.cz` a path obsahuje `/c_img_` (foto), ne `/d_logo_` / `branding`.
+### 2. Hyperinzerce – EMPTY (0 inzerátů, 11 s)
+Firecrawl scrape vrací prázdno – pravděpodobně špatná URL nebo žádné inzeráty na výchozí stránce. Oprava v `firecrawl.server.ts`:
 
-Test URL z příkladu (`d18-a.sdn.cz/d_18/c_img_p9_A/...jpeg?fl=res,2200,2200,1|wrm,...`) – tato URL je validní, musí projít. Loga mají typicky `d_logo_` nebo `branding` v cestě.
+- Přepsat `buildHyperinzerceUrl` na funkční formát: `https://reality.hyperinzerce.cz/prodej-bytu/` (varianty `prodej-bytu/`, `prodej-domu/`, `prodej-pozemku/`, `prodej-komercnich-objektu/`, `prodej-garazi/`). Ověřit přes `fetch_website`.
+- Pokud i s opravenou URL Firecrawl vrátí 0, přidat HTML fallback (přímý fetch + regex parsing) podobně jako u Bazoše.
 
-## 2. Investorské doporučení pro všechny typy nemovitostí
+### 3. Annonce – obrázky + chybné detail URL
+URL inzerátu vede na kategorii místo detailu (Firecrawl zachytil odkaz z bočního panelu, ne kartu inzerátu). Oprava:
 
-Aktuálně `calcYield()` v `valuation.ts` počítá **jen pro `property_type === "ostatni"**` (garáže). Rozšířit na byty, domy, komerční.
+- Zpřísnit prompt: „URL musí obsahovat `/detail/` nebo numerické ID inzerátu, ne `-f-` (filtr) ani `na-prodej`".
+- Post-filter v `scrapeViaFirecrawl` (volitelně per-source): zahodit URL matchující regex `\/[^/]+-f-\d+\.html$`.
+- U obrázků: rozšířit prompt o explicitní wording, že obrázek je `<img>` uvnitř karty (`.item`, `.inzerat`), ne logo portálu. Zvýšit `waitFor` na 5000 a zapnout `onlyMainContent: false` (už je).
+- Pokud problém přetrvá → fallback Bazoš-style HTML scrape pro Annonce.
 
-**Návrh:**
+### 4. Sreality – obrázky se nezobrazují
+Náš filtr v `extractImage` je správný, ale produkční sandbox (Cloudflare worker) nemusí dostávat plný embed obrázků z `/api/cs/v2/estates`. Oprava v `sreality.server.ts`:
 
-- Tabulka odhadovaného nájmu **per m² / měsíc** podle regionu × typu (byt/dům/komerční). Hodnoty zhruba podle českého trhu 2024–25, např. Praha byt 380 Kč/m², Brno 280, krajská města 220, ostatní 180; domy ~80 % bytového; komerční ~250 Kč/m² Praha atd.
-- Extrahovat plochu z názvu/area pole (regex `(\d+)\s*m²` už máme) – uložit jako number `area_m2` v `Listing`.
-- `calcYield(price, region, propertyType, area_m2)`:
-  - byty/domy/komerční: `monthly = rent_per_m2 * area_m2`
-  - garáž/stání (ostatni): současná logika (fixní nájem regionu)
-  - bez plochy → fallback fixní odhad podle typu+region (nebo `null` s poznámkou)
-- Hodnocení (★1–5, verdict) ponechat dle čistého výnosu, jen jemně doladit thresholdy pro byty (4 % net = průměr trhu, 5 % dobré, 6 % výborné).
-- V `ListingCard` zobrazit investiční metriky pro všechny typy – sekce už existuje, jen ji odemknout.  
-  
-zde jsou důležité ty hodnoty - budeš moci mít zdroj dat nebudeš vycházet z tabulky která se týkala garáži je to tak?
+- Logovat (pro diagnostiku) počet inzerátů s/bez obrázku.
+- Rozšířit hledání i o `_links.images` jako objekt s vnořeným polem `image` (Sreality občas vrací `_links: { images: [{ href }] }` na top level, jindy `_embedded.images`).
+- Přidat fallback: pokud žádný kandidát nesplní `isPropertyPhoto`, vzít první URL z `_links.images` bez filtru loga (logy mají `d_logo_`, foto má `c_img_`, ale CDN někdy vrátí jiný path) – ale jen pokud doména je `*.sdn.cz` a path NEobsahuje `logo|branding`.
+- Smazat `wrm,/watermark` z URL (volitelné, watermark je problém zobrazení) — necháme tak, jen ošetřit, že URL projde.
+- Pokud API nevrací obrázky vůbec, fallback: zkonstruovat URL z `hash_id` přes známý template `https://d18-a.sdn.cz/d_18/c_img_QO/abc.jpeg` – **toto nelze bez ID** → vynechat, místo toho zlogovat warning.
 
-## 3. Datum zveřejnění + HOT/NOVÝ badge
+### 5. Datum zveřejnění – zobrazit u inzerátu
+Datum už máme (`published_at`), ale na kartě se ukazuje jen relativní text malým fontem. Oprava v `ListingCard.tsx`:
 
-**Logika scrapingu dnes:** Všechny zdroje vrací **aktuálně inzerované** nabídky tříděné defaultně podle relevance/data zdroje (Sreality `sort=0` = nejnovější; Bazoš výpis je chronologický). Není to historický archiv – jakmile inzerát zmizí z výpisu portálu, scanner ho už nevidí. Skenuje se vždy na vyžádání (kliknutím), žádné ukládání mezi běhy.
+- Vedle ceny zobrazit absolutní datum (např. `3. 6. 2026`) místo (nebo vedle) relativního.
+- Pokud `published_at` chybí, žádný text nezobrazovat.
 
-**Co přidáme:**
+### 6. Přejmenovat „TOP" → „HOT" pro inzeráty ≤24h
+Aktuálně:
+- `freshnessBadge()` už generuje **HOT 🔥** pro ≤24h. ✅
+- Ale Bazoš/Sreality dávají vlastní badge **TOP** (placená pozice). To uživatele mate.
 
-- Nové pole `published_at?: string` v `Listing` (ISO date).
-- **Sreality:** dostupné v `last_update`, `_embedded.estate.last_update` nebo `date` – extrahovat.
-- **Bazoš:** v HTML bloku `inzeratydatum` (formát `[3.6. 2026]`) – parsovat regex.
-- **Bezrealitky:** GraphQL pole `dateCreated` / `publishedAt`.
-- **Firecrawl zdroje:** doplnit do extraction promptu.
-- **Sort by date:** přidat volbu „Nejnovější" do `sort_by`.
-- **Badge logika v `ListingCard`:**
-  - ≤ 24 h → červený **HOT 🔥**
-  - ≤ 72 h → modrý **NOVÝ**
-  - ≤ 7 dní → šedý **Tento týden**
-  - jinak relativní text („před 12 dny") pod cenou.
+Oprava:
+- V `bazos.server.ts` a `sreality.server.ts` přejmenovat `"TOP"` na `"Placené"` (nebo `"Promo"`) – stále viditelné, ale nepřekrývá HOT.
+- `ListingCard` přidat styl pro `"Placené"` (neutrální šedý badge).
+- HOT 🔥 zůstává pouze pro inzeráty zveřejněné ≤24h.
 
-## 4. Drobnosti
+### 7. Reálná tržní data nájmů
+Současné hodnoty v `valuation.ts` jsou statická tabulka (Praha 380 Kč/m² = ~9 200 Kč za 24m²) – pro Prahu 9 / větší byty nereálné. Reálný trh Praha 2024/25 je ~330–420 Kč/m² podle čtvrti, ale s podstatným rozptylem. Plán:
 
-- Sort: přidat `date_desc` (nejnovější první) jako default po skenu.
-- Diagnostika: zobrazit u Sreality, kolik inzerátů má/nemá obrázek (rychlá kontrola opravy).
+- **Krátkodobě:** upravit tabulku podle aktuálního Deloitte Rent Index Q4 2024 + ČSÚ:
+  - Praha průměr 415 Kč/m² (P1 480, P9 360, P10 340 atd.)
+  - Brno 320, Plzeň 280, Ostrava 230, krajská města 220–260, ostatní 180–210
+  - Pro byty rozlišit dispozici: 1+kk/1+1 vyšší per-m² (~+15 %), 4+kk/5+1 nižší (~−10 %).
+- **Dlouhodobě (volitelně):** vytáhnout reálná data přes Firecrawl scrape ze sreality.cz „pronájem byty" pro daný kraj × dispozici → zprůměrovat → cachovat 24h. To je samostatná feature, doporučuji v dalším kole.
+- V UI přidat malou poznámku „Odhad podle průměru kraje – orientační".
+
+### 8. Typ vlastnictví (osobní / družstevní / státní)
+Tuto informaci portály vystavují různě:
+- **Sreality:** v `items[].name` nebo `seo.category_sub_cb`; lepší v `_embedded.estate.values` (`ownership_cb`: 1=osobní, 2=družstevní, 3=státní). Vytáhnout z detailu seznamu, kde je dostupné. 
+- **Bezrealitky:** GraphQL pole `ownership` nebo `tenure` – ověřit přes introspection (stejný fallback mechanismus).
+- **Bazoš:** parsovat z titulku regex (`družstevní|osobní|OV|DV`).
+- **Firecrawl zdroje:** přidat do schema pole `ownership_type`.
+
+Plán:
+- Přidat `ownership?: "osobni" | "druzstevni" | "statni" | "jine"` do `Listing`.
+- Vytáhnout všude, kde to jde (Sreality + Bazoš guaranteed, ostatní best-effort).
+- Zobrazit jako malý badge pod cenou (např. „OV" / „DV"), případně přidat filtr do `FilterSidebar`.
+
+---
 
 ## Soubory k úpravě
+- `src/lib/scanner/sources/bezrealitky.server.ts` – odstranit `dateCreated`, fallback na alternativní pole; přidat ownership.
+- `src/lib/scanner/sources/sreality.server.ts` – rozšířit `extractImage`, diagnostika, ownership, přejmenovat badge TOP.
+- `src/lib/scanner/sources/bazos.server.ts` – přejmenovat badge TOP→Placené, parse ownership z titulku.
+- `src/lib/scanner/sources/firecrawl.server.ts` – opravit hyperinzerce URL, zpřísnit Annonce prompt + post-filter detail URL, schema přidat `ownership_type`.
+- `src/lib/scanner/valuation.ts` – aktualizovaná tabulka nájmů (Praha + okresy přesněji), poznámka.
+- `src/lib/scanner/types.ts` – `ownership` na `Listing`.
+- `src/components/ListingCard.tsx` – absolutní datum, ownership badge, styl pro „Placené".
 
-- `src/lib/scanner/sources/sreality.server.ts` – přepsat `extractImage`, doplnit `published_at`.
-- `src/lib/scanner/sources/bazos.server.ts` – parsovat datum, badge HOT.
-- `src/lib/scanner/sources/bezrealitky.server.ts` – datum z GraphQL.
-- `src/lib/scanner/sources/firecrawl.server.ts` – prompt: pole `published_date`.
-- `src/lib/scanner/valuation.ts` – nová tabulka nájmů per m², rozšířená logika.
-- `src/lib/scanner/types.ts` – `published_at`, `area_m2`, nové sort.
-- `src/lib/scanner/scan.functions.ts` – předat plochu do `calcYield`, podpora sortu.
-- `src/components/ListingCard.tsx` – HOT/NOVÝ badge dle data, investiční sekce pro všechny typy.
-- `src/components/FilterSidebar.tsx` – přidat sort „Nejnovější".
-
-## Co plán neřeší
-
-- Historické inzeráty (vyžadovalo by vlastní databázi + cron sběr – velký scope, můžeme řešit samostatně, případně přes Lovable Cloud).
+## Co plán neřeší (na příště)
+- Plnohodnotný live rent benchmark scrapingem Sreality pronájmů (s cachí) – samostatná etapa.
+- Filtr „pouze osobní vlastnictví" v sidebaru (přidám až po ověření, že data jsou spolehlivá).
