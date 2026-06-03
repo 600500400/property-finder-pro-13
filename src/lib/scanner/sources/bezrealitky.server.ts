@@ -3,8 +3,9 @@ import { cleanText, fmtPrice } from "../valuation";
 
 const GQL = "https://api.bezrealitky.cz/graphql/";
 const OFFER: Record<string, string> = { prodej: "PRODEJ", pronajem: "PRONAJEM" };
+// Valid EstateType enum (introspected 2026-06): BYT, DUM, POZEMEK, GARAZ, KANCELAR, NEBYTOVY_PROSTOR, REKREACNI_OBJEKT
 const ESTATE: Record<string, string> = {
-  byty: "BYT", domy: "DUM", pozemky: "POZEMEK", komercni: "KOMERCNI", ostatni: "OSTATNI",
+  byty: "BYT", domy: "DUM", pozemky: "POZEMEK", komercni: "KANCELAR", ostatni: "GARAZ",
 };
 
 const FIELDS = "id uri offerType estateType disposition price surface address(locale: CS)";
