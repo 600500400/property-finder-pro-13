@@ -170,7 +170,7 @@ interface RentResult {
   monthly: number | null;
   perM2: number | null;
   basisLabel: string;
-  source: "district" | "region" | "fallback";
+  source: RentBasisSource;
 }
 
 function rentMonthly(
@@ -189,19 +189,38 @@ function rentMonthly(
     return { monthly: null, perM2: null, basisLabel: "—", source: "fallback" };
   }
 
-  const slug = districtSlugFromLocality(locality, region);
+  const districtSlug = districtSlugFromLocality(locality, region);
+  const okresSlug = okresFromLocality(locality);
+
   let perM2Base: number;
   let basisLabel: string;
-  let source: "district" | "region" | "fallback";
-  if (slug && bench.district[slug] != null) {
-    perM2Base = bench.district[slug];
-    basisLabel = `${DISTRICT_LABEL[slug] || slug}: ${perM2Base} Kč/m²`;
+  let source: RentBasisSource;
+
+  // 1) Pražské obvody / Brno-části / Plzeň-N / Ostrava-části — nejpřesnější city-level
+  if (districtSlug && bench.district[districtSlug] != null) {
+    perM2Base = bench.district[districtSlug];
+    basisLabel = `${DISTRICT_LABEL[districtSlug] || districtSlug}: ${perM2Base} Kč/m²`;
     source = "district";
-  } else if (region && bench.region[region] != null) {
+  }
+  // 2) Okres (77 okresů) — preferujeme živý medián ze Sreality
+  else if (okresSlug && bench.okres[okresSlug]) {
+    const stat = bench.okres[okresSlug];
+    perM2Base = stat.perM2;
+    const info = OKRES_BY_SLUG[okresSlug];
+    const label = info?.label ?? okresSlug;
+    basisLabel = stat.source === "live"
+      ? `Okres ${label}: ${Math.round(stat.perM2)} Kč/m² (medián z ${stat.samples} inz., Sreality)`
+      : `Okres ${label}: ${Math.round(stat.perM2)} Kč/m² (statický odhad)`;
+    source = stat.source === "live" ? "okres_live" : "okres_static";
+  }
+  // 3) Kraj
+  else if (region && bench.region[region] != null) {
     perM2Base = bench.region[region];
     basisLabel = `${REGION_LABEL[region]}: ${perM2Base} Kč/m²`;
     source = "region";
-  } else {
+  }
+  // 4) ČR průměr
+  else {
     perM2Base = bench.region[""] ?? 270;
     basisLabel = `ČR (průměr): ${perM2Base} Kč/m²`;
     source = "fallback";
@@ -214,6 +233,7 @@ function rentMonthly(
   if (!area) return { monthly: null, perM2, basisLabel, source };
   return { monthly: Math.round(perM2 * area), perM2: Math.round(perM2), basisLabel, source };
 }
+
 
 export function calcYield(
   price: number,
