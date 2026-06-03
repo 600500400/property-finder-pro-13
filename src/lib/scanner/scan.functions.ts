@@ -5,7 +5,9 @@ import { calcYield } from "./valuation";
 import { fetchSreality } from "./sources/sreality.server";
 import { fetchBezrealitky } from "./sources/bezrealitky.server";
 import { fetchBazos } from "./sources/bazos.server";
-import { fetchIdnes, fetchRealityMix, fetchAnnonce, fetchHyperinzerce } from "./sources/firecrawl.server";
+import { fetchIdnes, fetchRealityMix } from "./sources/firecrawl.server";
+import { fetchAnnonce } from "./sources/annonce.server";
+import { fetchHyperinzerce } from "./sources/hyperinzerce.server";
 
 
 const FilterSchema = z.object({
