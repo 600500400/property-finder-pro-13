@@ -60,7 +60,7 @@ export const analyzeListing = createServerFn({ method: "POST" })
     if (cached) {
       const ageDays = (Date.now() - new Date(cached.created_at as string).getTime()) / 86_400_000;
       if (ageDays < TTL_DAYS) {
-        const p = cached.payload as AIAnalysis;
+        const p = cached.payload as unknown as AIAnalysis;
         return { ...p, cached: true, cached_at: cached.created_at as string };
       }
     }
@@ -112,7 +112,7 @@ Vyhodnoť investici. Vrať pouze JSON.`;
     await supabaseAdmin.from("ai_analyses").upsert({
       url_hash: hash,
       url: data.url,
-      payload: parsed,
+      payload: parsed as unknown as never,
       model: MODEL,
     });
 
