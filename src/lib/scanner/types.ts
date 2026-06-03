@@ -27,7 +27,7 @@ export type SourceKey =
   | "annonce"
   | "idnes";
 
-export type SortBy = "source" | "price_asc" | "price_desc" | "yield";
+export type SortBy = "source" | "price_asc" | "price_desc" | "yield" | "date_desc";
 
 export interface ScanFilters {
   deal_type: DealType;
@@ -61,6 +61,8 @@ export interface Listing {
   url: string;
   img: string;
   area: string;
+  area_m2?: number;
+  published_at?: string; // ISO date
   invest: Investment | null;
   badges?: string[];
 }

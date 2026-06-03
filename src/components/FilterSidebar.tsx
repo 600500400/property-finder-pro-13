@@ -209,7 +209,7 @@ export function FilterSidebar({ filters, setFilters, view, setView, onScan, onEx
 
       <Section label="Řazení">
         <Select value={filters.sort_by} onChange={(v) => update("sort_by", v as ScanFilters["sort_by"])}
-          options={[["source", "Dle zdroje"], ["price_asc", "Cena ↑"], ["price_desc", "Cena ↓"], ["yield", "Výnos ↓"]]} />
+          options={[["date_desc", "Nejnovější ↓"], ["source", "Dle zdroje"], ["price_asc", "Cena ↑"], ["price_desc", "Cena ↓"], ["yield", "Výnos ↓"]]} />
       </Section>
 
       <Section label="Presety filtrů">

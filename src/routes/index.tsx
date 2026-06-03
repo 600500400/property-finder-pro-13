@@ -27,7 +27,7 @@ const DEFAULT_FILTERS: ScanFilters = {
   sub_type: "",
   region: "",
   sources: [],
-  sort_by: "source",
+  sort_by: "date_desc",
   per_source_limit: 20,
 };
 

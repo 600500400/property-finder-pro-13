@@ -1,6 +1,6 @@
 import Firecrawl from "@mendable/firecrawl-js";
 import type { Listing, ScanFilters, SourceKey } from "../types";
-import { cleanText, parsePrice } from "../valuation";
+import { cleanText, parsePrice, parseArea } from "../valuation";
 
 function client() {
   const apiKey = process.env.FIRECRAWL_API_KEY;
@@ -75,6 +75,7 @@ const LISTING_SCHEMA = {
           price_text: { type: "string", description: "Cena tak, jak je v inzerátu (např. '350 000 Kč', 'Dohodou')" },
           locality: { type: "string", description: "Lokalita / město / okres" },
           image: { type: "string", description: "Absolutní URL náhledového obrázku (musí začínat http nebo https, NE data-src, NE tracking pixel, NE 1×1 placeholder)" },
+          published_date: { type: "string", description: "Datum zveřejnění inzerátu pokud je viditelné (formát YYYY-MM-DD nebo DD.MM.YYYY)" },
         },
         required: ["title", "url"],
       },
@@ -91,6 +92,17 @@ interface ExtractedItem {
   price_text?: string;
   locality?: string;
   image?: string;
+  published_date?: string;
+}
+
+function parsePublishedDate(s: string | undefined): string | undefined {
+  if (!s) return undefined;
+  const m1 = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+  const m2 = s.match(/(\d{1,2})\.\s*(\d{1,2})\.\s*(\d{4})/);
+  let d: Date | null = null;
+  if (m1) d = new Date(Number(m1[1]), Number(m1[2]) - 1, Number(m1[3]));
+  else if (m2) d = new Date(Number(m2[3]), Number(m2[2]) - 1, Number(m2[1]));
+  return d && !isNaN(d.getTime()) ? d.toISOString() : undefined;
 }
 
 function absolutize(u: string | undefined, base: string): string {
@@ -133,16 +145,20 @@ async function scrapeViaFirecrawl(
     const absUrl = absolutize(it.url, url);
     if (!absUrl) continue;
     const priceText = cleanText(it.price_text || "");
+    const title = cleanText(it.title);
+    const area_m2 = parseArea(title);
     out.push({
       source: sourceLabel,
       source_key: sourceKey,
-      name: cleanText(it.title),
+      name: title,
       locality: cleanText(it.locality || ""),
       price: parsePrice(priceText),
       price_text: priceText || "Dohodou",
       url: absUrl,
       img: absolutize(it.image, url),
-      area: "",
+      area: area_m2 ? `${area_m2} m²` : "",
+      area_m2,
+      published_at: parsePublishedDate(it.published_date),
       invest: null,
     });
   }

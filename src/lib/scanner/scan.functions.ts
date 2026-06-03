@@ -22,7 +22,7 @@ const FilterSchema = z.object({
   sources: z.array(z.enum([
     "sreality", "bazos", "bezrealitky", "hyperinzerce", "realitymix", "annonce", "idnes",
   ])),
-  sort_by: z.enum(["source", "price_asc", "price_desc", "yield"]),
+  sort_by: z.enum(["source", "price_asc", "price_desc", "yield", "date_desc"]),
   per_source_limit: z.number().min(1).max(100).default(20),
 });
 
@@ -121,7 +121,7 @@ export const runScan = createServerFn({ method: "POST" })
     const pmin = filters.price_min ?? 0;
     const pmax = filters.price_max ?? 999_999_999;
     all = all
-      .map(r => ({ ...r, invest: calcYield(r.price, filters.region, filters.property_type) }))
+      .map(r => ({ ...r, invest: calcYield(r.price, filters.region, filters.property_type, r.area_m2) }))
       .filter(r => r.price === 0 || (r.price >= pmin && r.price <= pmax));
 
     // sort
@@ -129,6 +129,7 @@ export const runScan = createServerFn({ method: "POST" })
       case "price_asc": all.sort((a, b) => (a.price || 999999999) - (b.price || 999999999)); break;
       case "price_desc": all.sort((a, b) => (b.price || 0) - (a.price || 0)); break;
       case "yield": all.sort((a, b) => (b.invest?.net_yield || 0) - (a.invest?.net_yield || 0)); break;
+      case "date_desc": all.sort((a, b) => (b.published_at || "").localeCompare(a.published_at || "")); break;
       default: all.sort((a, b) => a.source.localeCompare(b.source)); break;
     }
     diagnostics.sort((a, b) => a.source.localeCompare(b.source));

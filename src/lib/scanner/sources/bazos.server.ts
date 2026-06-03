@@ -1,5 +1,14 @@
 import type { Listing, ScanFilters } from "../types";
-import { cleanText, fmtPrice, parsePrice } from "../valuation";
+import { cleanText, parsePrice, parseArea } from "../valuation";
+
+// Parse "[3.6. 2026]" or "3.6.2026" → ISO date
+function parseBazosDate(block: string): string | undefined {
+  const m = block.match(/\[?\s*(\d{1,2})\.\s*(\d{1,2})\.\s*(\d{4})\s*\]?/);
+  if (!m) return undefined;
+  const [, d, mo, y] = m;
+  const dt = new Date(Number(y), Number(mo) - 1, Number(d));
+  return isNaN(dt.getTime()) ? undefined : dt.toISOString();
+}
 
 const BAZOS_CAT: Record<string, string> = {
   byty: "byt",
@@ -66,6 +75,11 @@ export async function fetchBazos(f: ScanFilters): Promise<Listing[]> {
     const locM = block.match(/<div class="inzeratylok">([\s\S]*?)<\/div>/);
     const locality = locM ? cleanText(stripTags(locM[1]).replace(/\d{3}\s?\d{2}/g, "").trim()) : "";
 
+    const dateM = block.match(/<span class="velikost10">([\s\S]*?)<\/span>/);
+    const published_at = dateM ? parseBazosDate(stripTags(dateM[1])) : parseBazosDate(block);
+
+    const area_m2 = parseArea(title);
+
     out.push({
       source: "Bazoš",
       source_key: "bazos",
@@ -75,7 +89,9 @@ export async function fetchBazos(f: ScanFilters): Promise<Listing[]> {
       price_text: priceText || "Dohodou",
       url: detailUrl,
       img,
-      area: "",
+      area: area_m2 ? `${area_m2} m²` : "",
+      area_m2,
+      published_at,
       invest: null,
       badges: badges.length ? badges : undefined,
     });
