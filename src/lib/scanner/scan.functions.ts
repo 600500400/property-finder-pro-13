@@ -1,7 +1,9 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import type { Diagnostic, Listing, ScanFilters, ScanResult, SourceKey } from "./types";
+import type { Diagnostic, Listing, PublishedDateSource, ScanFilters, ScanResult, SourceKey } from "./types";
 import { calcYield } from "./valuation";
+import { getBenchmark } from "./rent-benchmark.server";
+import { sortListings } from "./sort";
 import { fetchSreality } from "./sources/sreality.server";
 import { fetchBezrealitky } from "./sources/bezrealitky.server";
 import { fetchBazos } from "./sources/bazos.server";
@@ -48,6 +50,17 @@ const HTTP_FETCHERS: Partial<Record<SourceKey, (f: ScanFilters) => Promise<Listi
   hyperinzerce: fetchHyperinzerce,
 };
 
+// Whitelist regexů pro „skutečné" URL detailu (ne kategorie / seznam).
+const DETAIL_URL_PATTERN: Partial<Record<SourceKey, RegExp>> = {
+  sreality: /sreality\.cz\/(detail|hledani)\/.+\/\d+/i,
+  bazos: /reality\.bazos\.cz\/inzerat\//i,
+  bezrealitky: /bezrealitky\.cz\/nemovitosti-byty-domy\/[^/]+/i,
+  annonce: /annonce\.cz\/inzerat\//i,
+  hyperinzerce: /hyperinzerce\.cz\/.+\/.+-\d+\.html/i,
+  idnes: /reality\.idnes\.cz\/detail\//i,
+  realitymix: /realitymix\.cz\/detail\//i,
+};
+
 async function timed(key: SourceKey, fn: () => Promise<Listing[]>): Promise<{
   key: SourceKey; results: Listing[]; ms: number; error: string | null;
 }> {
@@ -61,20 +74,50 @@ async function timed(key: SourceKey, fn: () => Promise<Listing[]>): Promise<{
   }
 }
 
-// Post-filter by sub_type (garaz vs. garazove_stani) for sources that don't differentiate.
 function matchesSubType(l: Listing, sub: ScanFilters["sub_type"]): boolean {
   if (!sub) return true;
-  // Sreality already filters server-side via category_sub_cb
   if (l.source_key === "sreality") return true;
   const n = (l.name + " " + l.locality).toLowerCase();
-  if (sub === "garazove_stani") {
-    return /st[áa]n[íi]/.test(n);
-  }
-  if (sub === "garaz") {
-    // accept gar[áa]ž but exclude explicit "stání"
-    return /gar[áa][žz]/.test(n) && !/st[áa]n[íi]/.test(n);
-  }
+  if (sub === "garazove_stani") return /st[áa]n[íi]/.test(n);
+  if (sub === "garaz") return /gar[áa][žz]/.test(n) && !/st[áa]n[íi]/.test(n);
   return true;
+}
+
+// Zajistí published_at i published_at_source u každého listingu.
+// Současně spočítá per-source breakdown a vyloguje.
+function finalizeDates(key: SourceKey, items: Listing[]): { items: Listing[]; breakdown: { api: number; html: number; fallback: number } } {
+  const nowIso = new Date().toISOString();
+  let api = 0, html = 0, fallback = 0;
+  const out = items.map(l => {
+    if (l.published_at && l.published_at_source) {
+      if (l.published_at_source === "api") api++;
+      else if (l.published_at_source === "html") html++;
+      else fallback++;
+      return l;
+    }
+    if (l.published_at) {
+      // datum doplněno, zdroj neoznačený → považujeme za html/parsed
+      html++;
+      return { ...l, published_at_source: "html" as PublishedDateSource };
+    }
+    fallback++;
+    return { ...l, published_at: nowIso, published_at_source: "fallback_now" as PublishedDateSource };
+  });
+  console.log(`[scanner:${key}] dates api=${api} html=${html} fallback=${fallback}`);
+  return { items: out, breakdown: { api, html, fallback } };
+}
+
+function filterDetailUrls(key: SourceKey, items: Listing[]): { items: Listing[]; dropped: number } {
+  const re = DETAIL_URL_PATTERN[key];
+  if (!re) return { items, dropped: 0 };
+  let dropped = 0;
+  const out = items.filter(l => {
+    const ok = !!l.url && re.test(l.url);
+    if (!ok) dropped++;
+    return ok;
+  });
+  if (dropped > 0) console.log(`[scanner:${key}] dropped ${dropped} listings (URL nematchuje detail regex)`);
+  return { items: out, dropped };
 }
 
 export const runScan = createServerFn({ method: "POST" })
@@ -82,6 +125,7 @@ export const runScan = createServerFn({ method: "POST" })
   .handler(async ({ data }): Promise<ScanResult> => {
     const filters = data as ScanFilters;
     const limit = Math.max(1, Math.min(100, filters.per_source_limit || 20));
+    const bench = await getBenchmark();
     const tasks: Array<Promise<{ key: SourceKey; results: Listing[]; ms: number; error: string | null; }>> = [];
 
     for (const src of filters.sources) {
@@ -95,11 +139,12 @@ export const runScan = createServerFn({ method: "POST" })
     let all: Listing[] = [];
     for (const s of settled) {
       let res = s.results;
-      // sub_type post-filter for property_type "ostatni"
       if (filters.property_type === "ostatni" && filters.sub_type) {
         res = res.filter(r => matchesSubType(r, filters.sub_type));
       }
-      const capped = res.slice(0, limit);
+      const urlFiltered = filterDetailUrls(s.key, res);
+      const dated = finalizeDates(s.key, urlFiltered.items);
+      const capped = dated.items.slice(0, limit);
       diagnostics.push({
         source: SOURCE_LABEL[s.key],
         key: s.key,
@@ -107,6 +152,7 @@ export const runScan = createServerFn({ method: "POST" })
         ms: s.ms,
         ok: s.error === null,
         error: s.error,
+        dates_from: dated.breakdown,
       });
       all = all.concat(capped);
     }
@@ -119,21 +165,16 @@ export const runScan = createServerFn({ method: "POST" })
       seen.add(k); return true;
     });
 
-    // price filter + invest calc
     const pmin = filters.price_min ?? 0;
     const pmax = filters.price_max ?? 999_999_999;
     all = all
-      .map(r => ({ ...r, invest: calcYield(r.price, filters.region, filters.property_type, r.area_m2, r.name, r.ownership) }))
+      .map(r => ({
+        ...r,
+        invest: calcYield(r.price, filters.region, filters.property_type, r.area_m2, r.name, r.locality, r.ownership, bench),
+      }))
       .filter(r => r.price === 0 || (r.price >= pmin && r.price <= pmax));
 
-    // sort
-    switch (filters.sort_by) {
-      case "price_asc": all.sort((a, b) => (a.price || 999999999) - (b.price || 999999999)); break;
-      case "price_desc": all.sort((a, b) => (b.price || 0) - (a.price || 0)); break;
-      case "yield": all.sort((a, b) => (b.invest?.net_yield || 0) - (a.invest?.net_yield || 0)); break;
-      case "date_desc": all.sort((a, b) => (b.published_at || "").localeCompare(a.published_at || "")); break;
-      default: all.sort((a, b) => a.source.localeCompare(b.source)); break;
-    }
+    all = sortListings(all, filters.sort_by);
     diagnostics.sort((a, b) => a.source.localeCompare(b.source));
 
     return {
@@ -141,5 +182,9 @@ export const runScan = createServerFn({ method: "POST" })
       results: all,
       diagnostics,
       ts: new Date().toISOString(),
+      meta: {
+        benchmark_fetched_at: bench.fetched_at,
+        benchmark_source: bench.source,
+      },
     };
   });
