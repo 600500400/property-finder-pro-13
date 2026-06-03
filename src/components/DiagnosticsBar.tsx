@@ -1,8 +1,8 @@
-import type { Diagnostic } from "@/lib/scanner/types";
+import type { Diagnostic, ScanMeta } from "@/lib/scanner/types";
 import { CheckCircle2, AlertCircle, XCircle, ChevronDown, ChevronRight, Terminal } from "lucide-react";
 import { useState } from "react";
 
-export function DiagnosticsBar({ items }: { items: Diagnostic[] }) {
+export function DiagnosticsBar({ items, meta }: { items: Diagnostic[]; meta?: ScanMeta }) {
   const [open, setOpen] = useState(false);
   if (!items.length) return null;
 
