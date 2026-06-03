@@ -163,5 +163,3 @@ export const fetchAnnonce = (f: ScanFilters) =>
 export const fetchHyperinzerce = (f: ScanFilters) =>
   scrapeViaFirecrawl(buildHyperinzerceUrl(f), "Hyperinzerce", "hyperinzerce");
 
-export const fetchBazos = (f: ScanFilters) =>
-  scrapeViaFirecrawl(buildBazosUrl(f), "Bazoš", "bazos", { onlyMainContent: false, waitFor: 2000 });
