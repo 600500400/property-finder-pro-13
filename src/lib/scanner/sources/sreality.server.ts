@@ -138,7 +138,8 @@ function badgesOf(e: any): string[] {
 }
 
 function publishedOf(e: any): string | undefined {
-  const cand = e.last_update || e.lastUpdate || e.date || e.created || e.publish_date;
+  const cand = e.last_update || e.lastUpdate || e.date || e.created || e.publish_date
+    || e.last_modified || e.modified || e.created_at;
   if (!cand) return undefined;
   const d = new Date(String(cand));
   return isNaN(d.getTime()) ? undefined : d.toISOString();
