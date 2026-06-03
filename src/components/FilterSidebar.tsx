@@ -74,7 +74,16 @@ function savePresets(list: Preset[]) {
 
 export function FilterSidebar({ filters, setFilters, view, setView, onScan, onExport, scanning, canExport }: Props) {
   const [presets, setPresets] = useState<Preset[]>([]);
+  const [isAuthed, setIsAuthed] = useState(false);
+  const [cloudMsg, setCloudMsg] = useState<string | null>(null);
+  const saveCloud = useServerFn(upsertSavedFilter);
+
   useEffect(() => { setPresets(loadPresets()); }, []);
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => setIsAuthed(!!data.user));
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, s) => setIsAuthed(!!s?.user));
+    return () => subscription.unsubscribe();
+  }, []);
 
   const update = <K extends keyof ScanFilters>(k: K, v: ScanFilters[K]) =>
     setFilters({ ...filters, [k]: v });
@@ -90,6 +99,18 @@ export function FilterSidebar({ filters, setFilters, view, setView, onScan, onEx
     const next = [...presets.filter(p => p.name !== name), { name, filters }];
     savePresets(next);
     setPresets(next);
+  };
+  const handleSaveCloud = async () => {
+    const name = window.prompt("Název filtru (uloží se do tvého účtu):")?.trim();
+    if (!name) return;
+    setCloudMsg("Ukládám…");
+    try {
+      await saveCloud({ data: { name, filters: filters as unknown as Record<string, unknown> } });
+      setCloudMsg("Uloženo do účtu ✓");
+      setTimeout(() => setCloudMsg(null), 2500);
+    } catch (e) {
+      setCloudMsg(e instanceof Error ? e.message : String(e));
+    }
   };
   const handleLoadPreset = (name: string) => {
     const p = presets.find(x => x.name === name);
