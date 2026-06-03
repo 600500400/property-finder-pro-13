@@ -44,7 +44,9 @@ export interface ScanFilters {
   sources: SourceKey[];
   sort_by: SortBy;
   per_source_limit: number;
+  ownership?: Ownership[]; // klientský filtr; prázdné/undefined = vše
 }
+
 
 export interface Investment {
   monthly_rent: number;
@@ -90,7 +92,10 @@ export interface Diagnostic {
 export interface ScanMeta {
   benchmark_fetched_at?: string;
   benchmark_source?: string;
+  filtered_foreign?: number;
+  filtered_reasons?: Record<string, number>;
 }
+
 
 export interface ScanResult {
   count: number;

@@ -32,7 +32,7 @@ const DEFAULT_FILTERS: ScanFilters = {
   per_source_limit: 20,
 };
 
-const DEFAULT_VIEW = { only_with_image: false, dedupe: false };
+const DEFAULT_VIEW = { dedupe: false };
 const LAST_FILTERS_KEY = "realityscanner.lastFilters";
 const LAST_VIEW_KEY = "realityscanner.lastView";
 
@@ -83,7 +83,10 @@ function Index() {
 
   const listings = useMemo(() => {
     let arr = data?.results ?? [];
-    if (view.only_with_image) arr = arr.filter(l => !!l.img);
+    if (filters.ownership && filters.ownership.length > 0) {
+      const allow = new Set(filters.ownership);
+      arr = arr.filter(l => l.ownership && allow.has(l.ownership));
+    }
     if (view.dedupe) {
       const seen = new Set<string>();
       arr = arr.filter(l => {
@@ -95,7 +98,8 @@ function Index() {
       });
     }
     return sortListings(arr, filters.sort_by);
-  }, [data?.results, view.only_with_image, view.dedupe, filters.sort_by]);
+  }, [data?.results, view.dedupe, filters.sort_by, filters.ownership]);
+
 
   const groupedBySource = useMemo(() => {
     if (filters.sort_by !== "source") return null;

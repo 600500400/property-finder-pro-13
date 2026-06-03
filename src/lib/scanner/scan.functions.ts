@@ -2,8 +2,10 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import type { Diagnostic, Listing, PublishedDateSource, ScanFilters, ScanResult, SourceKey } from "./types";
 import { calcYield } from "./valuation";
+import { applySanity } from "./sanity";
 import { getBenchmark } from "./rent-benchmark.server";
 import { sortListings } from "./sort";
+
 import { fetchSreality } from "./sources/sreality.server";
 import { fetchBezrealitky } from "./sources/bezrealitky.server";
 import { fetchBazos } from "./sources/bazos.server";
@@ -174,6 +176,13 @@ export const runScan = createServerFn({ method: "POST" })
       }))
       .filter(r => r.price === 0 || (r.price >= pmin && r.price <= pmax));
 
+    // Anti-balast: vyřaď zahraniční inzeráty
+    const sanity = applySanity(all);
+    all = sanity.items;
+    if (sanity.stats.filtered_foreign > 0) {
+      console.log(`[scanner] filtered ${sanity.stats.filtered_foreign} foreign listings`, sanity.stats.reasons);
+    }
+
     all = sortListings(all, filters.sort_by);
     diagnostics.sort((a, b) => a.source.localeCompare(b.source));
 
@@ -185,6 +194,9 @@ export const runScan = createServerFn({ method: "POST" })
       meta: {
         benchmark_fetched_at: bench.fetched_at,
         benchmark_source: bench.source,
+        filtered_foreign: sanity.stats.filtered_foreign,
+        filtered_reasons: sanity.stats.reasons,
       },
     };
   });
+
