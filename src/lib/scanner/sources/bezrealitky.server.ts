@@ -1,5 +1,6 @@
-import type { Listing, ScanFilters } from "../types";
-import { cleanText, fmtPrice } from "../valuation";
+import type { Listing, Ownership, ScanFilters } from "../types";
+import { cleanText, fmtPrice, parseOwnership } from "../valuation";
+
 
 const GQL = "https://api.bezrealitky.cz/graphql/";
 const OFFER: Record<string, string> = { prodej: "PRODEJ", pronajem: "PRONAJEM" };
