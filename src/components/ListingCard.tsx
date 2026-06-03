@@ -169,6 +169,15 @@ export function ListingCard({ listing }: { listing: Listing }) {
               </span>
               <span className={`text-xs font-semibold ${yieldClass(inv.stars)}`}>{inv.verdict}</span>
             </div>
+            {inv.rent_basis_label && (
+              <div
+                className="mt-1 text-[10px] text-muted-foreground"
+                title={`Zdroj nájmu: ${inv.rent_source === "district" ? "konkrétní městská část" : inv.rent_source === "region" ? "krajský průměr" : "národní průměr"} — orientační odhad`}
+              >
+                Odhad nájmu: {inv.rent_basis_label}
+                {inv.rent_source === "district" ? " ✓" : inv.rent_source === "region" ? " (kraj)" : " (ČR)"}
+              </div>
+            )}
           </div>
         </div>
       )}
