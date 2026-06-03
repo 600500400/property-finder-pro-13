@@ -22,10 +22,10 @@ export const Route = createFileRoute("/")({
 
 const DEFAULT_FILTERS: ScanFilters = {
   deal_type: "prodej",
-  property_type: "ostatni",
-  sub_type: "garaz",
-  region: "stredocesky",
-  sources: ["sreality", "bazos", "bezrealitky"],
+  property_type: "byty",
+  sub_type: "",
+  region: "",
+  sources: [],
   sort_by: "source",
 };
 

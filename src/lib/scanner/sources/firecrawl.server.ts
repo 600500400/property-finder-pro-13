@@ -83,7 +83,7 @@ const LISTING_SCHEMA = {
   required: ["listings"],
 } as const;
 
-const PROMPT = "Extrahuj seznam realitních inzerátů ze stránky výpisu. Pro každý inzerát najdi titulek, ABSOLUTNÍ URL detailu (musí začínat https://), cenu (přesný text vč. měny), lokalitu a ABSOLUTNÍ URL náhledové fotky (atribut src obrázku, NIKDY ne data-src ani 1×1 pixel). Vynech reklamní, doporučené a sponzorované bloky, paginaci a opakující se navigaci. Maximálně 25 položek.";
+const PROMPT = "Extrahuj seznam realitních inzerátů ze stránky výpisu. Pro každý inzerát najdi titulek, ABSOLUTNÍ URL detailu (musí začínat https://), cenu (přesný text vč. měny), lokalitu a ABSOLUTNÍ URL náhledové fotky. U obrázku zkontroluj atributy src, data-src, data-original, data-lazy a srcset (ze srcset vezmi první URL). Vynech 1×1 pixel placeholdery, base64 data: URI a tracking pixely. Vynech reklamní, doporučené a sponzorované bloky, paginaci a opakující se navigaci. Maximálně 20 položek.";
 
 interface ExtractedItem {
   title?: string;

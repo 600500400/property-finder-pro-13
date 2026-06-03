@@ -75,15 +75,16 @@ export const runScan = createServerFn({ method: "POST" })
     const diagnostics: Diagnostic[] = [];
     let all: Listing[] = [];
     for (const s of settled) {
+      const capped = s.results.slice(0, 20); // limit max 20 per source
       diagnostics.push({
         source: SOURCE_LABEL[s.key],
         key: s.key,
-        count: s.results.length,
+        count: capped.length,
         ms: s.ms,
         ok: s.error === null,
         error: s.error,
       });
-      all = all.concat(s.results);
+      all = all.concat(capped);
     }
 
     // dedup
