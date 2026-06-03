@@ -1,5 +1,5 @@
 import type { Listing, ScanFilters } from "../types";
-import { cleanText, fmtPrice, parsePrice } from "../valuation";
+import { cleanText, fmtPrice, parseArea } from "../valuation";
 
 const SREALITY_CATEGORY_MAIN: Record<string, number> = {
   byty: 1, domy: 2, pozemky: 3, komercni: 4, ostatni: 5,
@@ -21,64 +21,51 @@ const MAIN_SLUG: Record<number, string> = {
 };
 const TYPE_SLUG: Record<number, string> = { 1: "prodej", 2: "pronajem" };
 
-function fixImg(u: string): string {
-  return (u || "")
-    .replace(/\{width\}/g, "400")
-    .replace(/\{height\}/g, "300")
+function fillTemplate(u: string): string {
+  return u
+    .replace(/\{width\}/g, "800")
+    .replace(/\{height\}/g, "600")
     .replace(/\{fileName\}/g, "image-0.jpeg");
 }
 
-function isImgUrl(s: string): boolean {
-  if (!s || typeof s !== "string") return false;
-  if (!/^https?:\/\//.test(s)) return false;
-  if (s.includes("sdn.cz") || s.includes("szn.cz") || s.includes("sreality.cz") || s.includes("imgsr")) return true;
-  return /\.(jpe?g|png|webp|avif)(\?|$)/i.test(s);
+// Accept only real property photos: hosted on Seznam CDN (sdn.cz) with /c_img_ path,
+// or any URL clearly pointing to an estate image file. Reject broker logos.
+function isPropertyPhoto(u: string): boolean {
+  if (!u || typeof u !== "string") return false;
+  if (!/^https?:\/\//.test(u)) return false;
+  const low = u.toLowerCase();
+  if (/\b(logo|branding|watermark|d_logo_|company|seller|avatar)\b/.test(low)) return false;
+  if (low.includes("/c_img_")) return true; // canonical Sreality CDN listing image
+  if (low.includes("sdn.cz") && /\.(jpe?g|png|webp|avif)/.test(low)) return true;
+  return false;
 }
 
+// Look ONLY at known image collections — never crawl whole estate object
+// (avoids accidentally picking up broker logos that live elsewhere).
 function extractImage(e: any): string {
-  // Try documented link/embedded shapes first
-  const candidates: any[] = [
-    e._links?.images,
+  const collections: any[] = [
     e._embedded?.images,
+    e._links?.images,
     e.images,
-    e._links?.image_middle,
-    e._links?.image_middle2,
-    e._links?.image_big,
-    e._links?.gallery,
-    e.gallery,
   ];
-
-  for (let src of candidates) {
-    if (!src) continue;
-    if (src && typeof src === "object" && !Array.isArray(src)) src = [src];
-    if (Array.isArray(src)) {
-      for (const it of src) {
-        if (!it) continue;
-        if (typeof it === "string" && isImgUrl(it)) return fixImg(it);
-        if (typeof it === "object") {
-          const href = it.href || it.url || it.src || it._links?.self?.href;
-          if (typeof href === "string" && href) {
-            const fixed = fixImg(href);
-            if (isImgUrl(fixed)) return fixed;
-          }
-        }
+  for (let c of collections) {
+    if (!c) continue;
+    if (!Array.isArray(c)) c = [c];
+    for (const it of c) {
+      if (!it) continue;
+      let href = "";
+      if (typeof it === "string") href = it;
+      else if (typeof it === "object") {
+        href = it.href || it.url || it.src
+          || it._links?.view?.href || it._links?.self?.href
+          || it.image_middle || it.image_big || "";
       }
+      if (!href) continue;
+      const filled = fillTemplate(href);
+      if (isPropertyPhoto(filled)) return filled;
     }
   }
-
-  // Recursive walk fallback
-  let found = "";
-  const walk = (n: any, depth = 0) => {
-    if (found || depth > 6) return;
-    if (Array.isArray(n)) n.forEach((x) => walk(x, depth + 1));
-    else if (n && typeof n === "object") Object.values(n).forEach((x) => walk(x, depth + 1));
-    else if (typeof n === "string") {
-      const fixed = fixImg(n);
-      if (isImgUrl(fixed)) found = fixed;
-    }
-  };
-  walk(e);
-  return found;
+  return "";
 }
 
 function localityOf(e: any): string {
@@ -147,6 +134,13 @@ function badgesOf(e: any): string[] {
   return out;
 }
 
+function publishedOf(e: any): string | undefined {
+  const cand = e.last_update || e.lastUpdate || e.date || e.created || e.publish_date || e._embedded?.estate?.last_update;
+  if (!cand) return undefined;
+  const d = new Date(String(cand));
+  return isNaN(d.getTime()) ? undefined : d.toISOString();
+}
+
 export async function fetchSreality(f: ScanFilters): Promise<Listing[]> {
   const mainCb = SREALITY_CATEGORY_MAIN[f.property_type] ?? 5;
   const typeCb = SREALITY_CATEGORY_TYPE[f.deal_type] ?? 1;
@@ -212,6 +206,7 @@ export async function fetchSreality(f: ScanFilters): Promise<Listing[]> {
     const name = cleanText(e.advert_name || e.name || "Nemovitost");
     const url = detailUrl(e, typeS, mainCb, name);
     const areaM = name.match(/(\d+)\s*m²/);
+    const area_m2 = parseArea(name) ?? (typeof e.usable_area === "number" ? e.usable_area : undefined);
     out.push({
       source: "Sreality",
       source_key: "sreality",
@@ -221,7 +216,9 @@ export async function fetchSreality(f: ScanFilters): Promise<Listing[]> {
       price_text: price ? fmtPrice(price) : "Cena na vyžádání",
       url,
       img: extractImage(e),
-      area: areaM ? areaM[0] : "",
+      area: areaM ? areaM[0] : (area_m2 ? `${area_m2} m²` : ""),
+      area_m2,
+      published_at: publishedOf(e),
       invest: null,
       badges: badgesOf(e),
     });

@@ -1,65 +1,69 @@
-## Plán úprav
+## 1. Oprava obrázků ze Sreality
 
-### 1) Oprava Sreality obrázků
-V `sreality.server.ts` v `extractImage()` aktuálně bereme z `_links.images/image_middle/...`. Z aktuálního API ale často přijde objekt s `_links.images` jako pole objektů s `href` template stringem (`...{width}x{height}...`) nebo přímo v `_embedded.images[].href`. Ošetříme:
-- procházet `e._embedded?.images` a `e.images` pole objektů,
-- akceptovat i `href` v hlubších strukturách,
-- pro template URL nahradit `{width}/{height}` (už děláme) i `{fileName}` placeholdery,
-- fallback walk i přes pole čísel/objektů (už máme, rozšířit i na URL bez `sdn.cz` doménový whitelist – stačí test na příponu obrázku).
+**Problém:** `extractImage()` vrací první URL nalezenou rekurzivně – často trefí logo makléře (`_embedded.seller.logo`, `branding`, `company_logo`) místo fotky nemovitosti.
 
-### 2) Volba počtu inzerátů na zdroj (limit)
-- Přidat do `ScanFilters` pole `per_source_limit: number` (default 20).
-- V sidebaru přidat `Select` s hodnotami `10 / 20 / 50 / 100`.
-- V `scan.functions.ts` použít místo hardcoded `slice(0, 20)` hodnotu z filtru, clamp 1–100. Stejný limit propsat do fetcherů, kde to dává smysl (Sreality `per_page`, Bezrealitky `limit`, Bazoš break loop).
+**Řešení v `src/lib/scanner/sources/sreality.server.ts`:**
 
-### 3) Sjednocení podkategorie napříč zdroji (garáž vs. garážové stání)
-Realita: každý portál má jiné taxonomie a chybové míchání. Pragmatický fix:
-- Když uživatel vybere `sub_type = garaz` nebo `garazove_stani`, ve fetcherech, které kategorii neumí spolehlivě filtrovat (Bazoš/Bezrealitky/Firecrawl zdroje), na klientu po fetchi **post-filtrujeme** podle klíčových slov v `name` (garáž/stání).
-- U Sreality už `category_sub_cb` posíláme – ponecháme.
-- Doplníme tooltip u podkategorie: „Některé portály nerozlišují – výsledky filtrujeme dodatečně podle názvu."
+- Hledat **pouze** v `_embedded.images[]` (hlavní galerie), případně `_links.images[]` – nikdy ne rekurzivně přes celý objekt.
+- Pokud nalezeno: vzít první `href` a normalizovat (template `{width}/{height}` → `800/600`, ponechat query `?fl=res,...` – to Sreality CDN vyžaduje, jinak vrací 403).
+- Vynechat URL obsahující `/logo/`, `/branding/`, `seller`, `company`.
+- Pokud galerie chybí → vrátit `""` (fallback ikona domu) místo loga.
+- Také ošetřit, že některé estaty mají `_links.images` jako objekt s `image_middle/image_big` (string href) – přijmout jen pokud doména je `sdn.cz` a path obsahuje `/c_img_` (foto), ne `/d_logo_` / `branding`.
 
-(Specializaci jen na byty zatím neděláme – ponecháme všechny typy, jen vylepšíme přesnost.)
+Test URL z příkladu (`d18-a.sdn.cz/d_18/c_img_p9_A/...jpeg?fl=res,2200,2200,1|wrm,...`) – tato URL je validní, musí projít. Loga mají typicky `d_logo_` nebo `branding` v cestě.
 
-### 4) FilterSidebar – nové UX prvky
-- **Toolbar nad seznamem zdrojů**: `Vybrat vše` / `Žádný` / `Jen rychlé (API+HTML)` – tři malá tlačítka.
-- **Limit počtu** (viz #2) jako nová sekce.
-- **Filtr „Jen s obrázkem"** – checkbox; aplikuje se v `Index` po fetchu.
-- **Dedup toggle** „Skrýt duplicity (lokalita + cena)" – checkbox; v `Index` přes Map klíč `${locality}|${price}` ponechat první.
-- **Presety filtrů** (localStorage):
-  - tlačítko „Uložit jako preset" → prompt na název → zápis do `localStorage.realityscanner.presets`,
-  - dropdown s uloženými presety + ikonka smazat,
-  - klíč `realityscanner.lastFilters` automaticky ukládá poslední konfiguraci a načítá při startu.
+## 2. Investorské doporučení pro všechny typy nemovitostí
 
-### 5) Sticky filter footer na mobilu
-- V `FilterSidebar` přesunout `Skenovat` + `Export CSV` na desktopu ponechat dole v sidebaru, ale na mobilu (`md:hidden`) renderovat zvlášť jako `fixed bottom-0 inset-x-0` panel s pozadím a stínem.
-- Hlavní `main` dostane `pb-24 md:pb-0`.
+Aktuálně `calcYield()` v `valuation.ts` počítá **jen pro `property_type === "ostatni"**` (garáže). Rozšířit na byty, domy, komerční.
 
-### 6) Skeleton karty během skenu
-- Nový komponent `ListingCardSkeleton` (využije `ui/skeleton.tsx`).
-- V `Index` během `mutation.isPending` renderovat grid 8–12 skeletonů místo prostého centra se spinnerem (spinner ponechat malý v hlavičce/diagnostice).
+**Návrh:**
 
-### 7) TOP / Nový badge
-- Rozšířit `Listing` typ o volitelné `badges?: string[]`.
-- Ve `sreality.server.ts` zachytit `label_top`/`is_topped`/`mark_as_new` z odpovědi (pokud existují) → `["TOP"]` / `["NOVÝ"]`.
-- V Bazoš parseru detekovat `TOP` v HTML bloku (třída/word).
-- `ListingCard` zobrazí chip-y vpravo nahoře u obrázku (vedle ikony ExternalLink).
+- Tabulka odhadovaného nájmu **per m² / měsíc** podle regionu × typu (byt/dům/komerční). Hodnoty zhruba podle českého trhu 2024–25, např. Praha byt 380 Kč/m², Brno 280, krajská města 220, ostatní 180; domy ~80 % bytového; komerční ~250 Kč/m² Praha atd.
+- Extrahovat plochu z názvu/area pole (regex `(\d+)\s*m²` už máme) – uložit jako number `area_m2` v `Listing`.
+- `calcYield(price, region, propertyType, area_m2)`:
+  - byty/domy/komerční: `monthly = rent_per_m2 * area_m2`
+  - garáž/stání (ostatni): současná logika (fixní nájem regionu)
+  - bez plochy → fallback fixní odhad podle typu+region (nebo `null` s poznámkou)
+- Hodnocení (★1–5, verdict) ponechat dle čistého výnosu, jen jemně doladit thresholdy pro byty (4 % net = průměr trhu, 5 % dobré, 6 % výborné).
+- V `ListingCard` zobrazit investiční metriky pro všechny typy – sekce už existuje, jen ji odemknout.  
+  
+zde jsou důležité ty hodnoty - budeš moci mít zdroj dat nebudeš vycházet z tabulky která se týkala garáži je to tak?
 
-### 8) Drobnosti
-- Defaulty zachovat: `byty / prodej / Celá ČR / sources=[]`.
-- Diagnostika: `DiagnosticsBar` už je sbalený, jen ověřit, že tlačítko „Log" je viditelné i bez výsledků (skryjeme jen pokud `items` prázdné).
+## 3. Datum zveřejnění + HOT/NOVÝ badge
+
+**Logika scrapingu dnes:** Všechny zdroje vrací **aktuálně inzerované** nabídky tříděné defaultně podle relevance/data zdroje (Sreality `sort=0` = nejnovější; Bazoš výpis je chronologický). Není to historický archiv – jakmile inzerát zmizí z výpisu portálu, scanner ho už nevidí. Skenuje se vždy na vyžádání (kliknutím), žádné ukládání mezi běhy.
+
+**Co přidáme:**
+
+- Nové pole `published_at?: string` v `Listing` (ISO date).
+- **Sreality:** dostupné v `last_update`, `_embedded.estate.last_update` nebo `date` – extrahovat.
+- **Bazoš:** v HTML bloku `inzeratydatum` (formát `[3.6. 2026]`) – parsovat regex.
+- **Bezrealitky:** GraphQL pole `dateCreated` / `publishedAt`.
+- **Firecrawl zdroje:** doplnit do extraction promptu.
+- **Sort by date:** přidat volbu „Nejnovější" do `sort_by`.
+- **Badge logika v `ListingCard`:**
+  - ≤ 24 h → červený **HOT 🔥**
+  - ≤ 72 h → modrý **NOVÝ**
+  - ≤ 7 dní → šedý **Tento týden**
+  - jinak relativní text („před 12 dny") pod cenou.
+
+## 4. Drobnosti
+
+- Sort: přidat `date_desc` (nejnovější první) jako default po skenu.
+- Diagnostika: zobrazit u Sreality, kolik inzerátů má/nemá obrázek (rychlá kontrola opravy).
 
 ## Soubory k úpravě
-- `src/lib/scanner/types.ts` – `per_source_limit`, `only_with_image`, `dedupe`, `badges?`.
-- `src/lib/scanner/scan.functions.ts` – respektovat `per_source_limit`, předat fetcherům, post-filtr podkategorie.
-- `src/lib/scanner/sources/sreality.server.ts` – lepší extrakce obrázků, TOP/NEW badge, `per_page` z limitu.
-- `src/lib/scanner/sources/bazos.server.ts` – limit + TOP detekce.
-- `src/lib/scanner/sources/bezrealitky.server.ts` – `limit` parametr.
-- `src/components/FilterSidebar.tsx` – toolbar zdrojů, limit select, presety, „jen s obrázkem", dedup toggle, mobile sticky footer.
-- `src/components/ListingCard.tsx` – badges (TOP/NOVÝ).
-- `src/components/ListingCardSkeleton.tsx` – nový.
-- `src/routes/index.tsx` – skeleton grid, dedup + image filter, načtení/uložení presetů, mobile bottom padding.
 
-## Co se NEMĚNÍ
-- Backend zdrojů (kromě bodu #1 a limitu) – funguje.
-- Vzhled karet zůstává, jen přibudou badge chip-y.
-- Žádné zúžení app na „jen byty" – necháme univerzální.
+- `src/lib/scanner/sources/sreality.server.ts` – přepsat `extractImage`, doplnit `published_at`.
+- `src/lib/scanner/sources/bazos.server.ts` – parsovat datum, badge HOT.
+- `src/lib/scanner/sources/bezrealitky.server.ts` – datum z GraphQL.
+- `src/lib/scanner/sources/firecrawl.server.ts` – prompt: pole `published_date`.
+- `src/lib/scanner/valuation.ts` – nová tabulka nájmů per m², rozšířená logika.
+- `src/lib/scanner/types.ts` – `published_at`, `area_m2`, nové sort.
+- `src/lib/scanner/scan.functions.ts` – předat plochu do `calcYield`, podpora sortu.
+- `src/components/ListingCard.tsx` – HOT/NOVÝ badge dle data, investiční sekce pro všechny typy.
+- `src/components/FilterSidebar.tsx` – přidat sort „Nejnovější".
+
+## Co plán neřeší
+
+- Historické inzeráty (vyžadovalo by vlastní databázi + cron sběr – velký scope, můžeme řešit samostatně, případně přes Lovable Cloud).

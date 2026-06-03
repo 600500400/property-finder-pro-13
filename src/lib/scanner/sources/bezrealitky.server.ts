@@ -8,7 +8,7 @@ const ESTATE: Record<string, string> = {
   byty: "BYT", domy: "DUM", pozemky: "POZEMEK", komercni: "KANCELAR", ostatni: "GARAZ",
 };
 
-const FIELDS = "id uri offerType estateType disposition price surface address(locale: CS)";
+const FIELDS = "id uri offerType estateType disposition price surface address(locale: CS) dateCreated";
 const IMG_VARIANTS = [
   "mainImage { url(filter: RECORD_MAIN) }",
   "mainImage { url }",
@@ -110,6 +110,11 @@ export async function fetchBezrealitky(f: ScanFilters): Promise<Listing[]> {
     const surface = it.surface;
     const disp = dispOf(it.disposition);
     const title = [disp, surface ? `${surface} m²` : ""].filter(Boolean).join(" ") || "Inzerát Bezrealitky";
+    let published_at: string | undefined;
+    if (it.dateCreated) {
+      const d = new Date(String(it.dateCreated));
+      if (!isNaN(d.getTime())) published_at = d.toISOString();
+    }
     out.push({
       source: "Bezrealitky",
       source_key: "bezrealitky",
@@ -120,6 +125,8 @@ export async function fetchBezrealitky(f: ScanFilters): Promise<Listing[]> {
       url,
       img: imgOf(it),
       area: surface ? `${surface} m²` : "",
+      area_m2: typeof surface === "number" ? surface : undefined,
+      published_at,
       invest: null,
     });
   }
