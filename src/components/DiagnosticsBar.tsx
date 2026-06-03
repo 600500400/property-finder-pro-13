@@ -1,8 +1,8 @@
-import type { Diagnostic } from "@/lib/scanner/types";
+import type { Diagnostic, ScanMeta } from "@/lib/scanner/types";
 import { CheckCircle2, AlertCircle, XCircle, ChevronDown, ChevronRight, Terminal } from "lucide-react";
 import { useState } from "react";
 
-export function DiagnosticsBar({ items }: { items: Diagnostic[] }) {
+export function DiagnosticsBar({ items, meta }: { items: Diagnostic[]; meta?: ScanMeta }) {
   const [open, setOpen] = useState(false);
   if (!items.length) return null;
 
@@ -49,8 +49,13 @@ export function DiagnosticsBar({ items }: { items: Diagnostic[] }) {
 
       {open && (
         <div className="mt-2 overflow-hidden rounded-lg border border-border bg-[var(--color-surface-2)]">
-          <div className="border-b border-border bg-[var(--color-surface)] px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.15em] text-muted-foreground">
-            Detail skenu
+          <div className="border-b border-border bg-[var(--color-surface)] px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.15em] text-muted-foreground flex items-center justify-between">
+            <span>Detail skenu</span>
+            {meta?.benchmark_fetched_at && (
+              <span className="font-mono text-[10px] normal-case tracking-normal text-muted-foreground">
+                Benchmark nájmů: {new Date(meta.benchmark_fetched_at).toLocaleString("cs-CZ")} ({meta.benchmark_source})
+              </span>
+            )}
           </div>
           <div className="max-h-72 overflow-y-auto p-3">
             <table className="w-full font-mono text-[11px]">
@@ -60,6 +65,7 @@ export function DiagnosticsBar({ items }: { items: Diagnostic[] }) {
                   <th className="pb-1 pr-3">Stav</th>
                   <th className="pb-1 pr-3">Počet</th>
                   <th className="pb-1 pr-3">Trvání</th>
+                  <th className="pb-1 pr-3">Datumy</th>
                   <th className="pb-1">Chyba / poznámka</th>
                 </tr>
               </thead>
@@ -78,6 +84,11 @@ export function DiagnosticsBar({ items }: { items: Diagnostic[] }) {
                     </td>
                     <td className="py-1 pr-3 text-foreground">{d.count}</td>
                     <td className="py-1 pr-3 text-muted-foreground">{d.ms} ms</td>
+                    <td className="py-1 pr-3 text-muted-foreground">
+                      {d.dates_from
+                        ? `api:${d.dates_from.api} html:${d.dates_from.html} fb:${d.dates_from.fallback}`
+                        : "—"}
+                    </td>
                     <td className="py-1 break-all text-muted-foreground">
                       {d.error ? d.error : d.count === 0 ? "Zdroj nevrátil žádné inzeráty." : "—"}
                     </td>

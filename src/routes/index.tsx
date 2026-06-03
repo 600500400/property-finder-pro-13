@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useState, useMemo, useEffect } from "react";
 
 import { runScan } from "@/lib/scanner/scan.functions";
+import { sortListings } from "@/lib/scanner/sort";
 import type { Listing, ScanFilters, ScanResult } from "@/lib/scanner/types";
 import { FilterSidebar, MobileScanFooter } from "@/components/FilterSidebar";
 import { ListingCard } from "@/components/ListingCard";
@@ -93,8 +94,8 @@ function Index() {
         return true;
       });
     }
-    return arr;
-  }, [data?.results, view.only_with_image, view.dedupe]);
+    return sortListings(arr, filters.sort_by);
+  }, [data?.results, view.only_with_image, view.dedupe, filters.sort_by]);
 
   const groupedBySource = useMemo(() => {
     if (filters.sort_by !== "source") return null;
@@ -170,7 +171,7 @@ function Index() {
             </div>
           </div>
 
-          {data && <DiagnosticsBar items={data.diagnostics} />}
+          {data && <DiagnosticsBar items={data.diagnostics} meta={data.meta} />}
 
           {mutation.isPending && (
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">

@@ -99,6 +99,7 @@ export async function fetchAnnonce(f: ScanFilters): Promise<Listing[]> {
       area: area_m2 ? `${area_m2} m²` : "",
       area_m2,
       published_at,
+      published_at_source: published_at ? "html" : undefined,
       ownership,
       invest: null,
     });

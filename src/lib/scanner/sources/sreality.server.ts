@@ -138,7 +138,8 @@ function badgesOf(e: any): string[] {
 }
 
 function publishedOf(e: any): string | undefined {
-  const cand = e.last_update || e.lastUpdate || e.date || e.created || e.publish_date;
+  const cand = e.last_update || e.lastUpdate || e.date || e.created || e.publish_date
+    || e.last_modified || e.modified || e.created_at;
   if (!cand) return undefined;
   const d = new Date(String(cand));
   return isNaN(d.getTime()) ? undefined : d.toISOString();
@@ -214,6 +215,7 @@ export async function fetchSreality(f: ScanFilters): Promise<Listing[]> {
 
   const typeS = TYPE_SLUG[typeCb] || "prodej";
   const out: Listing[] = [];
+  let withImg = 0;
   for (const e of estates) {
     if (!e || typeof e !== "object") continue;
     const price = priceOf(e);
@@ -221,6 +223,9 @@ export async function fetchSreality(f: ScanFilters): Promise<Listing[]> {
     const url = detailUrl(e, typeS, mainCb, name);
     const areaM = name.match(/(\d+)\s*m²/);
     const area_m2 = parseArea(name) ?? (typeof e.usable_area === "number" ? e.usable_area : undefined);
+    const img = extractImage(e);
+    if (img) withImg++;
+    const pubIso = publishedOf(e);
     out.push({
       source: "Sreality",
       source_key: "sreality",
@@ -229,14 +234,16 @@ export async function fetchSreality(f: ScanFilters): Promise<Listing[]> {
       price,
       price_text: price ? fmtPrice(price) : "Cena na vyžádání",
       url,
-      img: extractImage(e),
+      img,
       area: areaM ? areaM[0] : (area_m2 ? `${area_m2} m²` : ""),
       area_m2,
-      published_at: publishedOf(e),
+      published_at: pubIso,
+      published_at_source: pubIso ? "api" : undefined,
       ownership: ownershipOf(e, name),
       invest: null,
       badges: badgesOf(e),
     });
   }
+  console.log(`[scanner:sreality] estates=${estates.length} withImg=${withImg}`);
   return out;
 }

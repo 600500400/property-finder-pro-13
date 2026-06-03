@@ -130,6 +130,7 @@ async function scrapeViaFirecrawl(
     const priceText = cleanText(it.price_text || "");
     const title = cleanText(it.title);
     const area_m2 = parseArea(title);
+    const pub = parsePublishedDate(it.published_date);
     out.push({
       source: sourceLabel,
       source_key: sourceKey,
@@ -141,7 +142,8 @@ async function scrapeViaFirecrawl(
       img: absolutize(it.image, url),
       area: area_m2 ? `${area_m2} m²` : "",
       area_m2,
-      published_at: parsePublishedDate(it.published_date),
+      published_at: pub,
+      published_at_source: pub ? "html" : undefined,
       invest: null,
     });
   }
