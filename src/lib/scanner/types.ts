@@ -38,6 +38,7 @@ export interface ScanFilters {
   price_max?: number;
   sources: SourceKey[];
   sort_by: SortBy;
+  per_source_limit: number;
 }
 
 export interface Investment {
@@ -61,6 +62,7 @@ export interface Listing {
   img: string;
   area: string;
   invest: Investment | null;
+  badges?: string[];
 }
 
 export interface Diagnostic {
