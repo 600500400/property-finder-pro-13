@@ -1,6 +1,9 @@
 import type { Ownership, ScanFilters, SourceKey } from "@/lib/scanner/types";
-import { Download, Zap, Loader2, Save, Trash2, Bookmark } from "lucide-react";
+import { Download, Zap, Loader2, Save, Trash2, Bookmark, Cloud } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
+import { upsertSavedFilter } from "@/lib/saved/saved.functions";
+import { supabase } from "@/integrations/supabase/client";
 
 
 const REGIONS: Array<[ScanFilters["region"], string]> = [
