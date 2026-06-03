@@ -67,6 +67,7 @@ export function ListingCard({ listing }: { listing: Listing }) {
     ...(fresh && !isFallbackDate ? [fresh] : []),
     ...(listing.badges || []).filter(b => b !== "NOVÝ" || !fresh),
   ];
+  const pricePerM2 = listing.price && listing.area_m2 ? Math.round(listing.price / listing.area_m2) : null;
   return (
     <a
       href={listing.url}
@@ -74,35 +75,26 @@ export function ListingCard({ listing }: { listing: Listing }) {
       rel="noopener noreferrer"
       className="group flex flex-col overflow-hidden rounded-xl border border-border bg-card transition-all hover:-translate-y-0.5 hover:border-primary/50 hover:shadow-lg hover:shadow-primary/5"
     >
-      <div className="relative aspect-[4/3] w-full overflow-hidden bg-[var(--color-surface-2)]">
-        {listing.img ? (
-          <img
-            src={listing.img}
-            alt={listing.name}
-            loading="lazy"
-            className="h-full w-full object-cover transition-transform group-hover:scale-105"
-            onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
-          />
-        ) : (
-          <div className="flex h-full w-full items-center justify-center text-4xl text-border">🏠</div>
-        )}
-        <span className="absolute left-2 top-2 rounded-md bg-background/80 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-foreground backdrop-blur">
-          {listing.source}
-        </span>
-        {badges.length > 0 && (
-          <div className="absolute right-2 top-2 flex flex-wrap justify-end gap-1">
+      <div className="flex flex-1 flex-col gap-2 p-3">
+        {/* Header: source + badges */}
+        <div className="flex items-center justify-between gap-2">
+          <span className="rounded-md bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-primary">
+            {listing.source}
+          </span>
+          <div className="flex flex-wrap justify-end gap-1">
             {badges.map((b) => (
-              <span key={b} className={`rounded-md px-1.5 py-0.5 text-[9px] font-bold tracking-wider shadow ${badgeClass(b)}`}>
+              <span key={b} className={`rounded-md px-1.5 py-0.5 text-[9px] font-bold tracking-wider ${badgeClass(b)}`}>
                 {b}
               </span>
             ))}
+            <ExternalLink className="h-3.5 w-3.5 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
           </div>
-        )}
-        <ExternalLink className="absolute bottom-2 right-2 h-4 w-4 text-foreground/70 opacity-0 transition-opacity group-hover:opacity-100" />
-      </div>
+        </div>
 
-      <div className="flex flex-1 flex-col gap-1.5 p-3">
+        {/* Title */}
         <h3 className="line-clamp-2 text-sm font-semibold leading-snug text-foreground">{listing.name}</h3>
+
+        {/* Locality + ownership */}
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           {listing.locality && (
             <span className="flex min-w-0 items-center gap-1">
@@ -119,20 +111,32 @@ export function ListingCard({ listing }: { listing: Listing }) {
             </span>
           )}
         </div>
-        <div className="mt-auto flex items-end justify-between gap-2 pt-1">
-          <span className="font-mono text-lg font-bold text-primary">{listing.price_text}</span>
-          {dateText && (
-            <span
-              title={isFallbackDate ? "Datum nebylo k dispozici — zobrazen čas skenu" : "Datum zveřejnění"}
-              className={`text-[10px] ${isFallbackDate ? "italic text-muted-foreground/60" : "text-muted-foreground"}`}
-            >
-              {isFallbackDate ? `~ ${dateText}` : dateText}
-            </span>
-          )}
+
+        {/* Price + area + Kč/m² */}
+        <div className="flex items-end justify-between gap-2 pt-1">
+          <div className="flex flex-col">
+            <span className="font-mono text-lg font-bold text-primary leading-tight">{listing.price_text}</span>
+            {pricePerM2 && (
+              <span className="font-mono text-[10px] text-muted-foreground">
+                {pricePerM2.toLocaleString("cs-CZ")} Kč/m²
+              </span>
+            )}
+          </div>
+          <div className="flex flex-col items-end gap-0.5">
+            {listing.area && (
+              <span className="font-mono text-xs font-semibold text-foreground">{listing.area}</span>
+            )}
+            {dateText && (
+              <span
+                title={isFallbackDate ? "Datum nebylo k dispozici — zobrazen čas skenu" : "Datum zveřejnění"}
+                className={`text-[10px] ${isFallbackDate ? "italic text-muted-foreground/60" : "text-muted-foreground"}`}
+              >
+                {isFallbackDate ? `~ ${dateText}` : dateText}
+              </span>
+            )}
+          </div>
         </div>
       </div>
-
-
 
       {inv && (
         <div className={`grid grid-cols-2 gap-2 border-t border-border p-3 ${verdictBg(inv.stars)}`}>
@@ -184,3 +188,4 @@ export function ListingCard({ listing }: { listing: Listing }) {
     </a>
   );
 }
+
