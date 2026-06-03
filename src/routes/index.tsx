@@ -85,7 +85,12 @@ function Index() {
     let arr = data?.results ?? [];
     if (filters.ownership && filters.ownership.length > 0) {
       const allow = new Set(filters.ownership);
-      arr = arr.filter(l => l.ownership && allow.has(l.ownership));
+      // "jine" (Neurčeno) matchuje i listings bez detekovaného ownership
+      const includeUnknown = allow.has("jine");
+      arr = arr.filter(l => {
+        if (!l.ownership) return includeUnknown;
+        return allow.has(l.ownership);
+      });
     }
     if (view.dedupe) {
       const seen = new Set<string>();
