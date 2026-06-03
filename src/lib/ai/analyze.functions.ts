@@ -1,6 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const MODEL = "google/gemini-2.5-flash";
 
@@ -41,7 +40,6 @@ Vrať PŘESNĚ JSON formátu (žádné markdown bloky, žádný komentář):
 const TTL_DAYS = 30;
 
 export const analyzeListing = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
   .inputValidator((input) => ListingInput.parse(input))
   .handler(async ({ data }): Promise<AIAnalysis> => {
     const apiKey = process.env.LOVABLE_API_KEY;
