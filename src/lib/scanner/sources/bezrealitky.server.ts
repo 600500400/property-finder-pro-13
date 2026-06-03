@@ -150,6 +150,7 @@ export async function fetchBezrealitky(f: ScanFilters): Promise<Listing[]> {
       area: surface ? `${surface} m²` : "",
       area_m2: typeof surface === "number" ? surface : undefined,
       published_at,
+      published_at_source: published_at ? "api" : undefined,
       ownership,
       invest: null,
     });
