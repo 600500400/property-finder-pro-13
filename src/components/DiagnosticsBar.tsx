@@ -49,8 +49,13 @@ export function DiagnosticsBar({ items, meta }: { items: Diagnostic[]; meta?: Sc
 
       {open && (
         <div className="mt-2 overflow-hidden rounded-lg border border-border bg-[var(--color-surface-2)]">
-          <div className="border-b border-border bg-[var(--color-surface)] px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.15em] text-muted-foreground">
-            Detail skenu
+          <div className="border-b border-border bg-[var(--color-surface)] px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.15em] text-muted-foreground flex items-center justify-between">
+            <span>Detail skenu</span>
+            {meta?.benchmark_fetched_at && (
+              <span className="font-mono text-[10px] normal-case tracking-normal text-muted-foreground">
+                Benchmark nájmů: {new Date(meta.benchmark_fetched_at).toLocaleString("cs-CZ")} ({meta.benchmark_source})
+              </span>
+            )}
           </div>
           <div className="max-h-72 overflow-y-auto p-3">
             <table className="w-full font-mono text-[11px]">
@@ -60,6 +65,7 @@ export function DiagnosticsBar({ items, meta }: { items: Diagnostic[]; meta?: Sc
                   <th className="pb-1 pr-3">Stav</th>
                   <th className="pb-1 pr-3">Počet</th>
                   <th className="pb-1 pr-3">Trvání</th>
+                  <th className="pb-1 pr-3">Datumy</th>
                   <th className="pb-1">Chyba / poznámka</th>
                 </tr>
               </thead>
