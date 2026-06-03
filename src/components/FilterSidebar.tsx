@@ -271,9 +271,16 @@ export function FilterSidebar({ filters, setFilters, view, setView, onScan, onEx
         <div className="flex gap-1.5">
           <button type="button" onClick={handleSavePreset}
             className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-border bg-[var(--color-surface-2)] px-2 py-1.5 text-xs text-foreground hover:border-primary/50">
-            <Save className="h-3 w-3" /> Uložit
+            <Save className="h-3 w-3" /> Lokálně
           </button>
+          {isAuthed && (
+            <button type="button" onClick={handleSaveCloud}
+              className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-primary/50 bg-primary/5 px-2 py-1.5 text-xs font-semibold text-primary hover:bg-primary/10">
+              <Cloud className="h-3 w-3" /> Do účtu
+            </button>
+          )}
         </div>
+        {cloudMsg && <p className="text-[10px] text-muted-foreground">{cloudMsg}</p>}
         {presets.length > 0 && (
           <div className="flex flex-col gap-1">
             {presets.map((p) => (
