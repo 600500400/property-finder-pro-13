@@ -22,10 +22,10 @@ export const Route = createFileRoute("/")({
 
 const DEFAULT_FILTERS: ScanFilters = {
   deal_type: "prodej",
-  property_type: "ostatni",
-  sub_type: "garaz",
-  region: "stredocesky",
-  sources: ["sreality", "bazos", "bezrealitky"],
+  property_type: "byty",
+  sub_type: "",
+  region: "",
+  sources: [],
   sort_by: "source",
 };
 
@@ -144,7 +144,9 @@ function Index() {
               <div className="mb-3 text-5xl">🏠</div>
               <h3 className="text-lg font-semibold">Reality Scanner</h3>
               <p className="mt-1 text-sm text-muted-foreground">
-                Nastav filtry vlevo a klikni na „Skenovat nemovitosti".
+                {filters.sources.length === 0
+                  ? "Vyber vlevo alespoň jeden realitní server a klikni na „Skenovat nemovitosti”."
+                  : "Nastav filtry vlevo a klikni na „Skenovat nemovitosti”."}
               </p>
             </div>
           )}

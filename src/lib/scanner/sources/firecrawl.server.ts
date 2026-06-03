@@ -60,19 +60,6 @@ function buildHyperinzerceUrl(f: ScanFilters): string {
   return `https://reality.hyperinzerce.cz/${deal}-${cat}/inzeraty/`;
 }
 
-function buildBazosUrl(f: ScanFilters): string {
-  const cat = f.property_type === "byty" ? "byt"
-    : f.property_type === "domy" ? "dum"
-    : f.property_type === "pozemky" ? "pozemek"
-    : "garaz";
-  const deal = f.deal_type === "pronajem" ? "pronajmu" : "prodam";
-  const qs = new URLSearchParams();
-  if (f.price_min) qs.set("cenaod", String(f.price_min));
-  if (f.price_max) qs.set("cenado", String(f.price_max));
-  const q = qs.toString();
-  return `https://reality.bazos.cz/${deal}/${cat}/${q ? "?" + q : ""}`;
-}
-
 // ---------- Generic Firecrawl-based extractor ----------
 
 const LISTING_SCHEMA = {
@@ -96,7 +83,7 @@ const LISTING_SCHEMA = {
   required: ["listings"],
 } as const;
 
-const PROMPT = "Extrahuj seznam realitních inzerátů ze stránky výpisu. Pro každý inzerát najdi titulek, ABSOLUTNÍ URL detailu (musí začínat https://), cenu (přesný text vč. měny), lokalitu a ABSOLUTNÍ URL náhledové fotky (atribut src obrázku, NIKDY ne data-src ani 1×1 pixel). Vynech reklamní, doporučené a sponzorované bloky, paginaci a opakující se navigaci. Maximálně 25 položek.";
+const PROMPT = "Extrahuj seznam realitních inzerátů ze stránky výpisu. Pro každý inzerát najdi titulek, ABSOLUTNÍ URL detailu (musí začínat https://), cenu (přesný text vč. měny), lokalitu a ABSOLUTNÍ URL náhledové fotky. U obrázku zkontroluj atributy src, data-src, data-original, data-lazy a srcset (ze srcset vezmi první URL). Vynech 1×1 pixel placeholdery, base64 data: URI a tracking pixely. Vynech reklamní, doporučené a sponzorované bloky, paginaci a opakující se navigaci. Maximálně 20 položek.";
 
 interface ExtractedItem {
   title?: string;
@@ -176,5 +163,3 @@ export const fetchAnnonce = (f: ScanFilters) =>
 export const fetchHyperinzerce = (f: ScanFilters) =>
   scrapeViaFirecrawl(buildHyperinzerceUrl(f), "Hyperinzerce", "hyperinzerce");
 
-export const fetchBazos = (f: ScanFilters) =>
-  scrapeViaFirecrawl(buildBazosUrl(f), "Bazoš", "bazos", { onlyMainContent: false, waitFor: 2000 });
