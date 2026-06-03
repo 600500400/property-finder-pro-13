@@ -1,8 +1,10 @@
 import type { Investment, Ownership, PropertyType, Region } from "./types";
+import type { RentBenchmark } from "./rent-benchmark.server";
+import { okresFromLocality, OKRES_BY_SLUG } from "./okresy";
 
-// Krajská hodnota nájmu (Kč/m²/měsíc) — fallback když neznáme čtvrť.
-// 2024–2025 (Deloitte Rent Index Q3 2024 + ČSÚ).
-const RENT_PER_M2_REGION: Record<string, number> = {
+// Re-export pro back-compat
+export type { RentBenchmark };
+
   praha: 415,
   stredocesky: 290,
   jihocesky: 260,
