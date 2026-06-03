@@ -9,7 +9,8 @@ const ESTATE: Record<string, string> = {
   byty: "BYT", domy: "DUM", pozemky: "POZEMEK", komercni: "KANCELAR", ostatni: "GARAZ",
 };
 
-const BASE_FIELDS = "id uri offerType estateType disposition price surface address(locale: CS) tenure";
+const CORE_FIELDS = "id uri offerType estateType disposition price surface address(locale: CS)";
+const TENURE_VARIANTS = ["tenure", "ownership", ""];
 const DATE_VARIANTS = ["dateCreated", "publishedAt", "createdAt", "lastUpdate", ""];
 const IMG_VARIANTS = [
   "mainImage { url(filter: RECORD_MAIN) }",
@@ -19,8 +20,9 @@ const IMG_VARIANTS = [
   "",
 ];
 
-function buildQueries(imgFragment: string, dateField: string) {
-  const fields = BASE_FIELDS
+function buildQueries(imgFragment: string, dateField: string, tenureField: string) {
+  const fields = CORE_FIELDS
+    + (tenureField ? " " + tenureField : "")
     + (dateField ? " " + dateField : "")
     + (imgFragment ? " " + imgFragment : "");
   const body = "{ list{ " + fields + " } totalCount }";
