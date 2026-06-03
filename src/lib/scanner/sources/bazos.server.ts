@@ -1,5 +1,5 @@
 import type { Listing, ScanFilters } from "../types";
-import { cleanText, parsePrice, parseArea } from "../valuation";
+import { cleanText, parsePrice, parseArea, parseOwnership } from "../valuation";
 
 // Parse "[3.6. 2026]" or "3.6.2026" → ISO date
 function parseBazosDate(block: string): string | undefined {
@@ -56,7 +56,7 @@ export async function fetchBazos(f: ScanFilters): Promise<Listing[]> {
     if (out.length >= cap) break;
     const block = m[1];
     const badges: string[] = [];
-    if (/\btop\b/i.test(block) || /class="[^"]*top[^"]*"/i.test(block)) badges.push("TOP");
+    if (/\btop\b/i.test(block) || /class="[^"]*top[^"]*"/i.test(block)) badges.push("Placené");
 
     const linkM = block.match(/<a href="(\/inzerat\/[^"]+)"/);
     if (!linkM) continue;
@@ -78,6 +78,10 @@ export async function fetchBazos(f: ScanFilters): Promise<Listing[]> {
     const dateM = block.match(/<span class="velikost10">([\s\S]*?)<\/span>/);
     const published_at = dateM ? parseBazosDate(stripTags(dateM[1])) : parseBazosDate(block);
 
+    const descM = block.match(/<div class="popis">([\s\S]*?)<\/div>/);
+    const descText = descM ? stripTags(descM[1]) : "";
+    const ownership = parseOwnership(title + " " + descText);
+
     const area_m2 = parseArea(title);
 
     out.push({
@@ -92,6 +96,7 @@ export async function fetchBazos(f: ScanFilters): Promise<Listing[]> {
       area: area_m2 ? `${area_m2} m²` : "",
       area_m2,
       published_at,
+      ownership,
       invest: null,
       badges: badges.length ? badges : undefined,
     });

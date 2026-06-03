@@ -5,7 +5,9 @@ import { calcYield } from "./valuation";
 import { fetchSreality } from "./sources/sreality.server";
 import { fetchBezrealitky } from "./sources/bezrealitky.server";
 import { fetchBazos } from "./sources/bazos.server";
-import { fetchIdnes, fetchRealityMix, fetchAnnonce, fetchHyperinzerce } from "./sources/firecrawl.server";
+import { fetchIdnes, fetchRealityMix } from "./sources/firecrawl.server";
+import { fetchAnnonce } from "./sources/annonce.server";
+import { fetchHyperinzerce } from "./sources/hyperinzerce.server";
 
 
 const FilterSchema = z.object({
@@ -121,7 +123,7 @@ export const runScan = createServerFn({ method: "POST" })
     const pmin = filters.price_min ?? 0;
     const pmax = filters.price_max ?? 999_999_999;
     all = all
-      .map(r => ({ ...r, invest: calcYield(r.price, filters.region, filters.property_type, r.area_m2) }))
+      .map(r => ({ ...r, invest: calcYield(r.price, filters.region, filters.property_type, r.area_m2, r.name, r.ownership) }))
       .filter(r => r.price === 0 || (r.price >= pmin && r.price <= pmax));
 
     // sort

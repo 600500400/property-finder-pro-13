@@ -24,7 +24,7 @@ function verdictBg(stars: number | undefined): string {
 }
 
 function badgeClass(badge: string): string {
-  if (badge === "TOP") return "bg-amber-500/90 text-black";
+  if (badge === "Placené") return "bg-muted text-muted-foreground border border-border";
   if (badge === "HOT 🔥") return "bg-red-500 text-white";
   if (badge === "NOVÝ" || badge === "NEW") return "bg-primary text-primary-foreground";
   if (badge === "Tento týden") return "bg-sky-500/80 text-white";
@@ -43,23 +43,25 @@ function freshnessBadge(iso: string | undefined): string | null {
   return null;
 }
 
-function relativeDate(iso: string | undefined): string | null {
+function fmtDate(iso: string | undefined): string | null {
   if (!iso) return null;
-  const t = new Date(iso).getTime();
-  if (isNaN(t)) return null;
-  const days = Math.floor((Date.now() - t) / 86_400_000);
-  if (days < 0) return null;
-  if (days === 0) return "dnes";
-  if (days === 1) return "včera";
-  if (days < 31) return `před ${days} dny`;
-  const mo = Math.floor(days / 30);
-  return `před ${mo} měs.`;
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return null;
+  return d.toLocaleDateString("cs-CZ", { day: "numeric", month: "numeric", year: "numeric" });
 }
+
+const OWNERSHIP_LABEL: Record<string, { short: string; full: string }> = {
+  osobni: { short: "OV", full: "Osobní vlastnictví" },
+  druzstevni: { short: "DV", full: "Družstevní" },
+  statni: { short: "ST", full: "Státní/obecní" },
+  jine: { short: "?", full: "Jiné" },
+};
 
 export function ListingCard({ listing }: { listing: Listing }) {
   const inv = listing.invest;
   const fresh = freshnessBadge(listing.published_at);
-  const rel = relativeDate(listing.published_at);
+  const dateText = fmtDate(listing.published_at);
+  const own = listing.ownership ? OWNERSHIP_LABEL[listing.ownership] : null;
   const badges = [
     ...(fresh ? [fresh] : []),
     ...(listing.badges || []).filter(b => b !== "NOVÝ" || !fresh),
@@ -100,17 +102,28 @@ export function ListingCard({ listing }: { listing: Listing }) {
 
       <div className="flex flex-1 flex-col gap-1.5 p-3">
         <h3 className="line-clamp-2 text-sm font-semibold leading-snug text-foreground">{listing.name}</h3>
-        {listing.locality && (
-          <div className="flex items-center gap-1 text-xs text-muted-foreground">
-            <MapPin className="h-3 w-3 shrink-0" />
-            <span className="truncate">{listing.locality}</span>
-          </div>
-        )}
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          {listing.locality && (
+            <span className="flex min-w-0 items-center gap-1">
+              <MapPin className="h-3 w-3 shrink-0" />
+              <span className="truncate">{listing.locality}</span>
+            </span>
+          )}
+          {own && (
+            <span
+              title={own.full}
+              className="ml-auto shrink-0 rounded border border-border bg-muted/40 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-foreground"
+            >
+              {own.short}
+            </span>
+          )}
+        </div>
         <div className="mt-auto flex items-end justify-between gap-2 pt-1">
           <span className="font-mono text-lg font-bold text-primary">{listing.price_text}</span>
-          {rel && <span className="text-[10px] text-muted-foreground">{rel}</span>}
+          {dateText && <span className="text-[10px] text-muted-foreground">{dateText}</span>}
         </div>
       </div>
+
 
       {inv && (
         <div className={`grid grid-cols-2 gap-2 border-t border-border p-3 ${verdictBg(inv.stars)}`}>

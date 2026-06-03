@@ -1,5 +1,6 @@
-import type { Listing, ScanFilters } from "../types";
-import { cleanText, fmtPrice } from "../valuation";
+import type { Listing, Ownership, ScanFilters } from "../types";
+import { cleanText, fmtPrice, parseOwnership } from "../valuation";
+
 
 const GQL = "https://api.bezrealitky.cz/graphql/";
 const OFFER: Record<string, string> = { prodej: "PRODEJ", pronajem: "PRONAJEM" };
@@ -8,7 +9,9 @@ const ESTATE: Record<string, string> = {
   byty: "BYT", domy: "DUM", pozemky: "POZEMEK", komercni: "KANCELAR", ostatni: "GARAZ",
 };
 
-const FIELDS = "id uri offerType estateType disposition price surface address(locale: CS) dateCreated";
+const CORE_FIELDS = "id uri offerType estateType disposition price surface address(locale: CS)";
+const TENURE_VARIANTS = ["tenure", "ownership", ""];
+const DATE_VARIANTS = ["dateCreated", "publishedAt", "createdAt", "lastUpdate", ""];
 const IMG_VARIANTS = [
   "mainImage { url(filter: RECORD_MAIN) }",
   "mainImage { url }",
@@ -17,8 +20,11 @@ const IMG_VARIANTS = [
   "",
 ];
 
-function buildQueries(imgFragment: string) {
-  const fields = FIELDS + (imgFragment ? " " + imgFragment : "");
+function buildQueries(imgFragment: string, dateField: string, tenureField: string) {
+  const fields = CORE_FIELDS
+    + (tenureField ? " " + tenureField : "")
+    + (dateField ? " " + dateField : "")
+    + (imgFragment ? " " + imgFragment : "");
   const body = "{ list{ " + fields + " } totalCount }";
   const region = `query($offerType:[OfferType],$estateType:[EstateType],$regionOsmIds:[ID],$limit:Int,$order:ResultOrder){ listAdverts(offerType:$offerType,estateType:$estateType,regionOsmIds:$regionOsmIds,limit:$limit,order:$order) ${body} }`;
   const plain = `query($offerType:[OfferType],$estateType:[EstateType],$limit:Int,$order:ResultOrder){ listAdverts(offerType:$offerType,estateType:$estateType,limit:$limit,order:$order) ${body} }`;
@@ -91,13 +97,21 @@ export async function fetchBezrealitky(f: ScanFilters): Promise<Listing[]> {
 
   let payload: any = null;
   let firstErr: any = null;
-  for (const frag of IMG_VARIANTS) {
-    const { region, plain } = buildQueries(frag);
-    let p = await run(region, regionVars);
-    if (p.errors && frag && isFieldError(p.errors)) { firstErr ||= p.errors; continue; }
-    if (p.errors) p = await run(plain, baseVars);
-    if (!p.errors) { payload = p; break; }
-    firstErr ||= p.errors;
+  let usedDate = "";
+  let usedTenure = "";
+  outer: for (const tenureField of TENURE_VARIANTS) {
+    for (const dateField of DATE_VARIANTS) {
+      for (const frag of IMG_VARIANTS) {
+        const { region, plain } = buildQueries(frag, dateField, tenureField);
+        let p = await run(region, regionVars);
+        if (p.errors && frag && isFieldError(p.errors)) { firstErr ||= p.errors; continue; }
+        if (p.errors && dateField && isFieldError(p.errors)) { firstErr ||= p.errors; break; }
+        if (p.errors && tenureField && isFieldError(p.errors)) { firstErr ||= p.errors; break; }
+        if (p.errors) p = await run(plain, baseVars);
+        if (!p.errors) { payload = p; usedDate = dateField; usedTenure = tenureField; break outer; }
+        firstErr ||= p.errors;
+      }
+    }
   }
   if (!payload) throw new Error(`GraphQL: ${JSON.stringify((firstErr || [])[0] || {}).slice(0, 160)}`);
 
@@ -111,10 +125,19 @@ export async function fetchBezrealitky(f: ScanFilters): Promise<Listing[]> {
     const disp = dispOf(it.disposition);
     const title = [disp, surface ? `${surface} m²` : ""].filter(Boolean).join(" ") || "Inzerát Bezrealitky";
     let published_at: string | undefined;
-    if (it.dateCreated) {
-      const d = new Date(String(it.dateCreated));
+    const dateRaw = usedDate ? it[usedDate] : undefined;
+    if (dateRaw) {
+      const d = new Date(String(dateRaw));
       if (!isNaN(d.getTime())) published_at = d.toISOString();
     }
+    // tenure / ownership enum: VLASTNI / DRUZSTEVNI / OSTATNI
+    let ownership: Ownership | undefined;
+    const tenRaw = usedTenure ? it[usedTenure] : undefined;
+    const ten = String(tenRaw || "").toUpperCase();
+    if (ten.includes("DRUZ")) ownership = "druzstevni";
+    else if (ten.includes("VLAST") || ten === "OWN") ownership = "osobni";
+    else if (ten.includes("STAT")) ownership = "statni";
+    else ownership = parseOwnership(title);
     out.push({
       source: "Bezrealitky",
       source_key: "bezrealitky",
@@ -127,8 +150,10 @@ export async function fetchBezrealitky(f: ScanFilters): Promise<Listing[]> {
       area: surface ? `${surface} m²` : "",
       area_m2: typeof surface === "number" ? surface : undefined,
       published_at,
+      ownership,
       invest: null,
     });
   }
   return out;
 }
+
