@@ -1,5 +1,6 @@
 import type { Listing } from "@/lib/scanner/types";
 import { MapPin, ExternalLink, TrendingUp, TrendingDown, Coins, Clock } from "lucide-react";
+import { AIAnalysisButton } from "./AIAnalysisDialog";
 
 function yieldClass(stars: number | undefined): string {
   switch (stars) {
