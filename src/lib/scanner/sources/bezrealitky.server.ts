@@ -130,9 +130,10 @@ export async function fetchBezrealitky(f: ScanFilters): Promise<Listing[]> {
       const d = new Date(String(dateRaw));
       if (!isNaN(d.getTime())) published_at = d.toISOString();
     }
-    // tenure: VLASTNI / DRUZSTEVNI / OSTATNI
+    // tenure / ownership enum: VLASTNI / DRUZSTEVNI / OSTATNI
     let ownership: Ownership | undefined;
-    const ten = String(it.tenure || "").toUpperCase();
+    const tenRaw = usedTenure ? it[usedTenure] : undefined;
+    const ten = String(tenRaw || "").toUpperCase();
     if (ten.includes("DRUZ")) ownership = "druzstevni";
     else if (ten.includes("VLAST") || ten === "OWN") ownership = "osobni";
     else if (ten.includes("STAT")) ownership = "statni";
