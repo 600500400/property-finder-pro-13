@@ -156,9 +156,4 @@ export const fetchIdnes = (f: ScanFilters) =>
 export const fetchRealityMix = (f: ScanFilters) =>
   scrapeViaFirecrawl(buildRealityMixUrl(f), "RealityMix", "realitymix");
 
-export const fetchAnnonce = (f: ScanFilters) =>
-  scrapeViaFirecrawl(buildAnnonceUrl(f), "Annonce", "annonce", { onlyMainContent: false, waitFor: 3500 });
-
-export const fetchHyperinzerce = (f: ScanFilters) =>
-  scrapeViaFirecrawl(buildHyperinzerceUrl(f), "Hyperinzerce", "hyperinzerce");
 
