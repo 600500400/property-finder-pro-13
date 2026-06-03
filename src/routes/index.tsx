@@ -10,6 +10,7 @@ import { FilterSidebar, MobileScanFooter } from "@/components/FilterSidebar";
 import { ListingCard } from "@/components/ListingCard";
 import { ListingCardSkeleton } from "@/components/ListingCardSkeleton";
 import { DiagnosticsBar } from "@/components/DiagnosticsBar";
+import { UserMenu } from "@/components/UserMenu";
 import { Radar } from "lucide-react";
 
 export const Route = createFileRoute("/")({
