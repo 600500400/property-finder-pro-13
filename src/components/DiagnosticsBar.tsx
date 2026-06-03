@@ -84,6 +84,11 @@ export function DiagnosticsBar({ items, meta }: { items: Diagnostic[]; meta?: Sc
                     </td>
                     <td className="py-1 pr-3 text-foreground">{d.count}</td>
                     <td className="py-1 pr-3 text-muted-foreground">{d.ms} ms</td>
+                    <td className="py-1 pr-3 text-muted-foreground">
+                      {d.dates_from
+                        ? `api:${d.dates_from.api} html:${d.dates_from.html} fb:${d.dates_from.fallback}`
+                        : "—"}
+                    </td>
                     <td className="py-1 break-all text-muted-foreground">
                       {d.error ? d.error : d.count === 0 ? "Zdroj nevrátil žádné inzeráty." : "—"}
                     </td>
