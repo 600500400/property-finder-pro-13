@@ -1,43 +1,78 @@
-# Opravy skenování a zobrazení
+## Co jsem otestoval
 
-Tři nezávislé chyby, které opravím v jedné dávce.
+Spustil jsem výchozí sken (Prodej / Ostatní / Garáž / Středočeský; zdroje Sreality + Bazoš + Bezrealitky). Výsledek z diagnostiky:
 
-## 1) Sreality – kliknutí vede na 404
+- **Sreality** — 52 inz., 256 ms — OK
+- **Bazoš** — 20 inz., **35 594 ms** — funguje, ale extrémně pomalé a část inzerátů nemá obrázek
+- **Bezrealitky** — **0 inz., 354 ms** — odpověď OK, ale prázdný seznam
 
-**Příčina:** sestavujeme detail URL ručně podle `mainCb` a lokality, ale aktuální Sreality vyžaduje pro byty i segment dispozice (např. `/detail/prodej/byt/3+1/praha-vinohrady/<hash_id>`). Bez něj vrátí 404. Navíc API už často přímo vrací správný odkaz v `_links.self.href` (resp. `seo.locality`).
+## Nalezené chyby
 
-**Oprava** v `src/lib/scanner/sources/sreality.server.ts`:
-- Pokud estate vrací `_links.self.href` nebo `seo.locality` + `hash_id`, použít je rovnou.
-- Pro byty (`mainCb === 1`) přidat do cesty segment dispozice z `seo.category_sub_cb` → slug (`2+kk`, `3+1`, …).
-- Jako poslední fallback místo neúplného detail URL použít odkaz na výsledky vyhledávání `https://www.sreality.cz/hledani/...?id=<hash_id>` (nikdy nesmí vést na 404).
+### 1. Bezrealitky vrací 0 výsledků (kritické)
 
-## 2) Bazoš a Annonce – nic se neskenuje
+Ruční dotaz na `api.bezrealitky.cz/graphql/` vrátil:
 
-**Bazoš:** parsujeme HTML podle třídy `inzeraty inzeratyflex`, která se na Bazoši mění a aktuálně neodpovídá – proto 0 výsledků (a v diagnostice OK, ale prázdné).
-**Annonce:** Firecrawl extraktor sice běží, ale URL builder vrací stránku, která 25 inzerátů neobsahuje v hlavním obsahu (`onlyMainContent: true` je ořezává), nebo se LLM extrakce vrací prázdná.
+```
+"Variable $estateType got invalid value [\"OSTATNI\"]; Expected type EstateType at value[0]"
+```
 
-**Oprava:**
-- Přepnout **Bazoš na Firecrawl** stejně jako ostatní browser-zdroje (sjednocený `scrapeViaFirecrawl`). Tím odpadne křehký HTML parser. Bazoš jako jeden ze 7 zdrojů přes Firecrawl.
-- **Annonce:** vypnout `onlyMainContent`, prodloužit `waitFor` na 3000 ms a upřesnit prompt, ať bere i položky mimo „main“ container; ověřit URL pattern (`https://reality.annonce.cz/<deal>-<cat>/`) – při prázdném výsledku zalogovat do diagnostiky.
-- V `scan.functions.ts` přesunout `bazos` z `HTTP_FETCHERS` na firecrawl wrapper a smazat starý `bazos.server.ts`.
+Introspekce `EstateType` ukázala aktuální platné hodnoty: `UNDEFINED, BYT, DUM, POZEMEK, GARAZ, KANCELAR, NEBYTOVY_PROSTOR, REKREACNI_OBJEKT`.
+V `bezrealitky.server.ts` zatím mapujeme `ostatni → OSTATNI` a `komercni → KOMERCNI` — obě hodnoty v aktuálním schématu neexistují, takže GraphQL vrací errory a fetcher končí s prázdným seznamem.
 
-## 3) Chybějící obrázky u iDnes / RealityMix / Annonce / Hyperinzerce
+### 2. FilterSidebar zobrazuje u Bazoše badge „HTML" místo „BROWSER"
 
-**Příčina:** Firecrawl vrací relativní cesty (`/img/...`) nebo `data-src` lazy atributy, které ukládáme rovnou do `img`. Prohlížeč pak načítá relativně k naší doméně → 404 / nic.
+Bazoš jsme přesunuli na Firecrawl, ale v `src/components/FilterSidebar.tsx` zůstal v `SOURCES` typ `html` a badge `HTML`. UI tím uživatele mate (vypadá to jako rychlý HTTP zdroj, ale ve skutečnosti spotřebovává Firecrawl kredity a trvá ~30 s).
 
-**Oprava** v `firecrawl.server.ts`:
-- Přidat `absolutizeImage(url, base)` – pokud začíná `//` přidat `https:`, pokud `/` připojit origin portálu, jinak nechat.
-- V promptu explicitně požadovat **absolutní** URL a `src` (ne `data-src`, ne tracking pixely).
-- Filtrovat zjevné placeholdery (`blank.gif`, base64 1×1, prázdný string).
-- V `ListingCard.tsx` ponechat existující `onError → display:none` (už tam je).
+### 3. Bazoš přes Firecrawl trvá ~35 s
 
-## 4) Drobnost
+Aktuálně používáme společný `scrapeViaFirecrawl` s `waitFor: 2000` a LLM JSON extrakcí. Pro Bazoš je to overkill — Bazoš je čisté HTML bez JS, nepotřebuje headless browser. Před přechodem stačil HTTP fetch + cheerio (~1 s) — jen měl rozbitý selektor.
 
-V `DiagnosticsBar` zobrazit i případnou chybovou hlášku v tooltipu už dnes – stačí ověřit, že diagnostika z firecrawl scraperu propaguje chybu (`scrapeViaFirecrawl` při prázdném výsledku nehází – vrátí 0 a zobrazí žlutě „Žádné výsledky“, což je v pořádku).
+### 4. Některé Bazoš karty nemají obrázek
 
-## Soubory
+Firecrawl LLM extrakce občas vrátí prázdný `image` (lazy `data-src` v `<img>`). Náš `absolutize()` to už filtruje, ale neexistuje fallback na vyhledání `data-src` v HTML.
 
-- upravit `src/lib/scanner/sources/sreality.server.ts` (URL detailu)
-- upravit `src/lib/scanner/sources/firecrawl.server.ts` (absolutní obrázky, Annonce tuning, přidat `fetchBazosFC`)
-- upravit `src/lib/scanner/scan.functions.ts` (Bazoš → firecrawl)
-- smazat `src/lib/scanner/sources/bazos.server.ts`
+### 5. Drobnost — `bb-customSelect` hydration warning
+
+V konzoli je hydration mismatch způsobený browser extenzí v select prvcích (`bb-custom-select-container`). Není to bug aplikace, ale stojí za zmínku — neopravuji.
+
+## Plán oprav
+
+### A) Oprava `src/lib/scanner/sources/bezrealitky.server.ts`
+
+- Přemapovat `ESTATE` na platné enum hodnoty:
+  - `byty → BYT`, `domy → DUM`, `pozemky → POZEMEK`
+  - `ostatni → GARAZ` (drží se původní logiky scanneru garáží)
+  - `komercni → KANCELAR` (případně rozšířit na `[KANCELAR, NEBYTOVY_PROSTOR]`)
+- Ověřit, že `OfferType` (`PRODEJ`/`PRONAJEM`) zůstává platné (test ukázal že ano).
+
+### B) Návrat Bazoše na HTML scrape (rychlost)
+
+- Znovu vytvořit `src/lib/scanner/sources/bazos.server.ts` s HTML fetch + regex/cheerio-light parserem, ale **na aktuálních selektorech** (článek `<div class="inzeraty">` / `<div class="inzeratynadpis">`). Cíl < 3 s.
+- V `scan.functions.ts` přepnout `bazos` zpět na nový `fetchBazos` z `bazos.server.ts`.
+- V `firecrawl.server.ts` odstranit `fetchBazos` a `buildBazosUrl`.
+
+### C) Sjednotit FilterSidebar
+
+- V `SOURCES` opravit položku Bazoš: `type: "html"`, `badge: "HTML"` (zůstává po návratu k HTTP scrape — což odpovídá realitě).
+- Žádné jiné položky neměnit.
+
+### D) Lepší extrakce obrázků pro Firecrawl zdroje
+
+- Rozšířit prompt v `firecrawl.server.ts`, aby explicitně hledal i `data-src`, `data-original` a `srcset` (a vybral první URL ze `srcset`).
+- Volitelně: druhý průchod přes `links`/`html` formát Firecrawlu jako fallback (pokud `image` chybí, dohledat první `<img>` v daném listing bloku). Toto až pokud (A)–(C) nestačí.
+
+## Co se NEMĚNÍ
+
+- Sreality (funguje, 256 ms, 52 výsledků).
+- iDnes / RealityMix / Annonce / Hyperinzerce přes Firecrawl (uživatel je v defaultu nemá zapnuté; otestujeme až po opravě výše).
+- Vzhled karet a layout.
+
+## Soubory, kterých se to dotkne
+
+- `src/lib/scanner/sources/bezrealitky.server.ts` (oprava enum mapování)
+- `src/lib/scanner/sources/bazos.server.ts` (znovu vytvořit)
+- `src/lib/scanner/sources/firecrawl.server.ts` (odstranit Bazoš + vylepšit prompt pro obrázky)
+- `src/lib/scanner/scan.functions.ts` (přepojit Bazoš)
+- `src/components/FilterSidebar.tsx` (badge Bazoš zpět na HTML)
+
+Ok ještě se zamer na UI aplikace předdefinované hodnoty jsou tam typ garáže. To změn. Ať jsou tam předdefinované byty na prodej.a predvybrane všechny realitní servery. Zrus to a nech na uživateli které realitní servery chce skenovat. Nastav tam limit např. Ne všechny jenom třeba 20nejaktualnejsich nebo podobne. Taky bychom potřebovali někam schovat logo ani. V případě chyby abychom se mohli podívat do logu. Navrhni další vylepšení UI
