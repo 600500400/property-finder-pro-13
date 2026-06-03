@@ -8,7 +8,8 @@ const ESTATE: Record<string, string> = {
   byty: "BYT", domy: "DUM", pozemky: "POZEMEK", komercni: "KANCELAR", ostatni: "GARAZ",
 };
 
-const FIELDS = "id uri offerType estateType disposition price surface address(locale: CS) dateCreated";
+const BASE_FIELDS = "id uri offerType estateType disposition price surface address(locale: CS) tenure";
+const DATE_VARIANTS = ["dateCreated", "publishedAt", "createdAt", "lastUpdate", ""];
 const IMG_VARIANTS = [
   "mainImage { url(filter: RECORD_MAIN) }",
   "mainImage { url }",
@@ -17,8 +18,10 @@ const IMG_VARIANTS = [
   "",
 ];
 
-function buildQueries(imgFragment: string) {
-  const fields = FIELDS + (imgFragment ? " " + imgFragment : "");
+function buildQueries(imgFragment: string, dateField: string) {
+  const fields = BASE_FIELDS
+    + (dateField ? " " + dateField : "")
+    + (imgFragment ? " " + imgFragment : "");
   const body = "{ list{ " + fields + " } totalCount }";
   const region = `query($offerType:[OfferType],$estateType:[EstateType],$regionOsmIds:[ID],$limit:Int,$order:ResultOrder){ listAdverts(offerType:$offerType,estateType:$estateType,regionOsmIds:$regionOsmIds,limit:$limit,order:$order) ${body} }`;
   const plain = `query($offerType:[OfferType],$estateType:[EstateType],$limit:Int,$order:ResultOrder){ listAdverts(offerType:$offerType,estateType:$estateType,limit:$limit,order:$order) ${body} }`;
