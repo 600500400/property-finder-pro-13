@@ -192,6 +192,9 @@ export function ListingCard({ listing }: { listing: Listing }) {
                  inv.rent_source === "region" ? " (kraj)" : " (ČR)"}
               </div>
             )}
+            <div className="mt-2 flex justify-end">
+              <AIAnalysisButton listing={listing} />
+            </div>
           </div>
         </div>
       )}
