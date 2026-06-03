@@ -1,5 +1,4 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { executeScan } from "@/lib/scanner/scan-internal.server";
 import type { ScanFilters } from "@/lib/scanner/types";
 
 // Cron endpoint volaný z pg_cron. Vybere scheduled_scans které mají běžet
