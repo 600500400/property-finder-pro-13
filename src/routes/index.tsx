@@ -1,14 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 
 import { runScan } from "@/lib/scanner/scan.functions";
 import type { Listing, ScanFilters, ScanResult } from "@/lib/scanner/types";
-import { FilterSidebar } from "@/components/FilterSidebar";
+import { FilterSidebar, MobileScanFooter } from "@/components/FilterSidebar";
 import { ListingCard } from "@/components/ListingCard";
+import { ListingCardSkeleton } from "@/components/ListingCardSkeleton";
 import { DiagnosticsBar } from "@/components/DiagnosticsBar";
-import { Radar, Loader2 } from "lucide-react";
+import { Radar } from "lucide-react";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -27,7 +28,12 @@ const DEFAULT_FILTERS: ScanFilters = {
   region: "",
   sources: [],
   sort_by: "source",
+  per_source_limit: 20,
 };
+
+const DEFAULT_VIEW = { only_with_image: false, dedupe: false };
+const LAST_FILTERS_KEY = "realityscanner.lastFilters";
+const LAST_VIEW_KEY = "realityscanner.lastView";
 
 function toCsv(results: Listing[]): string {
   const headers = [
@@ -48,13 +54,47 @@ function toCsv(results: Listing[]): string {
 
 function Index() {
   const [filters, setFilters] = useState<ScanFilters>(DEFAULT_FILTERS);
+  const [view, setView] = useState(DEFAULT_VIEW);
+
+  // Load persisted filters/view on mount
+  useEffect(() => {
+    try {
+      const f = localStorage.getItem(LAST_FILTERS_KEY);
+      if (f) setFilters({ ...DEFAULT_FILTERS, ...JSON.parse(f) });
+      const v = localStorage.getItem(LAST_VIEW_KEY);
+      if (v) setView({ ...DEFAULT_VIEW, ...JSON.parse(v) });
+    } catch { /* ignore */ }
+  }, []);
+  // Persist
+  useEffect(() => {
+    try { localStorage.setItem(LAST_FILTERS_KEY, JSON.stringify(filters)); } catch { /* ignore */ }
+  }, [filters]);
+  useEffect(() => {
+    try { localStorage.setItem(LAST_VIEW_KEY, JSON.stringify(view)); } catch { /* ignore */ }
+  }, [view]);
+
   const scanFn = useServerFn(runScan);
   const mutation = useMutation({
     mutationFn: (f: ScanFilters) => scanFn({ data: f }),
   });
 
   const data: ScanResult | undefined = mutation.data;
-  const listings = data?.results ?? [];
+
+  const listings = useMemo(() => {
+    let arr = data?.results ?? [];
+    if (view.only_with_image) arr = arr.filter(l => !!l.img);
+    if (view.dedupe) {
+      const seen = new Set<string>();
+      arr = arr.filter(l => {
+        const k = `${(l.locality || "").toLowerCase()}|${l.price || 0}`;
+        if (l.price === 0 || !l.locality) return true;
+        if (seen.has(k)) return false;
+        seen.add(k);
+        return true;
+      });
+    }
+    return arr;
+  }, [data?.results, view.only_with_image, view.dedupe]);
 
   const groupedBySource = useMemo(() => {
     if (filters.sort_by !== "source") return null;
@@ -78,6 +118,8 @@ function Index() {
     URL.revokeObjectURL(url);
   };
 
+  const skeletonCount = Math.min(12, filters.sources.length * 4 || 8);
+
   return (
     <div className="flex h-screen flex-col bg-background text-foreground">
       <header className="sticky top-0 z-30 flex items-center gap-3 border-b border-border bg-[var(--color-surface)] px-5 py-3">
@@ -93,7 +135,7 @@ function Index() {
         <div className="ml-auto flex items-center gap-2">
           {data && (
             <span className="rounded-full bg-primary px-2.5 py-0.5 text-xs font-bold text-primary-foreground">
-              {data.count}
+              {listings.length}
             </span>
           )}
         </div>
@@ -103,19 +145,25 @@ function Index() {
         <FilterSidebar
           filters={filters}
           setFilters={setFilters}
+          view={view}
+          setView={setView}
           onScan={() => mutation.mutate(filters)}
           onExport={handleExport}
           scanning={mutation.isPending}
           canExport={listings.length > 0}
         />
 
-        <main className="overflow-y-auto p-5">
+        <main className="overflow-y-auto p-5 pb-24 md:pb-5">
           <div className="mb-3 flex items-center gap-3">
             <div className="text-sm text-muted-foreground">
               {mutation.isPending ? (
                 "Skenuji..."
               ) : data ? (
-                <><strong className="text-foreground">{data.count}</strong> inzerátů nalezeno</>
+                <><strong className="text-foreground">{listings.length}</strong> inzerátů zobrazeno
+                  {listings.length !== data.count && (
+                    <span className="ml-1 text-xs">(z {data.count} po filtrech)</span>
+                  )}
+                </>
               ) : (
                 "Připraven ke skenování"
               )}
@@ -125,9 +173,10 @@ function Index() {
           {data && <DiagnosticsBar items={data.diagnostics} />}
 
           {mutation.isPending && (
-            <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
-              <Loader2 className="mb-4 h-10 w-10 animate-spin text-primary" />
-              <p>Načítám inzeráty z vybraných zdrojů…</p>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+              {Array.from({ length: skeletonCount }).map((_, i) => (
+                <ListingCardSkeleton key={i} />
+              ))}
             </div>
           )}
 
@@ -151,7 +200,7 @@ function Index() {
             </div>
           )}
 
-          {data && data.count === 0 && (
+          {data && listings.length === 0 && (
             <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border py-16 text-center">
               <div className="mb-2 text-4xl">🔍</div>
               <p className="text-sm text-muted-foreground">Žádné inzeráty neodpovídají filtrům.</p>
@@ -187,6 +236,14 @@ function Index() {
           )}
         </main>
       </div>
+
+      <MobileScanFooter
+        onScan={() => mutation.mutate(filters)}
+        onExport={handleExport}
+        scanning={mutation.isPending}
+        canExport={listings.length > 0}
+        sourcesCount={filters.sources.length}
+      />
     </div>
   );
 }

@@ -23,6 +23,12 @@ function verdictBg(stars: number | undefined): string {
   }
 }
 
+function badgeClass(badge: string): string {
+  if (badge === "TOP") return "bg-amber-500/90 text-black";
+  if (badge === "NOVÝ" || badge === "NEW") return "bg-primary text-primary-foreground";
+  return "bg-background/80 text-foreground";
+}
+
 export function ListingCard({ listing }: { listing: Listing }) {
   const inv = listing.invest;
   return (
@@ -47,7 +53,16 @@ export function ListingCard({ listing }: { listing: Listing }) {
         <span className="absolute left-2 top-2 rounded-md bg-background/80 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-foreground backdrop-blur">
           {listing.source}
         </span>
-        <ExternalLink className="absolute right-2 top-2 h-4 w-4 text-foreground/70 opacity-0 transition-opacity group-hover:opacity-100" />
+        {listing.badges && listing.badges.length > 0 && (
+          <div className="absolute right-2 top-2 flex gap-1">
+            {listing.badges.map((b) => (
+              <span key={b} className={`rounded-md px-1.5 py-0.5 text-[9px] font-bold tracking-wider shadow ${badgeClass(b)}`}>
+                {b}
+              </span>
+            ))}
+          </div>
+        )}
+        <ExternalLink className="absolute bottom-2 right-2 h-4 w-4 text-foreground/70 opacity-0 transition-opacity group-hover:opacity-100" />
       </div>
 
       <div className="flex flex-1 flex-col gap-1.5 p-3">

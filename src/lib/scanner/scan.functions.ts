@@ -23,6 +23,7 @@ const FilterSchema = z.object({
     "sreality", "bazos", "bezrealitky", "hyperinzerce", "realitymix", "annonce", "idnes",
   ])),
   sort_by: z.enum(["source", "price_asc", "price_desc", "yield"]),
+  per_source_limit: z.number().min(1).max(100).default(20),
 });
 
 const SOURCE_LABEL: Record<SourceKey, string> = {
@@ -58,10 +59,27 @@ async function timed(key: SourceKey, fn: () => Promise<Listing[]>): Promise<{
   }
 }
 
+// Post-filter by sub_type (garaz vs. garazove_stani) for sources that don't differentiate.
+function matchesSubType(l: Listing, sub: ScanFilters["sub_type"]): boolean {
+  if (!sub) return true;
+  // Sreality already filters server-side via category_sub_cb
+  if (l.source_key === "sreality") return true;
+  const n = (l.name + " " + l.locality).toLowerCase();
+  if (sub === "garazove_stani") {
+    return /st[áa]n[íi]/.test(n);
+  }
+  if (sub === "garaz") {
+    // accept gar[áa]ž but exclude explicit "stání"
+    return /gar[áa][žz]/.test(n) && !/st[áa]n[íi]/.test(n);
+  }
+  return true;
+}
+
 export const runScan = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => FilterSchema.parse(data))
   .handler(async ({ data }): Promise<ScanResult> => {
     const filters = data as ScanFilters;
+    const limit = Math.max(1, Math.min(100, filters.per_source_limit || 20));
     const tasks: Array<Promise<{ key: SourceKey; results: Listing[]; ms: number; error: string | null; }>> = [];
 
     for (const src of filters.sources) {
@@ -70,12 +88,16 @@ export const runScan = createServerFn({ method: "POST" })
       }
     }
 
-
     const settled = await Promise.all(tasks);
     const diagnostics: Diagnostic[] = [];
     let all: Listing[] = [];
     for (const s of settled) {
-      const capped = s.results.slice(0, 20); // limit max 20 per source
+      let res = s.results;
+      // sub_type post-filter for property_type "ostatni"
+      if (filters.property_type === "ostatni" && filters.sub_type) {
+        res = res.filter(r => matchesSubType(r, filters.sub_type));
+      }
+      const capped = res.slice(0, limit);
       diagnostics.push({
         source: SOURCE_LABEL[s.key],
         key: s.key,
@@ -87,7 +109,7 @@ export const runScan = createServerFn({ method: "POST" })
       all = all.concat(capped);
     }
 
-    // dedup
+    // dedup by URL
     const seen = new Set<string>();
     all = all.filter(r => {
       const k = r.url || `${r.source}|${r.name}`;
