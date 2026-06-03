@@ -31,8 +31,8 @@ export const Route = createFileRoute("/api/public/hooks/run-schedules")({
               scheduled_scan_id: s.id,
               user_id: s.user_id,
               count: result.count,
-              results: top,
-              meta: result.meta ?? {},
+              results: top as unknown as never,
+              meta: (result.meta ?? {}) as unknown as never,
               emailed: false,
             });
             await supabaseAdmin.from("scheduled_scans")

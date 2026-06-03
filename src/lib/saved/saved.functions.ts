@@ -80,7 +80,7 @@ export const upsertScheduledScan = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const payload = {
-      filters: data.filters,
+      filters: data.filters as never,
       email: data.email,
       frequency_per_day: data.frequency_per_day,
       max_per_email: data.max_per_email,
