@@ -1,5 +1,6 @@
 import type { ScanFilters, SourceKey } from "@/lib/scanner/types";
-import { Download, Zap, Loader2 } from "lucide-react";
+import { Download, Zap, Loader2, Save, Trash2, Bookmark } from "lucide-react";
+import { useEffect, useState } from "react";
 
 const REGIONS: Array<[ScanFilters["region"], string]> = [
   ["", "Celá ČR"], ["praha", "Praha"], ["stredocesky", "Středočeský"],
@@ -20,6 +21,8 @@ const SOURCES: Array<{ key: SourceKey; label: string; badge: string; type: "api"
   { key: "annonce", label: "Annonce", badge: "BROWSER", type: "browser" },
   { key: "idnes", label: "iDnes Reality", badge: "BROWSER", type: "browser" },
 ];
+const ALL_KEYS = SOURCES.map(s => s.key);
+const FAST_KEYS = SOURCES.filter(s => s.type !== "browser").map(s => s.key);
 
 function badgeClass(type: "api" | "html" | "browser") {
   if (type === "api") return "bg-primary/15 text-primary";
@@ -27,16 +30,41 @@ function badgeClass(type: "api" | "html" | "browser") {
   return "bg-orange-500/15 text-orange-400";
 }
 
+interface ViewOptions {
+  only_with_image: boolean;
+  dedupe: boolean;
+}
+
 interface Props {
   filters: ScanFilters;
   setFilters: (f: ScanFilters) => void;
+  view: ViewOptions;
+  setView: (v: ViewOptions) => void;
   onScan: () => void;
   onExport: () => void;
   scanning: boolean;
   canExport: boolean;
 }
 
-export function FilterSidebar({ filters, setFilters, onScan, onExport, scanning, canExport }: Props) {
+const PRESET_KEY = "realityscanner.presets";
+
+type Preset = { name: string; filters: ScanFilters };
+
+function loadPresets(): Preset[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = localStorage.getItem(PRESET_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch { return []; }
+}
+function savePresets(list: Preset[]) {
+  try { localStorage.setItem(PRESET_KEY, JSON.stringify(list)); } catch { /* ignore */ }
+}
+
+export function FilterSidebar({ filters, setFilters, view, setView, onScan, onExport, scanning, canExport }: Props) {
+  const [presets, setPresets] = useState<Preset[]>([]);
+  useEffect(() => { setPresets(loadPresets()); }, []);
+
   const update = <K extends keyof ScanFilters>(k: K, v: ScanFilters[K]) =>
     setFilters({ ...filters, [k]: v });
 
@@ -45,8 +73,25 @@ export function FilterSidebar({ filters, setFilters, onScan, onExport, scanning,
     update("sources", has ? filters.sources.filter(x => x !== s) : [...filters.sources, s]);
   };
 
+  const handleSavePreset = () => {
+    const name = window.prompt("Název presetu:")?.trim();
+    if (!name) return;
+    const next = [...presets.filter(p => p.name !== name), { name, filters }];
+    savePresets(next);
+    setPresets(next);
+  };
+  const handleLoadPreset = (name: string) => {
+    const p = presets.find(x => x.name === name);
+    if (p) setFilters(p.filters);
+  };
+  const handleDeletePreset = (name: string) => {
+    const next = presets.filter(p => p.name !== name);
+    savePresets(next);
+    setPresets(next);
+  };
+
   return (
-    <aside className="flex h-full flex-col gap-5 overflow-y-auto border-r border-border bg-[var(--color-surface)] p-5">
+    <aside className="flex h-full flex-col gap-5 overflow-y-auto border-r border-border bg-[var(--color-surface)] p-5 pb-32 md:pb-5">
       <Section label="Typ obchodu">
         <Select value={filters.deal_type} onChange={(v) => update("deal_type", v as ScanFilters["deal_type"])}
           options={[["prodej", "Prodej"], ["pronajem", "Pronájem"]]} />
@@ -54,12 +99,15 @@ export function FilterSidebar({ filters, setFilters, onScan, onExport, scanning,
 
       <Section label="Typ nemovitosti">
         <Select value={filters.property_type} onChange={(v) => update("property_type", v as ScanFilters["property_type"])}
-          options={[["ostatni", "Ostatní (garáže)"], ["byty", "Byty"], ["domy", "Domy"], ["pozemky", "Pozemky"], ["komercni", "Komerční"]]} />
+          options={[["byty", "Byty"], ["domy", "Domy"], ["pozemky", "Pozemky"], ["komercni", "Komerční"], ["ostatni", "Ostatní (garáže)"]]} />
         {filters.property_type === "ostatni" && (
           <>
-            <Label>Podkategorie (Sreality)</Label>
+            <Label>Podkategorie</Label>
             <Select value={filters.sub_type} onChange={(v) => update("sub_type", v as ScanFilters["sub_type"])}
               options={[["garaz", "Garáž"], ["garazove_stani", "Garážové stání"], ["", "Vše"]]} />
+            <p className="text-[10px] leading-relaxed text-muted-foreground">
+              Některé portály nerozlišují – výsledky filtrujeme dodatečně podle názvu.
+            </p>
           </>
         )}
       </Section>
@@ -93,7 +141,29 @@ export function FilterSidebar({ filters, setFilters, onScan, onExport, scanning,
         </div>
       </Section>
 
+      <Section label="Počet inzerátů na zdroj">
+        <Select value={String(filters.per_source_limit)} onChange={(v) => update("per_source_limit", Number(v))}
+          options={[["10", "10"], ["20", "20 (doporučeno)"], ["30", "30"], ["50", "50"], ["100", "100 (max)"]]} />
+        <p className="text-[10px] leading-relaxed text-muted-foreground">
+          Vyšší limit = pomalejší sken a více zatížení portálů.
+        </p>
+      </Section>
+
       <Section label="Zdroje dat">
+        <div className="mb-1 flex gap-1.5">
+          <button type="button" onClick={() => update("sources", ALL_KEYS)}
+            className="rounded-md border border-border bg-[var(--color-surface-2)] px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground hover:text-foreground">
+            Vše
+          </button>
+          <button type="button" onClick={() => update("sources", FAST_KEYS)}
+            className="rounded-md border border-border bg-[var(--color-surface-2)] px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground hover:text-foreground">
+            Jen rychlé
+          </button>
+          <button type="button" onClick={() => update("sources", [])}
+            className="rounded-md border border-border bg-[var(--color-surface-2)] px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground hover:text-foreground">
+            Žádný
+          </button>
+        </div>
         <div className="flex flex-col gap-1.5">
           {SOURCES.map((s) => {
             const checked = filters.sources.includes(s.key);
@@ -122,12 +192,53 @@ export function FilterSidebar({ filters, setFilters, onScan, onExport, scanning,
         </p>
       </Section>
 
+      <Section label="Zobrazení">
+        <label className="flex cursor-pointer items-center gap-2 text-sm text-foreground">
+          <input type="checkbox" checked={view.only_with_image}
+            onChange={(e) => setView({ ...view, only_with_image: e.target.checked })}
+            className="h-4 w-4 accent-primary" />
+          Jen inzeráty s obrázkem
+        </label>
+        <label className="flex cursor-pointer items-center gap-2 text-sm text-foreground">
+          <input type="checkbox" checked={view.dedupe}
+            onChange={(e) => setView({ ...view, dedupe: e.target.checked })}
+            className="h-4 w-4 accent-primary" />
+          Skrýt duplicity (lokalita + cena)
+        </label>
+      </Section>
+
       <Section label="Řazení">
         <Select value={filters.sort_by} onChange={(v) => update("sort_by", v as ScanFilters["sort_by"])}
           options={[["source", "Dle zdroje"], ["price_asc", "Cena ↑"], ["price_desc", "Cena ↓"], ["yield", "Výnos ↓"]]} />
       </Section>
 
-      <div className="mt-auto flex flex-col gap-2 pt-2">
+      <Section label="Presety filtrů">
+        <div className="flex gap-1.5">
+          <button type="button" onClick={handleSavePreset}
+            className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-border bg-[var(--color-surface-2)] px-2 py-1.5 text-xs text-foreground hover:border-primary/50">
+            <Save className="h-3 w-3" /> Uložit
+          </button>
+        </div>
+        {presets.length > 0 && (
+          <div className="flex flex-col gap-1">
+            {presets.map((p) => (
+              <div key={p.name} className="flex items-center gap-1">
+                <button type="button" onClick={() => handleLoadPreset(p.name)}
+                  className="flex flex-1 items-center gap-1.5 rounded-md border border-border bg-[var(--color-surface-2)] px-2 py-1.5 text-left text-xs text-foreground hover:border-primary/50">
+                  <Bookmark className="h-3 w-3 text-primary" /> {p.name}
+                </button>
+                <button type="button" onClick={() => handleDeletePreset(p.name)}
+                  className="rounded-md border border-border bg-[var(--color-surface-2)] p-1.5 text-muted-foreground hover:text-[var(--color-danger)]">
+                  <Trash2 className="h-3 w-3" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </Section>
+
+      {/* Desktop action buttons */}
+      <div className="mt-auto hidden flex-col gap-2 pt-2 md:flex">
         <button
           onClick={onScan}
           disabled={scanning || filters.sources.length === 0}
@@ -145,6 +256,36 @@ export function FilterSidebar({ filters, setFilters, onScan, onExport, scanning,
         </button>
       </div>
     </aside>
+  );
+}
+
+export function MobileScanFooter({
+  onScan, onExport, scanning, canExport, sourcesCount,
+}: {
+  onScan: () => void;
+  onExport: () => void;
+  scanning: boolean;
+  canExport: boolean;
+  sourcesCount: number;
+}) {
+  return (
+    <div className="fixed inset-x-0 bottom-0 z-40 flex gap-2 border-t border-border bg-[var(--color-surface)]/95 p-3 backdrop-blur md:hidden">
+      <button
+        onClick={onScan}
+        disabled={scanning || sourcesCount === 0}
+        className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-bold text-primary-foreground transition hover:opacity-90 disabled:opacity-50"
+      >
+        {scanning ? <Loader2 className="h-4 w-4 animate-spin" /> : <Zap className="h-4 w-4" />}
+        {scanning ? "Skenuji..." : "Skenovat"}
+      </button>
+      <button
+        onClick={onExport}
+        disabled={!canExport}
+        className="flex items-center justify-center gap-2 rounded-xl border border-primary/60 bg-transparent px-4 py-3 text-sm font-semibold text-primary transition hover:bg-primary/10 disabled:cursor-not-allowed disabled:border-border disabled:text-muted-foreground"
+      >
+        <Download className="h-4 w-4" />
+      </button>
+    </div>
   );
 }
 
