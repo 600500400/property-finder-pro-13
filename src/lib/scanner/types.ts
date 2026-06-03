@@ -29,6 +29,8 @@ export type SourceKey =
 
 export type SortBy = "source" | "price_asc" | "price_desc" | "yield" | "date_desc";
 
+export type Ownership = "osobni" | "druzstevni" | "statni" | "jine";
+
 export interface ScanFilters {
   deal_type: DealType;
   property_type: PropertyType;
@@ -63,6 +65,7 @@ export interface Listing {
   area: string;
   area_m2?: number;
   published_at?: string; // ISO date
+  ownership?: Ownership;
   invest: Investment | null;
   badges?: string[];
 }
