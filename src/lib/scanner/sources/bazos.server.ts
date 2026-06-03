@@ -1,5 +1,5 @@
 import type { Listing, ScanFilters } from "../types";
-import { cleanText, parsePrice, parseArea } from "../valuation";
+import { cleanText, parsePrice, parseArea, parseOwnership } from "../valuation";
 
 // Parse "[3.6. 2026]" or "3.6.2026" → ISO date
 function parseBazosDate(block: string): string | undefined {
