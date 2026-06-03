@@ -40,25 +40,8 @@ function buildRealityMixUrl(f: ScanFilters): string {
   return `https://www.realitymix.cz/vypis-nemovitosti-na-prodej/${cat}-${deal}.html`;
 }
 
-function buildAnnonceUrl(f: ScanFilters): string {
-  const deal = f.deal_type === "pronajem" ? "pronajem" : "prodej";
-  const cat = f.property_type === "byty" ? "byty"
-    : f.property_type === "domy" ? "domy-a-vily"
-    : f.property_type === "pozemky" ? "pozemky"
-    : f.property_type === "komercni" ? "komercni-prostory"
-    : "garaze";
-  return `https://reality.annonce.cz/${deal}-${cat}/`;
-}
+// (Annonce a Hyperinzerce mají vlastní HTML scrapery — viz annonce.server.ts / hyperinzerce.server.ts)
 
-function buildHyperinzerceUrl(f: ScanFilters): string {
-  const deal = f.deal_type === "pronajem" ? "pronajem" : "prodej";
-  const cat = f.property_type === "byty" ? "byty"
-    : f.property_type === "domy" ? "domy"
-    : f.property_type === "pozemky" ? "pozemky"
-    : f.property_type === "komercni" ? "komercni-objekty"
-    : "garaze";
-  return `https://reality.hyperinzerce.cz/${deal}-${cat}/inzeraty/`;
-}
 
 // ---------- Generic Firecrawl-based extractor ----------
 
