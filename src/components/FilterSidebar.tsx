@@ -1,6 +1,7 @@
-import type { ScanFilters, SourceKey } from "@/lib/scanner/types";
+import type { Ownership, ScanFilters, SourceKey } from "@/lib/scanner/types";
 import { Download, Zap, Loader2, Save, Trash2, Bookmark } from "lucide-react";
 import { useEffect, useState } from "react";
+
 
 const REGIONS: Array<[ScanFilters["region"], string]> = [
   ["", "Celá ČR"], ["praha", "Praha"], ["stredocesky", "Středočeský"],
@@ -31,9 +32,16 @@ function badgeClass(type: "api" | "html" | "browser") {
 }
 
 interface ViewOptions {
-  only_with_image: boolean;
   dedupe: boolean;
 }
+
+const OWNERSHIP_OPTS: Array<[Ownership, string]> = [
+  ["osobni", "Osobní (OV)"],
+  ["druzstevni", "Družstevní (DV)"],
+  ["statni", "Státní / obecní"],
+  ["jine", "Neurčeno / jiné"],
+];
+
 
 interface Props {
   filters: ScanFilters;
@@ -192,13 +200,35 @@ export function FilterSidebar({ filters, setFilters, view, setView, onScan, onEx
         </p>
       </Section>
 
+      <Section label="Typ vlastnictví">
+        <div className="flex flex-col gap-1">
+          {OWNERSHIP_OPTS.map(([key, label]) => {
+            const sel = filters.ownership ?? [];
+            const checked = sel.includes(key);
+            return (
+              <label key={key} className="flex cursor-pointer items-center gap-2 text-sm text-foreground">
+                <input
+                  type="checkbox"
+                  checked={checked}
+                  onChange={(e) => {
+                    const next = e.target.checked
+                      ? [...sel, key]
+                      : sel.filter(x => x !== key);
+                    update("ownership", next.length ? next : undefined);
+                  }}
+                  className="h-4 w-4 accent-primary"
+                />
+                {label}
+              </label>
+            );
+          })}
+        </div>
+        <p className="text-[10px] leading-relaxed text-muted-foreground">
+          Filtr na již načtených datech – nevyžaduje nový sken.
+        </p>
+      </Section>
+
       <Section label="Zobrazení">
-        <label className="flex cursor-pointer items-center gap-2 text-sm text-foreground">
-          <input type="checkbox" checked={view.only_with_image}
-            onChange={(e) => setView({ ...view, only_with_image: e.target.checked })}
-            className="h-4 w-4 accent-primary" />
-          Jen inzeráty s obrázkem
-        </label>
         <label className="flex cursor-pointer items-center gap-2 text-sm text-foreground">
           <input type="checkbox" checked={view.dedupe}
             onChange={(e) => setView({ ...view, dedupe: e.target.checked })}
@@ -206,6 +236,7 @@ export function FilterSidebar({ filters, setFilters, view, setView, onScan, onEx
           Skrýt duplicity (lokalita + cena)
         </label>
       </Section>
+
 
       <Section label="Řazení">
         <Select value={filters.sort_by} onChange={(v) => update("sort_by", v as ScanFilters["sort_by"])}
