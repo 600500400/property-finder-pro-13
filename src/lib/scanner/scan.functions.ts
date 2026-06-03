@@ -198,6 +198,8 @@ export const runScan = createServerFn({ method: "POST" })
       meta: {
         benchmark_fetched_at: bench.fetched_at,
         benchmark_source: bench.source,
+        benchmark_live_okresy: bench.live_okresy,
+        benchmark_static_okresy: bench.static_okresy,
         filtered_foreign: sanity.stats.filtered_foreign,
         filtered_reasons: sanity.stats.reasons,
       },

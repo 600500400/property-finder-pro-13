@@ -176,10 +176,19 @@ export function ListingCard({ listing }: { listing: Listing }) {
             {inv.rent_basis_label && (
               <div
                 className="mt-1 text-[10px] text-muted-foreground"
-                title={`Zdroj nájmu: ${inv.rent_source === "district" ? "konkrétní městská část" : inv.rent_source === "region" ? "krajský průměr" : "národní průměr"} — orientační odhad`}
+                title={
+                  inv.rent_source === "okres_live" ? "Živá tržní data ze Sreality (medián per okres)" :
+                  inv.rent_source === "okres_static" ? "Statický odhad okresu (Deloitte / ČSÚ)" :
+                  inv.rent_source === "district" ? "Konkrétní městská část" :
+                  inv.rent_source === "region" ? "Krajský průměr" :
+                  "Národní průměr — orientační"
+                }
               >
                 Odhad nájmu: {inv.rent_basis_label}
-                {inv.rent_source === "district" ? " ✓" : inv.rent_source === "region" ? " (kraj)" : " (ČR)"}
+                {inv.rent_source === "okres_live" ? " ✓" :
+                 inv.rent_source === "district" ? " ✓" :
+                 inv.rent_source === "okres_static" ? " ~" :
+                 inv.rent_source === "region" ? " (kraj)" : " (ČR)"}
               </div>
             )}
           </div>
