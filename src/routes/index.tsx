@@ -10,6 +10,7 @@ import { FilterSidebar, MobileScanFooter } from "@/components/FilterSidebar";
 import { ListingCard } from "@/components/ListingCard";
 import { ListingCardSkeleton } from "@/components/ListingCardSkeleton";
 import { DiagnosticsBar } from "@/components/DiagnosticsBar";
+import { UserMenu } from "@/components/UserMenu";
 import { Radar } from "lucide-react";
 
 export const Route = createFileRoute("/")({
@@ -85,7 +86,12 @@ function Index() {
     let arr = data?.results ?? [];
     if (filters.ownership && filters.ownership.length > 0) {
       const allow = new Set(filters.ownership);
-      arr = arr.filter(l => l.ownership && allow.has(l.ownership));
+      // "jine" (Neurčeno) matchuje i listings bez detekovaného ownership
+      const includeUnknown = allow.has("jine");
+      arr = arr.filter(l => {
+        if (!l.ownership) return includeUnknown;
+        return allow.has(l.ownership);
+      });
     }
     if (view.dedupe) {
       const seen = new Set<string>();
@@ -143,6 +149,7 @@ function Index() {
               {listings.length}
             </span>
           )}
+          <UserMenu />
         </div>
       </header>
 

@@ -1,64 +1,112 @@
-## Plán nápravy – 4 oblasti
+## A) Rychlé opravy (Stage 1 follow-up)
 
-### 0) Předpoklad: Lovable Cloud + přihlášení
-Pro scheduler, ukládání filtrů a posílání emailů zapneme **Lovable Cloud** a přihlašování **email + heslo** (volitelně Google). Vytvoříme `profiles` tabulku (pokud bude potřeba) a tabulky `saved_filters`, `scheduled_scans`, `scan_results`, `scan_email_log` s RLS politikami (každý vidí jen své záznamy).
+### 1. Oprava filtru „Typ vlastnictví"
+Problém: scrapery zatím nenastavují `listing.ownership`, takže jakýkoli aktivní filtr odfiltruje vše (`l.ownership` je `undefined`).
 
-### 1) Odstranění obrázků, důraz na data
-- Z `Listing` typu odstraníme zobrazení `img` v `ListingCard` (pole v datech necháme pro budoucnost, jen ho přestaneme renderovat).
-- Karta se přepracuje na text-first layout: **název / lokalita+čtvrť / cena / plocha / Kč/m² / yield / typ vlastnictví / datum / zdroj / badges**.
-- Ze scraperů odstraníme práci s obrázky (urychlí to Sreality, Annonce, Bezrealitky atd.) – HEAD requesty na obrázky v testu odpadnou.
-- Plánuje to vyřešit jak Hyperinzerce/Annonce/iDnes prázdné obrázky, tak konzistenci napříč zdroji.
+Řešení v `src/routes/index.tsx`:
+- Položka „Neurčeno / jiné" (`jine`) bude matchovat i `undefined`.
+- Pokud `ownership` není detekováno z parseru, pokusíme se ho odvodit ad-hoc z `name + locality` (regex `OV / DV / osobní / družstevní`) ve `scan.functions.ts` (po sanity, před návratem).
 
-### 2) Filtr „typ vlastnictví"
-- Do `FilterSidebar` přidáme MultiSelect: **osobní / družstevní / státní / jiné / neznámé**.
-- `ScanFilters` rozšíříme o `ownership: Ownership[]`.
-- Filtrování proběhne **klientsky** (data už máme z parserů – `ownership` pole už existuje), aby fungovalo i na již naskenovaných inzerátech.
-- V `ListingCard` zobrazíme typ vlastnictví jako badge (už částečně je).
+V scraperech (Sreality, Bezrealitky, Bazoš, Hyperinzerce, Annonce, iDnes) doplníme volání `parseOwnership(name + " " + locality + " " + description?)` při mapování — máme už helper ve `valuation.ts`.
 
-### 3) Anti-balast: jen ČR + sanity checks
-- Nový modul `src/lib/scanner/sanity.ts` s funkcí `isCzechListing(listing)`:
-  - Whitelist CZ klíčových slov / krajů / měst (~200 položek).
-  - Blacklist: „Španělsko", „Itálie", „Bulharsko", „Chorvatsko", „Slovensko", „Rakousko", „Německo", „Turecko", „Kypr", „Thajsko", „Egypt", „UAE", „Dubai", měna `EUR/€` v ceně bez kontextu, atd.
-  - Detekce přes `locality + name + url` (např. `sreality.cz/zahranicni-reality/`).
-- Volá se v `scan.functions.ts` po sloučení výsledků; vyřazené jdou do `diagnostics.filtered_foreign` (počet) místo do listu.
-- Současně doplníme `filtered_invalid_url` a `filtered_no_price` čítače pro transparentnost.
+Akceptace: zapnutím „Družstevní" zůstanou jen DV; „Neurčeno" ukáže i položky bez detekce; přepínání filtru nevyžaduje nový sken.
 
-### 4) AI investiční rádce (MVP)
-- Tlačítko **„AI analýza"** na kartě inzerátu otevře dialog.
-- Server function `analyzeListing` (TanStack `createServerFn`) volá **Lovable AI Gateway** (`google/gemini-3-flash-preview`) s payloadem inzerátu + lokalitou + naším yield benchmarkem.
-- Prompt instruuje model, aby vrátil JSON: `{ lokalita_summary, rizika[], sociodemografie, doporuceni, score_1_10 }`.
-- Výsledek se cachuje v tabulce `ai_analyses` (klíč = URL inzerátu, TTL 30 dní), aby se neopakovaly náklady.
-- UI render markdown přes `react-markdown` (už dostupné).
-- Poznámka: MVP nepoužívá externí datasety vyloučených lokalit – model pracuje jen se svými znalostmi + našimi daty. Vylepšení (MV ČR registry, ČSÚ data) v dalším kroku.
+### 2. Okresní (district-level) referenční nájem
+Místo krajského průměru použít průměr z konkrétního **okresu** (77 okresů ČR + 22 pražských obvodů).
 
-### 5) Scheduler s emailem
-- Stránka **`/saved`** (chráněná `_authenticated`):
-  - Uložit aktuální filtr jako pojmenovaný preset.
-  - U presetu zapnout scheduler: frekvence (`1× / 2× / 3× denně`), emailová adresa, max počet nových inzerátů v emailu.
-- Tabulky:
-  - `saved_filters (id, user_id, name, filters_jsonb, created_at)`
-  - `scheduled_scans (id, user_id, filter_id, frequency, email, enabled, last_run_at, next_run_at)`
-  - `scan_results (id, scheduled_scan_id, listing_url, listing_jsonb, first_seen_at)` – pro deduplikaci.
-- Server route `/api/public/cron/run-schedules` (chráněná HMAC sdíleným tajemstvím `CRON_SECRET`):
-  - Načte due schedulers, spustí scan, dedup proti `scan_results`, pošle email s **jen novými** inzeráty.
-- pg_cron job v Supabase volá tento endpoint každých 30 min.
-- **Lovable Emails**: použijeme zabudované `email_domain--setup_email_infra` + `scaffold_transactional_email`, šablona `daily-scan-report.tsx` s top 10 inzeráty (jen text, bez obrázků – konzistentní s bodem 1).
-- Vyžaduje od uživatele: ověření emailové domény (průvodce v UI).
+Implementace v `src/lib/scanner/rent-benchmark.server.ts`:
+- Nový loader `refreshBenchmark()` udělá denně 1× lehký scrape Sreality search API (`category_type_cb=2 / pronajem`, `category_main_cb=1 / byty`, `per_page=100`, paginace ~5 stránek na okres přes `locality_district_id`).
+- Spočítá `median(price / area_m2)` per okres (medián > průměr, ignoruje outliery, min. 8 platných vzorků).
+- Fallback do statické tabulky `RENT_PER_M2_DISTRICT` (Deloitte 2024) když nedostatek dat.
+- Cache 24 h v `globalThis` (už existuje) + persist do souboru `/tmp/rent-bench.json` aby přežil HMR.
+- Meta v `ScanResult` rozšířit o `benchmark_okresy_filled: number` a `benchmark_okresy_fallback: number`.
 
-### Soubory
-**Nové:** `src/lib/scanner/sanity.ts`, `src/lib/ai/analyze.functions.ts`, `src/routes/_authenticated/saved.tsx`, `src/routes/auth.tsx`, `src/routes/api/public/cron/run-schedules.ts`, `src/lib/email-templates/daily-scan-report.tsx`, `src/components/AIAnalysisDialog.tsx`, migrace pro 4 nové tabulky + RLS.
-**Upravené:** `ListingCard.tsx` (odstranění obrázku, AI tlačítko, ownership badge), `FilterSidebar.tsx` (ownership filtr), `scan.functions.ts` (sanity volání, čítače), `types.ts` (ownership[] ve filtrech), všechny `sources/*.ts` (vypustit `img` práci), `routes/index.tsx` (klientský ownership filter), `__root.tsx` (auth provider link).
-**Smazané:** HEAD image check ve `tests/e2e/scanner-detail-urls.test.ts`.
+Úprava `valuation.ts`:
+- `districtSlugFromLocality()` rozšířit o detekci 77 okresů (mapa `OKRES_SLUGS`, parsování `okres X` / city → okres přes lookup tabulku).
+- Prefer order: Praha-N / Brno-část / Plzeň-N / Ostrava-část → okres → kraj → ČR.
+- `RentResult.basisLabel` ukáže např. „Okres Beroun: 245 Kč/m² (medián z 124 inzerátů, Sreality)".
+- `rent_source` rozšířit o `"district_live" | "district_static" | "region" | "fallback"`.
 
-### Pořadí prací
-1. Lovable Cloud + auth + migrace tabulek.
-2. Odstranění obrázků + ownership filtr (rychlé wins).
-3. Sanity filtr (jen ČR).
-4. Saved filters + scheduler UI.
-5. Email infrastruktura + cron endpoint.
-6. AI analýza dialog.
+Karta inzerátu (`ListingCard`) — drobná úprava textu zdroje, aby uživatel viděl „okres Beroun (živá data)" vs „kraj (fallback)".
 
-### Otevřené otázky (vyřeším default ve build módu, pokud neřekneš jinak)
-- Doména pro emaily – nastaví se v průvodci po zapnutí Cloudu.
-- AI model – default `google/gemini-3-flash-preview` (rychlý, levný); pro hloubku lze přepnout na `gemini-2.5-pro`.
-- Frekvence cronu kontroly schedulerů – 30 min (pokrývá 1×/2×/3× denně).
+---
+
+## B) Fáze 2 — Cloud, Auth, Scheduler, AI rádce
+
+### 3. Zapnutí Lovable Cloud + Auth
+- Aktivovat Lovable Cloud (Supabase pod kapotou — uživateli říkáme „Cloud").
+- Auth: **email + heslo** (default), zapnout HIBP password check.
+- Tabulka `profiles (id uuid PK fk auth.users, email text, created_at)` + trigger pro auto-insert na signup.
+- Stránka `/auth` (sign-in / sign-up), pathless layout `/_authenticated/` pro chráněné stránky (klient-side gate `ssr:false`).
+- V hlavičce aplikace zobrazit „Přihlásit / Odhlásit / Můj profil".
+
+### 4. Schéma databáze
+Migrace (vše s explicitními GRANT + RLS):
+
+- `saved_filters` — uložené presety filtrů na účet (název, JSON `filters`, vytvořeno).
+- `scheduled_scans` — `saved_filter_id`, `frequency` (1×/2×/3× denně), `email`, `max_per_email`, `enabled`, `last_run_at`.
+- `scan_results` — historie spuštění (`scheduled_scan_id`, `ts`, `count`, `results jsonb`, `meta jsonb`).
+- `scan_email_log` — log odeslaných emailů.
+- `ai_analyses` — cache AI rozborů (`url_hash` PK, `payload jsonb`, `created_at`), TTL 30 dní.
+
+RLS: čtení/zápis jen `user_id = auth.uid()`; cron beží jako `service_role`.
+
+### 5. Stránka `/saved` (chráněná)
+- Seznam uložených presetů + možnost spustit ručně, zapnout scheduler, nastavit email a frekvenci.
+- Tlačítko „Uložit aktuální filtr" v sidebaru migruje localStorage presety do DB pro přihlášené.
+
+### 6. Scheduler + cron + email
+- Server route `app/routes/api/public/cron/run-schedules.ts`:
+  - Verifikace HMAC sekretem `CRON_SECRET`.
+  - Vybere `scheduled_scans` které mají běžet (podle `last_run_at` + `frequency`).
+  - Pro každý: zavolá interní `runScan(filters)`, uloží do `scan_results`, pošle email s top N (text-only, žádné obrázky).
+- pg_cron volá endpoint každých 30 min.
+- Emaily přes **Lovable Emails** (built-in): `email_domain--check_email_domain_status` → pokud chybí, dialog `presentation-open-email-setup`. Pak `setup_email_infra` + `scaffold_transactional_email` → React Email template `daily-scan-report.tsx` (značka, top inzeráty s názvem, cenou, čtvrtí, výnosem, linkem).
+
+### 7. AI investiční rádce (MVP)
+- Tlačítko „AI analýza" na `ListingCard` → modal `AIAnalysisDialog`.
+- Server fn `analyzeListing` (`src/lib/ai/analyze.functions.ts`):
+  - Vstup: celý `Listing` + okresní benchmark.
+  - Volá Lovable AI Gateway, model `google/gemini-2.5-flash` (rychlý, zdarma v promo).
+  - Prompt: shrň lokalitu, sociodemografii (obecně), rizika (vyloučená lokalita, povodňová zóna — z veřejně známých dat), zhodnoť výnos vs benchmark, doporuč 1–10.
+  - Výstup JSON `{lokalita, rizika[], sociodemo, doporuceni, score}` přes `inputValidator` zod.
+  - Cache v `ai_analyses` na 30 dní (klíč = SHA256 z `url + price`).
+- Vyžaduje `LOVABLE_API_KEY` (`ai_gateway--create`).
+
+---
+
+## Technické detaily
+
+### Soubory — nové
+- `supabase/migrations/<ts>_phase2_cloud.sql` (tabulky + RLS + GRANT)
+- `src/routes/auth.tsx`, `src/routes/_authenticated/route.tsx`, `src/routes/_authenticated/saved.tsx`
+- `src/routes/api/public/cron/run-schedules.ts`
+- `src/lib/ai/analyze.functions.ts`, `src/components/AIAnalysisDialog.tsx`
+- `src/emails/daily-scan-report.tsx`
+- `src/lib/scanner/okresy.ts` (mapa 77 okresů + city→okres)
+
+### Soubory — upravené
+- `src/lib/scanner/rent-benchmark.server.ts` — live scrape per okres + medián
+- `src/lib/scanner/valuation.ts` — okresní lookup, nový `rent_source`
+- `src/lib/scanner/types.ts` — rozšířený `RentBasisSource`, meta okres counters
+- `src/lib/scanner/scan.functions.ts` — odvození ownership z textu pokud chybí
+- `src/routes/index.tsx` — `jine` matchuje `undefined`
+- `src/routes/__root.tsx` — auth state listener, header sign-in/out
+- `src/lib/scanner/sources/*.server.ts` — naplnit `ownership` při mapování
+
+### Pořadí implementace (přírůstkové)
+1. Opravy A1 + A2 (rychlé, zlepší okamžitě UX).
+2. `supabase--enable` → migrace + Auth UI (`/auth`, `_authenticated`).
+3. Saved filters + `/saved` stránka.
+4. Email infra (dialog → setup → template).
+5. Scheduler cron endpoint + pg_cron.
+6. AI rádce.
+
+---
+
+## Otevřené otázky / předpoklady
+- Email: počítám s **vestavěnými Lovable Emails** (potvrzeno minulou volbou). Doménu nastaví uživatel v dialogu (může běžet i během vývoje, emaily se zatím nepošlou).
+- Cron interval cílím na **každých 30 min** (granularita stačí pro 1–3× denně). OK?
+- Live scrape benchmarku je „best-effort": při chybě Sreality API spadne na statickou tabulku — uživatel uvidí v Diagnostics.
+
+Po schválení začnu A1+A2 a hned navážu na zbytek fáze 2.

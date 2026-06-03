@@ -1,6 +1,9 @@
 import type { Ownership, ScanFilters, SourceKey } from "@/lib/scanner/types";
-import { Download, Zap, Loader2, Save, Trash2, Bookmark } from "lucide-react";
+import { Download, Zap, Loader2, Save, Trash2, Bookmark, Cloud } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
+import { upsertSavedFilter } from "@/lib/saved/saved.functions";
+import { supabase } from "@/integrations/supabase/client";
 
 
 const REGIONS: Array<[ScanFilters["region"], string]> = [
@@ -71,7 +74,16 @@ function savePresets(list: Preset[]) {
 
 export function FilterSidebar({ filters, setFilters, view, setView, onScan, onExport, scanning, canExport }: Props) {
   const [presets, setPresets] = useState<Preset[]>([]);
+  const [isAuthed, setIsAuthed] = useState(false);
+  const [cloudMsg, setCloudMsg] = useState<string | null>(null);
+  const saveCloud = useServerFn(upsertSavedFilter);
+
   useEffect(() => { setPresets(loadPresets()); }, []);
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => setIsAuthed(!!data.user));
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, s) => setIsAuthed(!!s?.user));
+    return () => subscription.unsubscribe();
+  }, []);
 
   const update = <K extends keyof ScanFilters>(k: K, v: ScanFilters[K]) =>
     setFilters({ ...filters, [k]: v });
@@ -87,6 +99,18 @@ export function FilterSidebar({ filters, setFilters, view, setView, onScan, onEx
     const next = [...presets.filter(p => p.name !== name), { name, filters }];
     savePresets(next);
     setPresets(next);
+  };
+  const handleSaveCloud = async () => {
+    const name = window.prompt("Název filtru (uloží se do tvého účtu):")?.trim();
+    if (!name) return;
+    setCloudMsg("Ukládám…");
+    try {
+      await saveCloud({ data: { name, filters: filters as unknown as Record<string, unknown> } });
+      setCloudMsg("Uloženo do účtu ✓");
+      setTimeout(() => setCloudMsg(null), 2500);
+    } catch (e) {
+      setCloudMsg(e instanceof Error ? e.message : String(e));
+    }
   };
   const handleLoadPreset = (name: string) => {
     const p = presets.find(x => x.name === name);
@@ -247,9 +271,16 @@ export function FilterSidebar({ filters, setFilters, view, setView, onScan, onEx
         <div className="flex gap-1.5">
           <button type="button" onClick={handleSavePreset}
             className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-border bg-[var(--color-surface-2)] px-2 py-1.5 text-xs text-foreground hover:border-primary/50">
-            <Save className="h-3 w-3" /> Uložit
+            <Save className="h-3 w-3" /> Lokálně
           </button>
+          {isAuthed && (
+            <button type="button" onClick={handleSaveCloud}
+              className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-primary/50 bg-primary/5 px-2 py-1.5 text-xs font-semibold text-primary hover:bg-primary/10">
+              <Cloud className="h-3 w-3" /> Do účtu
+            </button>
+          )}
         </div>
+        {cloudMsg && <p className="text-[10px] text-muted-foreground">{cloudMsg}</p>}
         {presets.length > 0 && (
           <div className="flex flex-col gap-1">
             {presets.map((p) => (

@@ -32,7 +32,7 @@ export type SortBy = "source" | "price_asc" | "price_desc" | "yield" | "date_des
 export type Ownership = "osobni" | "druzstevni" | "statni" | "jine";
 
 export type PublishedDateSource = "api" | "html" | "estimated" | "fallback_now";
-export type RentBasisSource = "district" | "region" | "fallback";
+export type RentBasisSource = "district" | "okres_live" | "okres_static" | "region" | "fallback";
 
 export interface ScanFilters {
   deal_type: DealType;
@@ -92,6 +92,8 @@ export interface Diagnostic {
 export interface ScanMeta {
   benchmark_fetched_at?: string;
   benchmark_source?: string;
+  benchmark_live_okresy?: number;
+  benchmark_static_okresy?: number;
   filtered_foreign?: number;
   filtered_reasons?: Record<string, number>;
 }
