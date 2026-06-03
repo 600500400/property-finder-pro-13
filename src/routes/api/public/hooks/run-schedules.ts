@@ -9,6 +9,7 @@ export const Route = createFileRoute("/api/public/hooks/run-schedules")({
     handlers: {
       POST: async () => {
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+        const { executeScan } = await import("@/lib/scanner/scan-internal.server");
         const now = new Date();
 
         const { data: schedules, error } = await supabaseAdmin
