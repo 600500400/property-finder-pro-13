@@ -94,8 +94,8 @@ function Index() {
         return true;
       });
     }
-    return arr;
-  }, [data?.results, view.only_with_image, view.dedupe]);
+    return sortListings(arr, filters.sort_by);
+  }, [data?.results, view.only_with_image, view.dedupe, filters.sort_by]);
 
   const groupedBySource = useMemo(() => {
     if (filters.sort_by !== "source") return null;
