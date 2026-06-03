@@ -61,9 +61,10 @@ export function ListingCard({ listing }: { listing: Listing }) {
   const inv = listing.invest;
   const fresh = freshnessBadge(listing.published_at);
   const dateText = fmtDate(listing.published_at);
+  const isFallbackDate = listing.published_at_source === "fallback_now";
   const own = listing.ownership ? OWNERSHIP_LABEL[listing.ownership] : null;
   const badges = [
-    ...(fresh ? [fresh] : []),
+    ...(fresh && !isFallbackDate ? [fresh] : []),
     ...(listing.badges || []).filter(b => b !== "NOVÝ" || !fresh),
   ];
   return (
@@ -120,9 +121,17 @@ export function ListingCard({ listing }: { listing: Listing }) {
         </div>
         <div className="mt-auto flex items-end justify-between gap-2 pt-1">
           <span className="font-mono text-lg font-bold text-primary">{listing.price_text}</span>
-          {dateText && <span className="text-[10px] text-muted-foreground">{dateText}</span>}
+          {dateText && (
+            <span
+              title={isFallbackDate ? "Datum nebylo k dispozici — zobrazen čas skenu" : "Datum zveřejnění"}
+              className={`text-[10px] ${isFallbackDate ? "italic text-muted-foreground/60" : "text-muted-foreground"}`}
+            >
+              {isFallbackDate ? `~ ${dateText}` : dateText}
+            </span>
+          )}
         </div>
       </div>
+
 
 
       {inv && (
