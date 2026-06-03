@@ -92,7 +92,10 @@ export interface Diagnostic {
 export interface ScanMeta {
   benchmark_fetched_at?: string;
   benchmark_source?: string;
+  filtered_foreign?: number;
+  filtered_reasons?: Record<string, number>;
 }
+
 
 export interface ScanResult {
   count: number;
