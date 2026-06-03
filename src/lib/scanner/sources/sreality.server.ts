@@ -1,5 +1,5 @@
-import type { Listing, ScanFilters } from "../types";
-import { cleanText, fmtPrice, parseArea } from "../valuation";
+import type { Listing, Ownership, ScanFilters } from "../types";
+import { cleanText, fmtPrice, parseArea, parseOwnership } from "../valuation";
 
 const SREALITY_CATEGORY_MAIN: Record<string, number> = {
   byty: 1, domy: 2, pozemky: 3, komercni: 4, ostatni: 5,
@@ -21,49 +21,57 @@ const MAIN_SLUG: Record<number, string> = {
 };
 const TYPE_SLUG: Record<number, string> = { 1: "prodej", 2: "pronajem" };
 
-function fillTemplate(u: string): string {
-  return u
-    .replace(/\{width\}/g, "800")
-    .replace(/\{height\}/g, "600")
-    .replace(/\{fileName\}/g, "image-0.jpeg");
+function normalizeImgUrl(u: string): string {
+  if (!u) return "";
+  let v = u.trim();
+  if (v.startsWith("//")) v = "https:" + v;
+  // Sreality občas vrací template "{width}/{height}"; necháme rozumné rozměry
+  v = v.replace(/\{width\}/g, "800").replace(/\{height\}/g, "600");
+  return v;
 }
 
-// Accept only real property photos: hosted on Seznam CDN (sdn.cz) with /c_img_ path,
-// or any URL clearly pointing to an estate image file. Reject broker logos.
 function isPropertyPhoto(u: string): boolean {
-  if (!u || typeof u !== "string") return false;
-  if (!/^https?:\/\//.test(u)) return false;
+  if (!u) return false;
   const low = u.toLowerCase();
-  if (/\b(logo|branding|watermark|d_logo_|company|seller|avatar)\b/.test(low)) return false;
-  if (low.includes("/c_img_")) return true; // canonical Sreality CDN listing image
+  if (/(logo|branding|d_logo_|premise_logo)/.test(low)) return false;
+  // c_img_ je canonical Sreality CDN listing image
+  if (low.includes("/c_img_")) return true;
   if (low.includes("sdn.cz") && /\.(jpe?g|png|webp|avif)/.test(low)) return true;
   return false;
 }
 
-// Look ONLY at known image collections — never crawl whole estate object
-// (avoids accidentally picking up broker logos that live elsewhere).
+// Sreality v1 search API ukládá obrázky v `advert_images` (string[])
+// a `advert_images_all` (object[] s `advert_image_sdn_url`).
 function extractImage(e: any): string {
-  const collections: any[] = [
-    e._embedded?.images,
-    e._links?.images,
-    e.images,
-  ];
-  for (let c of collections) {
+  const candidates: string[] = [];
+
+  if (Array.isArray(e.advert_images)) {
+    for (const u of e.advert_images) {
+      if (typeof u === "string") candidates.push(u);
+    }
+  }
+  if (Array.isArray(e.advert_images_all)) {
+    for (const it of e.advert_images_all) {
+      const u = it?.advert_image_sdn_url || it?.url || it?.href;
+      if (typeof u === "string") candidates.push(u);
+    }
+  }
+  // legacy fallback
+  const legacy: any[] = [e._embedded?.images, e._links?.images, e.images];
+  for (let c of legacy) {
     if (!c) continue;
     if (!Array.isArray(c)) c = [c];
     for (const it of c) {
       if (!it) continue;
-      let href = "";
-      if (typeof it === "string") href = it;
-      else if (typeof it === "object") {
-        href = it.href || it.url || it.src
-          || it._links?.view?.href || it._links?.self?.href
-          || it.image_middle || it.image_big || "";
-      }
-      if (!href) continue;
-      const filled = fillTemplate(href);
-      if (isPropertyPhoto(filled)) return filled;
+      const u = typeof it === "string" ? it
+        : it.href || it.url || it.src || it.image_middle || it.image_big || "";
+      if (u) candidates.push(u);
     }
+  }
+
+  for (const raw of candidates) {
+    const u = normalizeImgUrl(raw);
+    if (isPropertyPhoto(u)) return u;
   }
   return "";
 }
@@ -96,11 +104,6 @@ function detailUrl(e: any, typeS: string, mainCb: number, name: string): string 
   const hashId = e.hash_id || "";
   const loc = locSlug(e);
 
-  const self = e._links?.self?.href || e._links?.self;
-  if (typeof self === "string" && self.includes("/detail/")) {
-    return self.startsWith("http") ? self : `https://www.sreality.cz${self}`;
-  }
-
   if (mainCb === 5) {
     const low = name.toLowerCase();
     if (low.includes("stání") || low.includes("stani"))
@@ -129,16 +132,27 @@ function priceOf(e: any): number {
 
 function badgesOf(e: any): string[] {
   const out: string[] = [];
-  if (e.is_topped || e.label_top || e.labelsAll?.includes?.("topped") || e.labels?.includes?.("topped")) out.push("TOP");
-  if (e.mark_as_new || e.is_new || e.labels?.includes?.("new")) out.push("NOVÝ");
+  if (e.is_topped || e.label_top || e.labelsAll?.includes?.("topped") || e.labels?.includes?.("topped")) out.push("Placené");
+  if (e.mark_as_new || e.is_new) out.push("NOVÝ");
   return out;
 }
 
 function publishedOf(e: any): string | undefined {
-  const cand = e.last_update || e.lastUpdate || e.date || e.created || e.publish_date || e._embedded?.estate?.last_update;
+  const cand = e.last_update || e.lastUpdate || e.date || e.created || e.publish_date;
   if (!cand) return undefined;
   const d = new Date(String(cand));
   return isNaN(d.getTime()) ? undefined : d.toISOString();
+}
+
+function ownershipOf(e: any, name: string): Ownership | undefined {
+  // Sreality: ownership_cb 1=osobní, 2=družstevní, 3=státní/obecní
+  const v = e.ownership_cb?.value ?? e.ownership_cb;
+  if (typeof v === "number") {
+    if (v === 1) return "osobni";
+    if (v === 2) return "druzstevni";
+    if (v === 3) return "statni";
+  }
+  return parseOwnership(name);
 }
 
 export async function fetchSreality(f: ScanFilters): Promise<Listing[]> {
@@ -187,7 +201,7 @@ export async function fetchSreality(f: ScanFilters): Promise<Listing[]> {
       lastStatus = r.status;
       if (!r.ok) continue;
       const data: any = await r.json();
-      const est = data._embedded?.estates || data.results || data.estates || data.data || [];
+      const est = data.results || data._embedded?.estates || data.estates || data.data || [];
       if (Array.isArray(est) && est.length) { estates = est; break; }
     } catch {
       // try next
@@ -195,7 +209,7 @@ export async function fetchSreality(f: ScanFilters): Promise<Listing[]> {
   }
 
   if (!estates.length) {
-    throw new Error(`Sreality nevrátila inzeráty (HTTP ${lastStatus ?? "n/a"}). Pravděpodobně blokace bez TLS fingerprintu.`);
+    throw new Error(`Sreality nevrátila inzeráty (HTTP ${lastStatus ?? "n/a"}).`);
   }
 
   const typeS = TYPE_SLUG[typeCb] || "prodej";
@@ -219,6 +233,7 @@ export async function fetchSreality(f: ScanFilters): Promise<Listing[]> {
       area: areaM ? areaM[0] : (area_m2 ? `${area_m2} m²` : ""),
       area_m2,
       published_at: publishedOf(e),
+      ownership: ownershipOf(e, name),
       invest: null,
       badges: badgesOf(e),
     });
