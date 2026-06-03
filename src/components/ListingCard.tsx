@@ -86,9 +86,9 @@ export function ListingCard({ listing }: { listing: Listing }) {
         <span className="absolute left-2 top-2 rounded-md bg-background/80 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-foreground backdrop-blur">
           {listing.source}
         </span>
-        {listing.badges && listing.badges.length > 0 && (
-          <div className="absolute right-2 top-2 flex gap-1">
-            {listing.badges.map((b) => (
+        {badges.length > 0 && (
+          <div className="absolute right-2 top-2 flex flex-wrap justify-end gap-1">
+            {badges.map((b) => (
               <span key={b} className={`rounded-md px-1.5 py-0.5 text-[9px] font-bold tracking-wider shadow ${badgeClass(b)}`}>
                 {b}
               </span>
@@ -106,8 +106,9 @@ export function ListingCard({ listing }: { listing: Listing }) {
             <span className="truncate">{listing.locality}</span>
           </div>
         )}
-        <div className="mt-auto pt-1 font-mono text-lg font-bold text-primary">
-          {listing.price_text}
+        <div className="mt-auto flex items-end justify-between gap-2 pt-1">
+          <span className="font-mono text-lg font-bold text-primary">{listing.price_text}</span>
+          {rel && <span className="text-[10px] text-muted-foreground">{rel}</span>}
         </div>
       </div>
 
