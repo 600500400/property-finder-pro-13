@@ -27,17 +27,18 @@ export const upsertSavedFilter = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+    const filtersJson = data.filters as never;
     if (data.id) {
       const { error } = await supabase
         .from("saved_filters")
-        .update({ name: data.name, filters: data.filters, updated_at: new Date().toISOString() })
+        .update({ name: data.name, filters: filtersJson, updated_at: new Date().toISOString() })
         .eq("id", data.id);
       if (error) throw new Error(error.message);
       return { id: data.id };
     }
     const { data: row, error } = await supabase
       .from("saved_filters")
-      .insert({ user_id: userId, name: data.name, filters: data.filters })
+      .insert({ user_id: userId, name: data.name, filters: filtersJson })
       .select("id").single();
     if (error) throw new Error(error.message);
     return { id: row!.id };
