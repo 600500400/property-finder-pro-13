@@ -1,5 +1,4 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { executeScan } from "@/lib/scanner/scan-internal.server";
 import type { ScanFilters } from "@/lib/scanner/types";
 
 // Cron endpoint volaný z pg_cron. Vybere scheduled_scans které mají běžet
@@ -10,6 +9,7 @@ export const Route = createFileRoute("/api/public/hooks/run-schedules")({
     handlers: {
       POST: async () => {
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+        const { executeScan } = await import("@/lib/scanner/scan-internal.server");
         const now = new Date();
 
         const { data: schedules, error } = await supabaseAdmin
