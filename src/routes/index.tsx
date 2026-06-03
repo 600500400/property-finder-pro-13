@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useState, useMemo, useEffect } from "react";
 
 import { runScan } from "@/lib/scanner/scan.functions";
+import { sortListings } from "@/lib/scanner/sort";
 import type { Listing, ScanFilters, ScanResult } from "@/lib/scanner/types";
 import { FilterSidebar, MobileScanFooter } from "@/components/FilterSidebar";
 import { ListingCard } from "@/components/ListingCard";
