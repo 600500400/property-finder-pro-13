@@ -24,7 +24,7 @@ function verdictBg(stars: number | undefined): string {
 }
 
 function badgeClass(badge: string): string {
-  if (badge === "TOP") return "bg-amber-500/90 text-black";
+  if (badge === "Placené") return "bg-muted text-muted-foreground border border-border";
   if (badge === "HOT 🔥") return "bg-red-500 text-white";
   if (badge === "NOVÝ" || badge === "NEW") return "bg-primary text-primary-foreground";
   if (badge === "Tento týden") return "bg-sky-500/80 text-white";
@@ -43,18 +43,19 @@ function freshnessBadge(iso: string | undefined): string | null {
   return null;
 }
 
-function relativeDate(iso: string | undefined): string | null {
+function fmtDate(iso: string | undefined): string | null {
   if (!iso) return null;
-  const t = new Date(iso).getTime();
-  if (isNaN(t)) return null;
-  const days = Math.floor((Date.now() - t) / 86_400_000);
-  if (days < 0) return null;
-  if (days === 0) return "dnes";
-  if (days === 1) return "včera";
-  if (days < 31) return `před ${days} dny`;
-  const mo = Math.floor(days / 30);
-  return `před ${mo} měs.`;
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return null;
+  return d.toLocaleDateString("cs-CZ", { day: "numeric", month: "numeric", year: "numeric" });
 }
+
+const OWNERSHIP_LABEL: Record<string, { short: string; full: string }> = {
+  osobni: { short: "OV", full: "Osobní vlastnictví" },
+  druzstevni: { short: "DV", full: "Družstevní" },
+  statni: { short: "ST", full: "Státní/obecní" },
+  jine: { short: "?", full: "Jiné" },
+};
 
 export function ListingCard({ listing }: { listing: Listing }) {
   const inv = listing.invest;
