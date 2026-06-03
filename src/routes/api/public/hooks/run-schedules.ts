@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { runScanInternal } from "@/lib/scanner/scan-internal.server";
+import { executeScan } from "@/lib/scanner/scan-internal.server";
+import type { ScanFilters } from "@/lib/scanner/types";
 
 // Cron endpoint volaný z pg_cron. Vybere scheduled_scans které mají běžet
 // (na základě last_run_at + frequency_per_day) a uloží výsledky do scan_results.
@@ -24,7 +25,7 @@ export const Route = createFileRoute("/api/public/hooks/run-schedules")({
             continue;
           }
           try {
-            const result = await runScanInternal(s.filters as any);
+            const result = await executeScan(s.filters as unknown as ScanFilters);
             const top = result.results.slice(0, s.max_per_email as number);
             await supabaseAdmin.from("scan_results").insert({
               scheduled_scan_id: s.id,
