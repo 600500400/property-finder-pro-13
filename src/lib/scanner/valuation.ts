@@ -154,21 +154,7 @@ function districtSlugFromLocality(locality: string | undefined, region: Region):
   return null;
 }
 
-export interface RentBenchmark {
-  region: Record<string, number>;
-  district: Record<string, number>;
-  fetched_at: string;
-  source: string;
-}
-
-export function staticBenchmark(): RentBenchmark {
-  return {
-    region: RENT_PER_M2_REGION,
-    district: RENT_PER_M2_DISTRICT,
-    fetched_at: new Date().toISOString(),
-    source: "static-2024",
-  };
-}
+// (RentBenchmark interface lives in rent-benchmark.server.ts — re-exported above)
 
 function dispositionFactor(name: string): number {
   const n = name.toLowerCase();
