@@ -31,6 +31,9 @@ export type SortBy = "source" | "price_asc" | "price_desc" | "yield" | "date_des
 
 export type Ownership = "osobni" | "druzstevni" | "statni" | "jine";
 
+export type PublishedDateSource = "api" | "html" | "estimated" | "fallback_now";
+export type RentBasisSource = "district" | "region" | "fallback";
+
 export interface ScanFilters {
   deal_type: DealType;
   property_type: PropertyType;
@@ -51,6 +54,9 @@ export interface Investment {
   payback_years: number;
   stars: number;
   verdict: string;
+  rent_per_m2?: number;
+  rent_basis_label?: string; // např. "Praha 9: 360 Kč/m²"
+  rent_source?: RentBasisSource;
 }
 
 export interface Listing {
@@ -65,6 +71,7 @@ export interface Listing {
   area: string;
   area_m2?: number;
   published_at?: string; // ISO date
+  published_at_source?: PublishedDateSource;
   ownership?: Ownership;
   invest: Investment | null;
   badges?: string[];
@@ -77,6 +84,12 @@ export interface Diagnostic {
   ms: number;
   ok: boolean;
   error: string | null;
+  dates_from?: { api: number; html: number; fallback: number };
+}
+
+export interface ScanMeta {
+  benchmark_fetched_at?: string;
+  benchmark_source?: string;
 }
 
 export interface ScanResult {
@@ -84,4 +97,5 @@ export interface ScanResult {
   results: Listing[];
   diagnostics: Diagnostic[];
   ts: string;
+  meta?: ScanMeta;
 }
