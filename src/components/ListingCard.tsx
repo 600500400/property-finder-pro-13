@@ -164,7 +164,28 @@ export function ListingCard({ listing }: { listing: Listing }) {
             )}
           </div>
         </div>
+
+        {anuity?.has_anuity && (
+          <div
+            className="rounded-md border border-red-500/30 bg-red-500/5 px-2 py-1.5 text-[10px] leading-snug text-red-200"
+            title={anuity.source_phrase || undefined}
+          >
+            <div className="font-semibold uppercase tracking-wider text-red-300">
+              Pozor: anuita / nesplacený úvěr
+            </div>
+            {anuity.amount && listing.price ? (
+              <div className="mt-0.5 font-mono">
+                {fmtMil(listing.price)} + {fmtMil(anuity.amount)} = <span className="font-bold">{fmtMil(anuity.effective_price || listing.price + anuity.amount)} Kč efektivně</span>
+              </div>
+            ) : (
+              <div className="mt-0.5 text-red-200/80">
+                {anuity.confidence === "medium" ? "Družstevní byt – ověř výši anuity v inzerátu." : "Částka nebyla v popisu nalezena."}
+              </div>
+            )}
+          </div>
+        )}
       </div>
+
 
       {inv && (
         <div className={`grid grid-cols-2 gap-2 border-t border-border p-3 ${verdictBg(inv.stars)}`}>
