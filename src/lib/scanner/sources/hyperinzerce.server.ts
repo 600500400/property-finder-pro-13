@@ -69,6 +69,7 @@ export async function fetchHyperinzerce(f: ScanFilters): Promise<Listing[]> {
       area: area_m2 ? `${area_m2} m²` : "",
       area_m2,
       ownership,
+      description_snippet: desc ? desc.slice(0, 600) : undefined,
       invest: null,
     });
   }
