@@ -53,7 +53,7 @@ export interface ScanFilters {
   sources: SourceKey[];
   sort_by: SortBy;
   per_source_limit: number;
-  ownership?: Ownership[]; // klientský filtr; prázdné/undefined = vše
+  
 }
 
 
