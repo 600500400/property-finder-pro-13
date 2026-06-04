@@ -218,33 +218,6 @@ export function FilterSidebar({ filters, setFilters, view, setView, onScan, onEx
         </p>
       </Section>
 
-      <Section label="Typ vlastnictví">
-        <div className="flex flex-col gap-1">
-          {OWNERSHIP_OPTS.map(([key, label]) => {
-            const sel = filters.ownership ?? [];
-            const checked = sel.includes(key);
-            return (
-              <label key={key} className="flex cursor-pointer items-center gap-2 text-sm text-foreground">
-                <input
-                  type="checkbox"
-                  checked={checked}
-                  onChange={(e) => {
-                    const next = e.target.checked
-                      ? [...sel, key]
-                      : sel.filter(x => x !== key);
-                    update("ownership", next.length ? next : undefined);
-                  }}
-                  className="h-4 w-4 accent-primary"
-                />
-                {label}
-              </label>
-            );
-          })}
-        </div>
-        <p className="text-[10px] leading-relaxed text-muted-foreground">
-          Filtr na již načtených datech – nevyžaduje nový sken.
-        </p>
-      </Section>
 
       <Section label="Zobrazení">
         <label className="flex cursor-pointer items-center gap-2 text-sm text-foreground">
