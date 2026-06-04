@@ -29,7 +29,16 @@ export type SourceKey =
 
 export type SortBy = "source" | "price_asc" | "price_desc" | "yield" | "date_desc";
 
-export type Ownership = "osobni" | "druzstevni" | "statni" | "jine";
+export type Ownership = "osobni" | "druzstevni" | "jine";
+export type OwnershipConfidence = "high" | "low";
+
+export interface AnuityInfo {
+  has_anuity: boolean;
+  amount?: number;          // detekovaná částka anuity v Kč
+  effective_price?: number; // price + amount, pokud obojí známe
+  confidence: "high" | "medium" | "low";
+  source_phrase?: string;   // krátký výňatek textu pro tooltip
+}
 
 export type PublishedDateSource = "api" | "html" | "estimated" | "fallback_now";
 export type RentBasisSource = "district" | "okres_live" | "okres_static" | "region" | "fallback";
