@@ -101,14 +101,6 @@ export function ListingCard({ listing }: { listing: Listing }) {
             {listing.source}
           </span>
           <div className="flex flex-wrap justify-end gap-1">
-            {own && (
-              <span
-                title={own.full}
-                className={`rounded-md px-1.5 py-0.5 text-[9px] font-bold tracking-wider ${own.cls}`}
-              >
-                {own.short}
-              </span>
-            )}
             {anuity?.has_anuity && (
               <span
                 title={anuity.source_phrase || "V popisu zmínka o anuitě / nesplaceném úvěru družstva"}
@@ -128,6 +120,18 @@ export function ListingCard({ listing }: { listing: Listing }) {
 
         {/* Title */}
         <h3 className="line-clamp-2 text-sm font-semibold leading-snug text-foreground">{listing.name}</h3>
+
+        {/* Ownership flag — výrazný štítek */}
+        {own && (
+          <div>
+            <span
+              title={own.full}
+              className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px] font-bold tracking-wide ${own.cls}`}
+            >
+              {own.short} <span className="font-normal opacity-80">· {own.full.split(" ").slice(0, 2).join(" ")}</span>
+            </span>
+          </div>
+        )}
 
         {/* Locality */}
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
