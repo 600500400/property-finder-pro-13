@@ -1,4 +1,4 @@
-import type { Ownership, ScanFilters, SourceKey } from "@/lib/scanner/types";
+import type { ScanFilters, SourceKey } from "@/lib/scanner/types";
 import { Download, Zap, Loader2, Save, Trash2, Bookmark, Cloud } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
