@@ -79,7 +79,7 @@ export async function fetchAnnonce(f: ScanFilters): Promise<Listing[]> {
       const t = cleanText(stripTags(ownM[1])).toLowerCase();
       if (t.includes("družstevní") || t.includes("druzstevni")) ownership = "druzstevni";
       else if (t.includes("osobní") || t.includes("osobni")) ownership = "osobni";
-      else if (t.includes("státní") || t.includes("statni")) ownership = "statni";
+      else if (t.includes("státní") || t.includes("statni") || t.includes("obecní")) ownership = "jine";
     }
 
     // area
