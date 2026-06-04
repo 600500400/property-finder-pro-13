@@ -132,6 +132,7 @@ export async function executeScan(filters: ScanFilters): Promise<ScanResult> {
       return {
         ...r,
         ownership,
+        ownership_confidence,
         anuity: anuity.has_anuity ? anuity : undefined,
         invest: calcYield(priceForYield, filters.region, filters.property_type, r.area_m2, r.name, r.locality, ownership, bench),
       };
