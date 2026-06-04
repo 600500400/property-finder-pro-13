@@ -51,12 +51,29 @@ function fmtDate(iso: string | undefined): string | null {
   return d.toLocaleDateString("cs-CZ", { day: "numeric", month: "numeric", year: "numeric" });
 }
 
-const OWNERSHIP_LABEL: Record<string, { short: string; full: string }> = {
-  osobni: { short: "OV", full: "Osobní vlastnictví" },
-  druzstevni: { short: "DV", full: "Družstevní" },
-  statni: { short: "ST", full: "Státní/obecní" },
-  jine: { short: "?", full: "Jiné" },
+const OWNERSHIP_LABEL: Record<string, { short: string; full: string; cls: string }> = {
+  osobni: {
+    short: "OV",
+    full: "Osobní vlastnictví",
+    cls: "bg-emerald-500/15 text-emerald-300 border border-emerald-500/40",
+  },
+  druzstevni: {
+    short: "DV",
+    full: "Družstevní – pozor na anuitu / nesplacený úvěr",
+    cls: "bg-amber-500/15 text-amber-300 border border-amber-500/40",
+  },
+  jine: {
+    short: "JINÉ",
+    full: "Jiné / neurčeno (státní, obecní, nezjištěno)",
+    cls: "bg-muted text-muted-foreground border border-border",
+  },
 };
+
+function fmtMil(n: number): string {
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(n >= 10_000_000 ? 1 : 2).replace(".", ",")} mil`;
+  if (n >= 1_000) return `${Math.round(n / 1_000)} tis`;
+  return n.toLocaleString("cs-CZ");
+}
 
 export function ListingCard({ listing }: { listing: Listing }) {
   const inv = listing.invest;
@@ -64,6 +81,7 @@ export function ListingCard({ listing }: { listing: Listing }) {
   const dateText = fmtDate(listing.published_at);
   const isFallbackDate = listing.published_at_source === "fallback_now";
   const own = listing.ownership ? OWNERSHIP_LABEL[listing.ownership] : null;
+  const anuity = listing.anuity;
   const badges = [
     ...(fresh && !isFallbackDate ? [fresh] : []),
     ...(listing.badges || []).filter(b => b !== "NOVÝ" || !fresh),
@@ -77,12 +95,28 @@ export function ListingCard({ listing }: { listing: Listing }) {
       className="group flex flex-col overflow-hidden rounded-xl border border-border bg-card transition-all hover:-translate-y-0.5 hover:border-primary/50 hover:shadow-lg hover:shadow-primary/5"
     >
       <div className="flex flex-1 flex-col gap-2 p-3">
-        {/* Header: source + badges */}
+        {/* Header: source + badges (ownership, anuita, fresh) */}
         <div className="flex items-center justify-between gap-2">
           <span className="rounded-md bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-primary">
             {listing.source}
           </span>
           <div className="flex flex-wrap justify-end gap-1">
+            {own && (
+              <span
+                title={own.full}
+                className={`rounded-md px-1.5 py-0.5 text-[9px] font-bold tracking-wider ${own.cls}`}
+              >
+                {own.short}
+              </span>
+            )}
+            {anuity?.has_anuity && (
+              <span
+                title={anuity.source_phrase || "V popisu zmínka o anuitě / nesplaceném úvěru družstva"}
+                className="rounded-md border border-red-500/50 bg-red-500/15 px-1.5 py-0.5 text-[9px] font-bold tracking-wider text-red-300"
+              >
+                + ANUITA
+              </span>
+            )}
             {badges.map((b) => (
               <span key={b} className={`rounded-md px-1.5 py-0.5 text-[9px] font-bold tracking-wider ${badgeClass(b)}`}>
                 {b}
@@ -95,7 +129,7 @@ export function ListingCard({ listing }: { listing: Listing }) {
         {/* Title */}
         <h3 className="line-clamp-2 text-sm font-semibold leading-snug text-foreground">{listing.name}</h3>
 
-        {/* Locality + ownership */}
+        {/* Locality */}
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           {listing.locality && (
             <span className="flex min-w-0 items-center gap-1">
@@ -103,15 +137,8 @@ export function ListingCard({ listing }: { listing: Listing }) {
               <span className="truncate">{listing.locality}</span>
             </span>
           )}
-          {own && (
-            <span
-              title={own.full}
-              className="ml-auto shrink-0 rounded border border-border bg-muted/40 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-foreground"
-            >
-              {own.short}
-            </span>
-          )}
         </div>
+
 
         {/* Price + area + Kč/m² */}
         <div className="flex items-end justify-between gap-2 pt-1">
