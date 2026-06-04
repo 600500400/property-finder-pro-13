@@ -240,9 +240,15 @@ export function ListingCard({ listing }: { listing: Listing }) {
                  inv.rent_source === "region" ? " (kraj)" : " (ČR)"}
               </div>
             )}
+            {anuity?.effective_price && (
+              <div className="mt-1 text-[10px] font-semibold text-red-300">
+                ⚠ Výnos přepočten z efektivní ceny vč. anuity
+              </div>
+            )}
             <div className="mt-2 flex justify-end">
               <AIAnalysisButton listing={listing} />
             </div>
+
           </div>
         </div>
       )}
