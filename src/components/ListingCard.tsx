@@ -80,7 +80,8 @@ export function ListingCard({ listing }: { listing: Listing }) {
   const fresh = freshnessBadge(listing.published_at);
   const dateText = fmtDate(listing.published_at);
   const isFallbackDate = listing.published_at_source === "fallback_now";
-  const own = listing.ownership ? OWNERSHIP_LABEL[listing.ownership] : null;
+  const ownershipKey = listing.ownership ?? "jine";
+  const own = OWNERSHIP_LABEL[ownershipKey] ?? OWNERSHIP_LABEL.jine;
   const anuity = listing.anuity;
   const badges = [
     ...(fresh && !isFallbackDate ? [fresh] : []),
@@ -122,16 +123,14 @@ export function ListingCard({ listing }: { listing: Listing }) {
         <h3 className="line-clamp-2 text-sm font-semibold leading-snug text-foreground">{listing.name}</h3>
 
         {/* Ownership flag — výrazný štítek */}
-        {own && (
-          <div>
-            <span
-              title={own.full}
-              className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px] font-bold tracking-wide ${own.cls}`}
-            >
-              {own.short} <span className="font-normal opacity-80">· {own.full.split(" ").slice(0, 2).join(" ")}</span>
-            </span>
-          </div>
-        )}
+        <div>
+          <span
+            title={own.full}
+            className={`inline-flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-bold tracking-wide ${own.cls}`}
+          >
+            {own.short} <span className="font-normal opacity-80">· {own.full.split(" ").slice(0, 2).join(" ")}</span>
+          </span>
+        </div>
 
         {/* Locality */}
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
