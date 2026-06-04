@@ -1,6 +1,7 @@
 // Server-only orchestrace skenu — sdílená mezi runScan serverFn a cron endpointem.
 import type { Diagnostic, Listing, PublishedDateSource, ScanFilters, ScanResult, SourceKey } from "./types";
 import { calcYield, parseOwnership } from "./valuation";
+import { detectAnuity } from "./anuity";
 import { applySanity } from "./sanity";
 import { getBenchmark } from "./rent-benchmark.server";
 import { sortListings } from "./sort";
@@ -122,11 +123,15 @@ export async function executeScan(filters: ScanFilters): Promise<ScanResult> {
   const pmax = filters.price_max ?? 999_999_999;
   all = all
     .map(r => {
-      const ownership = r.ownership ?? parseOwnership(`${r.name} ${r.locality}`);
+      const ownership = r.ownership ?? parseOwnership(`${r.name} ${r.locality} ${r.description_snippet || ""}`);
+      const combinedText = `${r.name} ${r.description_snippet || ""}`;
+      const anuity = detectAnuity(combinedText, r.price, ownership);
+      const priceForYield = anuity.effective_price ?? r.price;
       return {
         ...r,
         ownership,
-        invest: calcYield(r.price, filters.region, filters.property_type, r.area_m2, r.name, r.locality, ownership, bench),
+        anuity: anuity.has_anuity ? anuity : undefined,
+        invest: calcYield(priceForYield, filters.region, filters.property_type, r.area_m2, r.name, r.locality, ownership, bench),
       };
     })
     .filter(r => r.price === 0 || (r.price >= pmin && r.price <= pmax));

@@ -136,7 +136,7 @@ export async function fetchBezrealitky(f: ScanFilters): Promise<Listing[]> {
     const ten = String(tenRaw || "").toUpperCase();
     if (ten.includes("DRUZ")) ownership = "druzstevni";
     else if (ten.includes("VLAST") || ten === "OWN") ownership = "osobni";
-    else if (ten.includes("STAT")) ownership = "statni";
+    else if (ten.includes("STAT") || ten.includes("OSTATNI")) ownership = "jine";
     else ownership = parseOwnership(title);
     out.push({
       source: "Bezrealitky",

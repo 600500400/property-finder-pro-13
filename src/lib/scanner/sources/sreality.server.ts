@@ -146,12 +146,12 @@ function publishedOf(e: any): string | undefined {
 }
 
 function ownershipOf(e: any, name: string): Ownership | undefined {
-  // Sreality: ownership_cb 1=osobní, 2=družstevní, 3=státní/obecní
+  // Sreality: ownership_cb 1=osobní, 2=družstevní, 3=státní/obecní → jine
   const v = e.ownership_cb?.value ?? e.ownership_cb;
   if (typeof v === "number") {
     if (v === 1) return "osobni";
     if (v === 2) return "druzstevni";
-    if (v === 3) return "statni";
+    if (v === 3) return "jine";
   }
   return parseOwnership(name);
 }

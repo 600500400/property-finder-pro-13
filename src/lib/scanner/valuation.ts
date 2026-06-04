@@ -308,8 +308,8 @@ export function parseArea(text: string | null | undefined): number | undefined {
 export function parseOwnership(text: string | undefined | null): Ownership | undefined {
   if (!text) return undefined;
   const t = String(text).toLowerCase();
-  if (/dru[žz]stevn|\bdv\b/.test(t)) return "druzstevni";
-  if (/osobn[íi]\s*vlastnictv|\bov\b/.test(t)) return "osobni";
-  if (/st[áa]tn[íi]/.test(t)) return "statni";
+  if (/dru[žz]stevn|\bdv\b|p[řr]evod\s+(?:[čc]lensk|[čc]lensk[ée]ho)|[čc]lensk[ýy]\s+pod[íi]l/.test(t)) return "druzstevni";
+  if (/osobn[íi]\s*vlastnictv|\bov\b|do\s+osobn[íi]ho\s+vlastnictv|v\s+osobn[íi]m\s+vlastnictv/.test(t)) return "osobni";
+  if (/st[áa]tn[íi]|obecn[íi]/.test(t)) return "jine";
   return undefined;
 }

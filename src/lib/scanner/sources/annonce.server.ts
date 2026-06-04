@@ -79,13 +79,17 @@ export async function fetchAnnonce(f: ScanFilters): Promise<Listing[]> {
       const t = cleanText(stripTags(ownM[1])).toLowerCase();
       if (t.includes("družstevní") || t.includes("druzstevni")) ownership = "druzstevni";
       else if (t.includes("osobní") || t.includes("osobni")) ownership = "osobni";
-      else if (t.includes("státní") || t.includes("statni")) ownership = "statni";
+      else if (t.includes("státní") || t.includes("statni") || t.includes("obecní")) ownership = "jine";
     }
 
     // area
     let area_m2 = parseArea(title);
     const areaM = block.match(/data-name-id="area"[\s\S]*?<td>\s*(\d+)\s*m2/);
     if (areaM) area_m2 = parseInt(areaM[1], 10);
+
+    // popis — Annonce má krátký perex v <p class="ad-text"> nebo prvním <p>
+    const descM = block.match(/<p class="ad-text">([\s\S]*?)<\/p>/) || block.match(/<p>([\s\S]*?)<\/p>/);
+    const descText = descM ? cleanText(stripTags(descM[1])) : "";
 
     out.push({
       source: "Annonce",
@@ -101,8 +105,10 @@ export async function fetchAnnonce(f: ScanFilters): Promise<Listing[]> {
       published_at,
       published_at_source: published_at ? "html" : undefined,
       ownership,
+      description_snippet: descText ? descText.slice(0, 600) : undefined,
       invest: null,
     });
   }
   return out;
 }
+

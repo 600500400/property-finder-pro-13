@@ -98,6 +98,7 @@ export async function fetchBazos(f: ScanFilters): Promise<Listing[]> {
       published_at,
       published_at_source: published_at ? "html" : undefined,
       ownership,
+      description_snippet: descText ? descText.slice(0, 600) : undefined,
       invest: null,
       badges: badges.length ? badges : undefined,
     });
