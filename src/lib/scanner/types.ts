@@ -84,6 +84,9 @@ export interface Listing {
   published_at?: string; // ISO date
   published_at_source?: PublishedDateSource;
   ownership?: Ownership;
+  ownership_confidence?: OwnershipConfidence;
+  description_snippet?: string;
+  anuity?: AnuityInfo;
   invest: Investment | null;
   badges?: string[];
 }
