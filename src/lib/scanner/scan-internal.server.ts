@@ -1,6 +1,7 @@
 // Server-only orchestrace skenu — sdílená mezi runScan serverFn a cron endpointem.
 import type { Diagnostic, Listing, PublishedDateSource, ScanFilters, ScanResult, SourceKey } from "./types";
 import { calcYield, parseOwnership } from "./valuation";
+import { detectAnuity } from "./anuity";
 import { applySanity } from "./sanity";
 import { getBenchmark } from "./rent-benchmark.server";
 import { sortListings } from "./sort";
