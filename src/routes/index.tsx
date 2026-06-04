@@ -84,15 +84,6 @@ function Index() {
 
   const listings = useMemo(() => {
     let arr = data?.results ?? [];
-    if (filters.ownership && filters.ownership.length > 0) {
-      const allow = new Set(filters.ownership);
-      // "jine" (Neurčeno) matchuje i listings bez detekovaného ownership
-      const includeUnknown = allow.has("jine");
-      arr = arr.filter(l => {
-        if (!l.ownership) return includeUnknown;
-        return allow.has(l.ownership);
-      });
-    }
     if (view.dedupe) {
       const seen = new Set<string>();
       arr = arr.filter(l => {
@@ -104,7 +95,7 @@ function Index() {
       });
     }
     return sortListings(arr, filters.sort_by);
-  }, [data?.results, view.dedupe, filters.sort_by, filters.ownership]);
+  }, [data?.results, view.dedupe, filters.sort_by]);
 
 
   const groupedBySource = useMemo(() => {
