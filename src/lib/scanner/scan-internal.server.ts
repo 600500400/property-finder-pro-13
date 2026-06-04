@@ -123,13 +123,16 @@ export async function executeScan(filters: ScanFilters): Promise<ScanResult> {
   const pmax = filters.price_max ?? 999_999_999;
   all = all
     .map(r => {
-      const ownership = r.ownership ?? parseOwnership(`${r.name} ${r.locality} ${r.description_snippet || ""}`);
+      const detected = r.ownership ?? parseOwnership(`${r.name} ${r.locality} ${r.description_snippet || ""}`);
+      const ownership = detected ?? "jine";
+      const ownership_confidence: "high" | "low" = detected ? "high" : "low";
       const combinedText = `${r.name} ${r.description_snippet || ""}`;
       const anuity = detectAnuity(combinedText, r.price, ownership);
       const priceForYield = anuity.effective_price ?? r.price;
       return {
         ...r,
         ownership,
+        ownership_confidence,
         anuity: anuity.has_anuity ? anuity : undefined,
         invest: calcYield(priceForYield, filters.region, filters.property_type, r.area_m2, r.name, r.locality, ownership, bench),
       };
