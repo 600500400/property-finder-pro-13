@@ -38,12 +38,6 @@ interface ViewOptions {
   dedupe: boolean;
 }
 
-const OWNERSHIP_OPTS: Array<[Ownership, string]> = [
-  ["osobni", "Osobní (OV)"],
-  ["druzstevni", "Družstevní (DV)"],
-  ["statni", "Státní / obecní"],
-  ["jine", "Neurčeno / jiné"],
-];
 
 
 interface Props {
