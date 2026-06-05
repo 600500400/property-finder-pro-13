@@ -145,14 +145,33 @@ function publishedOf(e: any): string | undefined {
   return isNaN(d.getTime()) ? undefined : d.toISOString();
 }
 
-function ownershipOf(e: any, name: string): Ownership | undefined {
-  // Sreality: ownership_cb 1=osobní, 2=družstevní, 3=státní/obecní → jine
-  const v = e.ownership_cb?.value ?? e.ownership_cb;
-  if (typeof v === "number") {
-    if (v === 1) return "osobni";
-    if (v === 2) return "druzstevni";
-    if (v === 3) return "jine";
+function ownershipFromValue(raw: any): Ownership | undefined {
+  const v = raw?.value ?? raw;
+  const name = typeof raw?.name === "string" ? raw.name.toLowerCase() : "";
+  if (v === 1 || name.includes("osob")) return "osobni";
+  if (v === 2 || name.includes("druž") || name.includes("druz")) return "druzstevni";
+  if (v === 3 || name.includes("stát") || name.includes("stat") || name.includes("obec")) return "jine";
+  return undefined;
+}
+
+async function detailInfo(hashId: string | number | undefined, headers: HeadersInit): Promise<{ ownership?: Ownership; description?: string }> {
+  if (!hashId) return {};
+  try {
+    const r = await fetch(`https://www.sreality.cz/api/v1/estates/${hashId}`, { headers, signal: AbortSignal.timeout(12000) });
+    if (!r.ok) return {};
+    const data: any = await r.json();
+    const result = data.result || data;
+    const description = cleanText(result.advert_description || result.description || "");
+    return { ownership: ownershipFromValue(result.ownership) ?? parseOwnership(description), description };
+  } catch {
+    return {};
   }
+}
+
+function ownershipOf(e: any, name: string): Ownership | undefined {
+  // Sreality: search občas pole nemá; detail má `ownership` { name, value }.
+  const direct = ownershipFromValue(e.ownership ?? e.ownership_cb);
+  if (direct) return direct;
   return parseOwnership(name);
 }
 
@@ -214,9 +233,10 @@ export async function fetchSreality(f: ScanFilters): Promise<Listing[]> {
   }
 
   const typeS = TYPE_SLUG[typeCb] || "prodej";
+  const details = await Promise.all(estates.map(e => detailInfo(e?.hash_id, headers)));
   const out: Listing[] = [];
   let withImg = 0;
-  for (const e of estates) {
+  for (const [idx, e] of estates.entries()) {
     if (!e || typeof e !== "object") continue;
     const price = priceOf(e);
     const name = cleanText(e.advert_name || e.name || "Nemovitost");
@@ -239,7 +259,8 @@ export async function fetchSreality(f: ScanFilters): Promise<Listing[]> {
       area_m2,
       published_at: pubIso,
       published_at_source: pubIso ? "api" : undefined,
-      ownership: ownershipOf(e, name),
+      ownership: details[idx]?.ownership ?? ownershipOf(e, name),
+      description_snippet: details[idx]?.description ? details[idx].description.slice(0, 600) : undefined,
       invest: null,
       badges: badgesOf(e),
     });
