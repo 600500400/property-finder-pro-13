@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import type { Diagnostic, Listing, PublishedDateSource, ScanFilters, ScanResult, SourceKey } from "./types";
-import { calcYield, parseOwnership } from "./valuation";
+import { calcYield, fallbackOwnership, parseOwnership } from "./valuation";
 import { detectAnuity } from "./anuity";
 import { applySanity } from "./sanity";
 import { getBenchmark } from "./rent-benchmark.server";
@@ -173,7 +173,7 @@ export const runScan = createServerFn({ method: "POST" })
     all = all
       .map(r => {
         const detected = r.ownership ?? parseOwnership(`${r.name} ${r.locality} ${r.description_snippet || ""}`);
-        const ownership = detected ?? "jine";
+        const ownership = detected ?? fallbackOwnership(filters.deal_type, filters.property_type);
         const ownership_confidence: "high" | "low" = detected ? "high" : "low";
         const anuity = detectAnuity(`${r.name} ${r.description_snippet || ""}`, r.price, ownership);
         const priceForYield = anuity.effective_price ?? r.price;

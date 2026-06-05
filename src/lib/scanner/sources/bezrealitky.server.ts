@@ -9,8 +9,7 @@ const ESTATE: Record<string, string> = {
   byty: "BYT", domy: "DUM", pozemky: "POZEMEK", komercni: "KANCELAR", ostatni: "GARAZ",
 };
 
-const CORE_FIELDS = "id uri offerType estateType disposition price surface address(locale: CS)";
-const TENURE_VARIANTS = ["tenure", "ownership", ""];
+const CORE_FIELDS = "id uri offerType estateType disposition price surface address(locale: CS) ownership description";
 const DATE_VARIANTS = ["dateCreated", "publishedAt", "createdAt", "lastUpdate", ""];
 const IMG_VARIANTS = [
   "mainImage { url(filter: RECORD_MAIN) }",
@@ -20,9 +19,8 @@ const IMG_VARIANTS = [
   "",
 ];
 
-function buildQueries(imgFragment: string, dateField: string, tenureField: string) {
+function buildQueries(imgFragment: string, dateField: string) {
   const fields = CORE_FIELDS
-    + (tenureField ? " " + tenureField : "")
     + (dateField ? " " + dateField : "")
     + (imgFragment ? " " + imgFragment : "");
   const body = "{ list{ " + fields + " } totalCount }";
@@ -98,20 +96,16 @@ export async function fetchBezrealitky(f: ScanFilters): Promise<Listing[]> {
   let payload: any = null;
   let firstErr: any = null;
   let usedDate = "";
-  let usedTenure = "";
-  outer: for (const tenureField of TENURE_VARIANTS) {
-    for (const dateField of DATE_VARIANTS) {
+  outer: for (const dateField of DATE_VARIANTS) {
       for (const frag of IMG_VARIANTS) {
-        const { region, plain } = buildQueries(frag, dateField, tenureField);
+        const { region, plain } = buildQueries(frag, dateField);
         let p = await run(region, regionVars);
         if (p.errors && frag && isFieldError(p.errors)) { firstErr ||= p.errors; continue; }
         if (p.errors && dateField && isFieldError(p.errors)) { firstErr ||= p.errors; break; }
-        if (p.errors && tenureField && isFieldError(p.errors)) { firstErr ||= p.errors; break; }
         if (p.errors) p = await run(plain, baseVars);
-        if (!p.errors) { payload = p; usedDate = dateField; usedTenure = tenureField; break outer; }
+        if (!p.errors) { payload = p; usedDate = dateField; break outer; }
         firstErr ||= p.errors;
       }
-    }
   }
   if (!payload) throw new Error(`GraphQL: ${JSON.stringify((firstErr || [])[0] || {}).slice(0, 160)}`);
 
@@ -132,12 +126,12 @@ export async function fetchBezrealitky(f: ScanFilters): Promise<Listing[]> {
     }
     // tenure / ownership enum: VLASTNI / DRUZSTEVNI / OSTATNI
     let ownership: Ownership | undefined;
-    const tenRaw = usedTenure ? it[usedTenure] : undefined;
+    const tenRaw = it.ownership;
     const ten = String(tenRaw || "").toUpperCase();
     if (ten.includes("DRUZ")) ownership = "druzstevni";
-    else if (ten.includes("VLAST") || ten === "OWN") ownership = "osobni";
+    else if (ten.includes("OSOB") || ten.includes("VLAST") || ten === "OWN") ownership = "osobni";
     else if (ten.includes("STAT") || ten.includes("OSTATNI")) ownership = "jine";
-    else ownership = parseOwnership(title);
+    else ownership = parseOwnership(`${title} ${it.description || ""}`);
     out.push({
       source: "Bezrealitky",
       source_key: "bezrealitky",
@@ -152,6 +146,7 @@ export async function fetchBezrealitky(f: ScanFilters): Promise<Listing[]> {
       published_at,
       published_at_source: published_at ? "api" : undefined,
       ownership,
+      description_snippet: it.description ? cleanText(it.description).slice(0, 600) : undefined,
       invest: null,
     });
   }
