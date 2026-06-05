@@ -24,7 +24,7 @@ const DETAIL_URL_PATTERN: Record<SourceKey, RegExp> = {
   bazos: /reality\.bazos\.cz\/inzerat\//i,
   bezrealitky: /bezrealitky\.cz\/nemovitosti-byty-domy\/[^/]+/i,
   annonce: /annonce\.cz\/inzerat\//i,
-  hyperinzerce: /hyperinzerce\.cz\/.+\/.+-\d+\.html/i,
+  hyperinzerce: /hyperinzerce\.cz\/.+\/inzerat\/\d+/i,
   idnes: /reality\.idnes\.cz\/detail\//i,
   realitymix: /realitymix\.cz\/detail\//i,
 };
@@ -58,10 +58,11 @@ const SOURCES: SrcCfg[] = [
 
 async function headOk(url: string): Promise<{ ok: boolean; type: string | null; status: number }> {
   try {
-    let res = await fetch(url, { method: "HEAD", redirect: "follow", signal: AbortSignal.timeout(10000) });
+    const headers = { "User-Agent": "Mozilla/5.0", "Referer": new URL(url).origin + "/" };
+    let res = await fetch(url, { method: "HEAD", headers, redirect: "follow", signal: AbortSignal.timeout(10000) });
     // Některé CDN nepodporují HEAD → fallback na GET (jen pár bytů přes Range).
     if (res.status === 405 || res.status === 403) {
-      res = await fetch(url, { method: "GET", headers: { Range: "bytes=0-1023" }, signal: AbortSignal.timeout(10000) });
+      res = await fetch(url, { method: "GET", headers: { ...headers, Range: "bytes=0-1023" }, signal: AbortSignal.timeout(10000) });
     }
     return { ok: res.ok, type: res.headers.get("content-type"), status: res.status };
   } catch (e) {

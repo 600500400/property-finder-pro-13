@@ -1,6 +1,6 @@
 // Server-only orchestrace skenu — sdílená mezi runScan serverFn a cron endpointem.
 import type { Diagnostic, Listing, PublishedDateSource, ScanFilters, ScanResult, SourceKey } from "./types";
-import { calcYield, parseOwnership } from "./valuation";
+import { calcYield, fallbackOwnership, parseOwnership } from "./valuation";
 import { detectAnuity } from "./anuity";
 import { applySanity } from "./sanity";
 import { getBenchmark } from "./rent-benchmark.server";
@@ -30,7 +30,7 @@ const DETAIL_URL_PATTERN: Partial<Record<SourceKey, RegExp>> = {
   bazos: /reality\.bazos\.cz\/inzerat\//i,
   bezrealitky: /bezrealitky\.cz\/nemovitosti-byty-domy\/[^/]+/i,
   annonce: /annonce\.cz\/inzerat\//i,
-  hyperinzerce: /hyperinzerce\.cz\/.+\/.+-\d+\.html/i,
+  hyperinzerce: /hyperinzerce\.cz\/.+\/inzerat\/\d+/i,
   idnes: /reality\.idnes\.cz\/detail\//i,
   realitymix: /realitymix\.cz\/detail\//i,
 };
@@ -124,7 +124,7 @@ export async function executeScan(filters: ScanFilters): Promise<ScanResult> {
   all = all
     .map(r => {
       const detected = r.ownership ?? parseOwnership(`${r.name} ${r.locality} ${r.description_snippet || ""}`);
-      const ownership = detected ?? "jine";
+      const ownership = detected ?? fallbackOwnership(filters.deal_type, filters.property_type);
       const ownership_confidence: "high" | "low" = detected ? "high" : "low";
       const combinedText = `${r.name} ${r.description_snippet || ""}`;
       const anuity = detectAnuity(combinedText, r.price, ownership);

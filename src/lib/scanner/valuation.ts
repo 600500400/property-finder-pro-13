@@ -1,4 +1,4 @@
-import type { Investment, Ownership, PropertyType, Region, RentBasisSource } from "./types";
+import type { DealType, Investment, Ownership, PropertyType, Region, RentBasisSource } from "./types";
 import type { RentBenchmark } from "./rent-benchmark.server";
 import { okresFromLocality, OKRES_BY_SLUG } from "./okresy";
 
@@ -308,8 +308,14 @@ export function parseArea(text: string | null | undefined): number | undefined {
 export function parseOwnership(text: string | undefined | null): Ownership | undefined {
   if (!text) return undefined;
   const t = String(text).toLowerCase();
-  if (/dru[žz]stevn|\bdv\b|p[řr]evod\s+(?:[čc]lensk|[čc]lensk[ée]ho)|[čc]lensk[ýy]\s+pod[íi]l/.test(t)) return "druzstevni";
-  if (/osobn[íi]\s*vlastnictv|\bov\b|do\s+osobn[íi]ho\s+vlastnictv|v\s+osobn[íi]m\s+vlastnictv/.test(t)) return "osobni";
-  if (/st[áa]tn[íi]|obecn[íi]/.test(t)) return "jine";
+  const plain = t.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  if (/dru[žz]stevn|druzstevn|\bdv\b|p[řr]evod\s+(?:[čc]lensk|[čc]lensk[ée]ho)|prevod\s+clensk|[čc]lensk[ýy]\s+pod[íi]l|clensky\s+podil|anuita|nesplacen[áa]\s+anuita/.test(t) || /druzstevn|\bdv\b|prevod\s+clensk|clensky\s+podil|anuita|nesplacena\s+anuita/.test(plain)) return "druzstevni";
+  if (/osobn[íi]\s*vlastnictv|\bov\b|do\s+osobn[íi]ho\s+vlastnictv|v\s+osobn[íi]m\s+vlastnictv|bytov[áa]\s+jednotka|jednotka\s+v\s+osobn/.test(t) || /osobni\s+vlastnictv|\bov\b|do\s+osobniho\s+vlastnictv|v\s+osobnim\s+vlastnictv|bytova\s+jednotka/.test(plain)) return "osobni";
+  if (/st[áa]tn[íi]|obecn[íi]/.test(t) || /statni|obecni/.test(plain)) return "jine";
   return undefined;
+}
+
+export function fallbackOwnership(dealType: DealType, propertyType: PropertyType): Ownership {
+  if (dealType === "prodej" && (propertyType === "byty" || propertyType === "domy")) return "osobni";
+  return "jine";
 }

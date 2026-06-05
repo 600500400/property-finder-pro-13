@@ -33,6 +33,25 @@ function stripTags(s: string): string {
   return s.replace(/<[^>]+>/g, "");
 }
 
+async function fetchDetailText(url: string): Promise<string> {
+  try {
+    const res = await fetch(url, {
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/125.0 Safari/537.36",
+        "Accept": "text/html,application/xhtml+xml",
+        "Accept-Language": "cs-CZ,cs;q=0.9",
+      },
+      signal: AbortSignal.timeout(12000),
+    });
+    if (!res.ok) return "";
+    const html = await res.text();
+    const descM = html.match(/<div class=popisdetail>([\s\S]*?)<\/div>/);
+    return descM ? cleanText(stripTags(descM[1])) : "";
+  } catch {
+    return "";
+  }
+}
+
 export async function fetchBazos(f: ScanFilters): Promise<Listing[]> {
   const url = buildUrl(f);
   const cap = Math.max(1, Math.min(100, f.per_source_limit || 20));
@@ -103,5 +122,14 @@ export async function fetchBazos(f: ScanFilters): Promise<Listing[]> {
       badges: badges.length ? badges : undefined,
     });
   }
-  return out;
+  return Promise.all(out.map(async (listing) => {
+    if (listing.ownership) return listing;
+    const detailText = await fetchDetailText(listing.url);
+    if (!detailText) return listing;
+    return {
+      ...listing,
+      ownership: parseOwnership(`${listing.name} ${detailText}`) ?? listing.ownership,
+      description_snippet: detailText.slice(0, 600),
+    };
+  }));
 }

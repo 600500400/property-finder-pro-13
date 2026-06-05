@@ -41,6 +41,8 @@ export async function fetchHyperinzerce(f: ScanFilters): Promise<Listing[]> {
 
     const titleM = block.match(/class="c-ad-list__item-name"[^>]*>([\s\S]*?)<\/a>/);
     const title = titleM ? cleanText(stripTags(titleM[1])) : "Hyperinzerce inzerát";
+    const kindText = `${title} ${detailUrl}`.toLowerCase();
+    if (/popt[áa]vka|hled[áa]m|hledame|nab[íi]dn[eě]te/.test(kindText)) continue;
 
     const imgM = block.match(/<img class="c-ad-list__item-image"[^>]+src="([^"]+)"/);
     const img = imgM ? imgM[1] : "";
