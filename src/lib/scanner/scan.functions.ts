@@ -59,7 +59,7 @@ const DETAIL_URL_PATTERN: Partial<Record<SourceKey, RegExp>> = {
   bazos: /reality\.bazos\.cz\/inzerat\//i,
   bezrealitky: /bezrealitky\.cz\/nemovitosti-byty-domy\/[^/]+/i,
   annonce: /annonce\.cz\/inzerat\//i,
-  hyperinzerce: /hyperinzerce\.cz\/.+\/.+-\d+\.html/i,
+  hyperinzerce: /hyperinzerce\.cz\/.+\/inzerat\/\d+/i,
   idnes: /reality\.idnes\.cz\/detail\//i,
   realitymix: /realitymix\.cz\/detail\//i,
 };

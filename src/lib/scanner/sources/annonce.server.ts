@@ -21,6 +21,12 @@ function stripTags(s: string): string {
   return s.replace(/<[^>]+>/g, "");
 }
 
+function absoluteAnnonceUrl(u: string): string {
+  if (!u) return "";
+  if (u.startsWith("http")) return u;
+  return `https://www.annonce.cz${u.startsWith("/") ? u : "/" + u}`;
+}
+
 function parseAnnDate(s: string): string | undefined {
   const m = s.match(/(\d{1,2})\.\s*(\d{1,2})\.\s*(\d{4})/);
   if (!m) return undefined;
@@ -52,15 +58,15 @@ export async function fetchAnnonce(f: ScanFilters): Promise<Listing[]> {
     if (out.length >= cap) break;
     const block = m[0];
 
-    const linkM = block.match(/<h2><a href="(https:\/\/www\.annonce\.cz\/inzerat\/[^"]+)"/);
+    const linkM = block.match(/<h2><a href="((?:https:\/\/www\.annonce\.cz)?\/inzerat\/[^"]+)"/);
     if (!linkM) continue;
-    const detailUrl = linkM[1];
+    const detailUrl = absoluteAnnonceUrl(linkM[1]);
 
     const titleM = block.match(/<h2><a [^>]*>([\s\S]*?)<\/a>/);
     const title = titleM ? cleanText(stripTags(titleM[1])) : "Annonce inzerát";
 
     const imgM = block.match(/<a class="thumbnail"[^>]*>\s*<img[^>]+src="([^"]+)"/);
-    const img = imgM ? imgM[1] : "";
+    const img = imgM ? absoluteAnnonceUrl(imgM[1]) : "";
 
     const priceM = block.match(/<strong class="mini-sticker"><span>([\s\S]*?)<\/span>/);
     const priceText = priceM ? cleanText(stripTags(priceM[1])) : "";
