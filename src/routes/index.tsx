@@ -37,6 +37,7 @@ const DEFAULT_FILTERS: ScanFilters = {
 interface ViewOptions {
   dedupe: boolean;
   density: Density;
+  [k: string]: unknown;
 }
 const DEFAULT_VIEW: ViewOptions = { dedupe: false, density: "card" };
 const LAST_FILTERS_KEY = "realityscanner.lastFilters";
