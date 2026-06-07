@@ -7,11 +7,12 @@ import { runScan } from "@/lib/scanner/scan.functions";
 import { sortListings } from "@/lib/scanner/sort";
 import type { Listing, ScanFilters, ScanResult } from "@/lib/scanner/types";
 import { FilterSidebar, MobileScanFooter } from "@/components/FilterSidebar";
-import { ListingCard } from "@/components/ListingCard";
+import { ListingCard, type Density } from "@/components/ListingCard";
 import { ListingCardSkeleton } from "@/components/ListingCardSkeleton";
 import { DiagnosticsBar } from "@/components/DiagnosticsBar";
 import { UserMenu } from "@/components/UserMenu";
-import { Radar } from "lucide-react";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Radar, SlidersHorizontal, LayoutGrid, Rows3, List, Zap, Loader2 } from "lucide-react";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -33,9 +34,26 @@ const DEFAULT_FILTERS: ScanFilters = {
   per_source_limit: 20,
 };
 
-const DEFAULT_VIEW = { dedupe: false };
+interface ViewOptions {
+  dedupe: boolean;
+  density: Density;
+  [k: string]: unknown;
+}
+const DEFAULT_VIEW: ViewOptions = { dedupe: false, density: "card" };
 const LAST_FILTERS_KEY = "realityscanner.lastFilters";
 const LAST_VIEW_KEY = "realityscanner.lastView";
+
+const DEAL_LABEL: Record<string, string> = { prodej: "Prodej", pronajem: "Pronájem" };
+const TYPE_LABEL: Record<string, string> = {
+  byty: "Byty", domy: "Domy", pozemky: "Pozemky", komercni: "Komerční", ostatni: "Garáže",
+};
+const REGION_LABEL: Record<string, string> = {
+  "": "Celá ČR", praha: "Praha", stredocesky: "Stř. kraj", jihocesky: "Jihočeský",
+  jihomoravsky: "Jihomoravský", karlovarsky: "Karlovarský", kralovehradecky: "Královéhrad.",
+  liberecky: "Liberecký", moravskoslezsky: "Mor.slezský", olomoucky: "Olomoucký",
+  pardubicky: "Pardubický", plzensky: "Plzeňský", ustecky: "Ústecký",
+  vysocina: "Vysočina", zlinsky: "Zlínský",
+};
 
 function toCsv(results: Listing[]): string {
   const headers = [
@@ -54,11 +72,17 @@ function toCsv(results: Listing[]): string {
   return "\ufeff" + [headers.join(","), ...rows].join("\n");
 }
 
+function gridClass(density: Density): string {
+  if (density === "list") return "flex flex-col";
+  if (density === "compact") return "grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6";
+  return "grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5";
+}
+
 function Index() {
   const [filters, setFilters] = useState<ScanFilters>(DEFAULT_FILTERS);
-  const [view, setView] = useState(DEFAULT_VIEW);
+  const [view, setView] = useState<ViewOptions>(DEFAULT_VIEW);
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
-  // Load persisted filters/view on mount
   useEffect(() => {
     try {
       const f = localStorage.getItem(LAST_FILTERS_KEY);
@@ -67,7 +91,6 @@ function Index() {
       if (v) setView({ ...DEFAULT_VIEW, ...JSON.parse(v) });
     } catch { /* ignore */ }
   }, []);
-  // Persist
   useEffect(() => {
     try { localStorage.setItem(LAST_FILTERS_KEY, JSON.stringify(filters)); } catch { /* ignore */ }
   }, [filters]);
@@ -78,6 +101,10 @@ function Index() {
   const scanFn = useServerFn(runScan);
   const mutation = useMutation({
     mutationFn: (f: ScanFilters) => scanFn({ data: f }),
+    onSuccess: () => {
+      // Po skenu na mobilu automaticky zavři filtry, aby uživatel viděl výsledky.
+      setMobileFiltersOpen(false);
+    },
   });
 
   const data: ScanResult | undefined = mutation.data;
@@ -96,7 +123,6 @@ function Index() {
     }
     return sortListings(arr, filters.sort_by);
   }, [data?.results, view.dedupe, filters.sort_by]);
-
 
   const groupedBySource = useMemo(() => {
     if (filters.sort_by !== "source") return null;
@@ -121,6 +147,14 @@ function Index() {
   };
 
   const skeletonCount = Math.min(12, filters.sources.length * 4 || 8);
+  const handleScan = () => mutation.mutate(filters);
+
+  const filterChips = [
+    DEAL_LABEL[filters.deal_type],
+    TYPE_LABEL[filters.property_type],
+    REGION_LABEL[filters.region] || "Celá ČR",
+    `${filters.sources.length} zdrojů`,
+  ];
 
   return (
     <div className="flex h-screen flex-col bg-background text-foreground">
@@ -130,7 +164,7 @@ function Index() {
           Reality<span className="text-primary">Scanner</span>
         </div>
         {data && (
-          <span className="font-mono text-[11px] text-muted-foreground">
+          <span className="hidden font-mono text-[11px] text-muted-foreground sm:inline">
             · {new Date(data.ts).toLocaleTimeString("cs-CZ")}
           </span>
         )}
@@ -144,39 +178,96 @@ function Index() {
         </div>
       </header>
 
-      <div className="grid flex-1 overflow-hidden md:grid-cols-[300px_1fr]">
-        <FilterSidebar
-          filters={filters}
-          setFilters={setFilters}
-          view={view}
-          setView={setView}
-          onScan={() => mutation.mutate(filters)}
-          onExport={handleExport}
-          scanning={mutation.isPending}
-          canExport={listings.length > 0}
-        />
+      {/* Mobile sticky chip bar — filtry + sken */}
+      <div className="sticky top-[57px] z-20 flex items-center gap-2 border-b border-border bg-background/85 px-3 py-2 backdrop-blur md:hidden">
+        <Sheet open={mobileFiltersOpen} onOpenChange={setMobileFiltersOpen}>
+          <SheetTrigger asChild>
+            <button
+              type="button"
+              className="flex items-center gap-1.5 rounded-full border border-border bg-[var(--color-surface-2)] px-3 py-1.5 text-xs font-semibold text-foreground active:scale-95"
+            >
+              <SlidersHorizontal className="h-3.5 w-3.5 text-primary" />
+              Filtry
+            </button>
+          </SheetTrigger>
+          <SheetContent side="left" className="w-[85vw] max-w-sm overflow-y-auto p-0">
+            <SheetHeader className="border-b border-border p-4">
+              <SheetTitle>Filtry</SheetTitle>
+            </SheetHeader>
+            <FilterSidebar
+              filters={filters}
+              setFilters={setFilters}
+              view={view}
+              setView={(v) => setView({ ...view, ...v, density: (v.density as Density) ?? view.density })}
+              onScan={handleScan}
+              onExport={handleExport}
+              scanning={mutation.isPending}
+              canExport={listings.length > 0}
+            />
+          </SheetContent>
+        </Sheet>
 
-        <main className="overflow-y-auto p-5 pb-24 md:pb-5">
-          <div className="mb-3 flex items-center gap-3">
+        <div className="flex flex-1 items-center gap-1 overflow-x-auto text-[11px] text-muted-foreground">
+          {filterChips.map((c, i) => (
+            <span key={i} className="whitespace-nowrap rounded-full bg-muted/50 px-2 py-0.5">
+              {c}
+            </span>
+          ))}
+        </div>
+
+        <button
+          onClick={handleScan}
+          disabled={mutation.isPending || filters.sources.length === 0}
+          className="flex shrink-0 items-center gap-1 rounded-full bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground disabled:opacity-50"
+        >
+          {mutation.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Zap className="h-3.5 w-3.5" />}
+          Skenovat
+        </button>
+      </div>
+
+      <div className="grid flex-1 overflow-hidden md:grid-cols-[300px_1fr]">
+        {/* Desktop sidebar */}
+        <div className="hidden md:block">
+          <FilterSidebar
+            filters={filters}
+            setFilters={setFilters}
+            view={view}
+            setView={(v) => setView({ ...view, ...v, density: (v.density as Density) ?? view.density })}
+            onScan={handleScan}
+            onExport={handleExport}
+            scanning={mutation.isPending}
+            canExport={listings.length > 0}
+          />
+        </div>
+
+        <main className="overflow-y-auto p-3 pb-24 md:p-5 md:pb-5">
+          <div className="mb-3 flex items-center justify-between gap-3">
             <div className="text-sm text-muted-foreground">
               {mutation.isPending ? (
                 "Skenuji..."
               ) : data ? (
-                <><strong className="text-foreground">{listings.length}</strong> inzerátů zobrazeno
+                <><strong className="text-foreground">{listings.length}</strong> inz.
                   {listings.length !== data.count && (
-                    <span className="ml-1 text-xs">(z {data.count} po filtrech)</span>
+                    <span className="ml-1 text-xs">(z {data.count})</span>
                   )}
                 </>
               ) : (
                 "Připraven ke skenování"
               )}
             </div>
+
+            {/* Density toggle */}
+            <div className="flex items-center gap-0.5 rounded-lg border border-border bg-[var(--color-surface-2)] p-0.5">
+              <DensityBtn current={view.density} value="card" onClick={(v) => setView({ ...view, density: v })} icon={<LayoutGrid className="h-3.5 w-3.5" />} title="Karty" />
+              <DensityBtn current={view.density} value="compact" onClick={(v) => setView({ ...view, density: v })} icon={<Rows3 className="h-3.5 w-3.5" />} title="Kompakt" />
+              <DensityBtn current={view.density} value="list" onClick={(v) => setView({ ...view, density: v })} icon={<List className="h-3.5 w-3.5" />} title="Seznam" />
+            </div>
           </div>
 
           {data && <DiagnosticsBar items={data.diagnostics} meta={data.meta} />}
 
           {mutation.isPending && (
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+            <div className={gridClass(view.density)}>
               {Array.from({ length: skeletonCount }).map((_, i) => (
                 <ListingCardSkeleton key={i} />
               ))}
@@ -197,8 +288,8 @@ function Index() {
               <h3 className="text-lg font-semibold">Reality Scanner</h3>
               <p className="mt-1 text-sm text-muted-foreground">
                 {filters.sources.length === 0
-                  ? "Vyber vlevo alespoň jeden realitní server a klikni na „Skenovat nemovitosti”."
-                  : "Nastav filtry vlevo a klikni na „Skenovat nemovitosti”."}
+                  ? "Vyber alespoň jeden realitní server a klikni na „Skenovat”."
+                  : "Nastav filtry a klikni na „Skenovat”."}
               </p>
             </div>
           )}
@@ -223,8 +314,8 @@ function Index() {
                         {items.length} inz.{diag ? ` · ${diag.ms}ms` : ""}
                       </span>
                     </div>
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
-                      {items.map((l, i) => <ListingCard key={l.url + i} listing={l} />)}
+                    <div className={gridClass(view.density)}>
+                      {items.map((l, i) => <ListingCard key={l.url + i} listing={l} density={view.density} />)}
                     </div>
                   </section>
                 );
@@ -232,21 +323,44 @@ function Index() {
             </div>
           ) : (
             listings.length > 0 && (
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
-                {listings.map((l, i) => <ListingCard key={l.url + i} listing={l} />)}
+              <div className={gridClass(view.density)}>
+                {listings.map((l, i) => <ListingCard key={l.url + i} listing={l} density={view.density} />)}
               </div>
             )
           )}
         </main>
       </div>
 
-      <MobileScanFooter
-        onScan={() => mutation.mutate(filters)}
-        onExport={handleExport}
-        scanning={mutation.isPending}
-        canExport={listings.length > 0}
-        sourcesCount={filters.sources.length}
-      />
+      {/* Mobile bottom CSV-export bar — jen když jsou data */}
+      {listings.length > 0 && (
+        <MobileScanFooter
+          onScan={handleScan}
+          onExport={handleExport}
+          scanning={mutation.isPending}
+          canExport={listings.length > 0}
+          sourcesCount={filters.sources.length}
+        />
+      )}
     </div>
+  );
+}
+
+function DensityBtn({
+  current, value, onClick, icon, title,
+}: {
+  current: Density; value: Density; onClick: (v: Density) => void; icon: React.ReactNode; title: string;
+}) {
+  const active = current === value;
+  return (
+    <button
+      type="button"
+      onClick={() => onClick(value)}
+      title={title}
+      aria-label={title}
+      aria-pressed={active}
+      className={`rounded-md p-1.5 transition ${active ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+    >
+      {icon}
+    </button>
   );
 }

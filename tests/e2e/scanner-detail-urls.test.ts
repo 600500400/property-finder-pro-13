@@ -17,10 +17,11 @@ import { fetchBezrealitky } from "../../src/lib/scanner/sources/bezrealitky.serv
 import { fetchAnnonce } from "../../src/lib/scanner/sources/annonce.server";
 import { fetchHyperinzerce } from "../../src/lib/scanner/sources/hyperinzerce.server";
 import { fetchIdnes, fetchRealityMix } from "../../src/lib/scanner/sources/firecrawl.server";
+import { resolveOwnership } from "../../src/lib/scanner/ownership";
 
 // Stejný whitelist jako v scan.functions.ts – kdyby se tam změnil, sjednoťte.
 const DETAIL_URL_PATTERN: Record<SourceKey, RegExp> = {
-  sreality: /sreality\.cz\/(detail|hledani)\/.+\/\d+/i,
+  sreality: /sreality\.cz\/(?:detail\/.+\/\d+|hledani\/[^?]+\?id=\d+)/i,
   bazos: /reality\.bazos\.cz\/inzerat\//i,
   bezrealitky: /bezrealitky\.cz\/nemovitosti-byty-domy\/[^/]+/i,
   annonce: /annonce\.cz\/inzerat\//i,
@@ -101,3 +102,33 @@ describe("Scanner: detail URL + image pro každý zdroj", () => {
     );
   }
 });
+
+describe("Scanner: detekce vlastnictví (OV/DV/JINÉ)", () => {
+  for (const src of SOURCES) {
+    const itFn =
+      src.requiresFirecrawl && !process.env.FIRECRAWL_API_KEY ? it.skip : it;
+
+    itFn(
+      `${src.label}: štítek vlastnictví je vždy ∈ {osobni, druzstevni, jine}, ne >50 % "jine/low"`,
+      async () => {
+        const listings = await src.fetch({ ...baseFilters, sources: [src.key] });
+        expect(listings.length, `${src.label} nevrátil inzeráty`).toBeGreaterThan(0);
+
+        let lowJine = 0;
+        for (const l of listings) {
+          const res = resolveOwnership(l, baseFilters);
+          expect(["osobni", "druzstevni", "jine"]).toContain(res.ownership);
+          expect(["high", "low"]).toContain(res.ownership_confidence);
+          if (res.ownership === "jine" && res.ownership_confidence === "low") lowJine++;
+        }
+        const ratio = lowJine / listings.length;
+        expect(
+          ratio,
+          `${src.label}: ${lowJine}/${listings.length} inzerátů končí jako JINÉ/low — scraper pravděpodobně nevrací description_snippet nebo ownership.`,
+        ).toBeLessThanOrEqual(0.5);
+      },
+      45_000,
+    );
+  }
+});
+

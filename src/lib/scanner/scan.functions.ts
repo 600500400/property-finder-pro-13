@@ -1,8 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import type { Diagnostic, Listing, PublishedDateSource, ScanFilters, ScanResult, SourceKey } from "./types";
-import { calcYield, fallbackOwnership, parseOwnership } from "./valuation";
-import { detectAnuity } from "./anuity";
+import { calcYield } from "./valuation";
+import { resolveOwnership } from "./ownership";
 import { applySanity } from "./sanity";
 import { getBenchmark } from "./rent-benchmark.server";
 import { sortListings } from "./sort";
@@ -55,7 +55,7 @@ const HTTP_FETCHERS: Partial<Record<SourceKey, (f: ScanFilters) => Promise<Listi
 
 // Whitelist regexů pro „skutečné" URL detailu (ne kategorie / seznam).
 const DETAIL_URL_PATTERN: Partial<Record<SourceKey, RegExp>> = {
-  sreality: /sreality\.cz\/(detail|hledani)\/.+\/\d+/i,
+  sreality: /sreality\.cz\/(?:detail\/.+\/\d+|hledani\/[^?]+\?id=\d+)/i,
   bazos: /reality\.bazos\.cz\/inzerat\//i,
   bezrealitky: /bezrealitky\.cz\/nemovitosti-byty-domy\/[^/]+/i,
   annonce: /annonce\.cz\/inzerat\//i,
@@ -172,17 +172,13 @@ export const runScan = createServerFn({ method: "POST" })
     const pmax = filters.price_max ?? 999_999_999;
     all = all
       .map(r => {
-        const detected = r.ownership ?? parseOwnership(`${r.name} ${r.locality} ${r.description_snippet || ""}`);
-        const ownership = detected ?? fallbackOwnership(filters.deal_type, filters.property_type);
-        const ownership_confidence: "high" | "low" = detected ? "high" : "low";
-        const anuity = detectAnuity(`${r.name} ${r.description_snippet || ""}`, r.price, ownership);
-        const priceForYield = anuity.effective_price ?? r.price;
+        const res = resolveOwnership(r, filters);
         return {
           ...r,
-          ownership,
-          ownership_confidence,
-          anuity: anuity.has_anuity ? anuity : undefined,
-          invest: calcYield(priceForYield, filters.region, filters.property_type, r.area_m2, r.name, r.locality, ownership, bench),
+          ownership: res.ownership,
+          ownership_confidence: res.ownership_confidence,
+          anuity: res.anuity,
+          invest: calcYield(res.priceForYield, filters.region, filters.property_type, r.area_m2, r.name, r.locality, res.ownership, bench),
         };
       })
       .filter(r => r.price === 0 || (r.price >= pmin && r.price <= pmax));
