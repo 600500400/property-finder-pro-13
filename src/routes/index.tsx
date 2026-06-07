@@ -198,7 +198,7 @@ function Index() {
               filters={filters}
               setFilters={setFilters}
               view={view}
-              setView={setView}
+              setView={(v) => setView({ ...view, ...v, density: (v.density as Density) ?? view.density })}
               onScan={handleScan}
               onExport={handleExport}
               scanning={mutation.isPending}
@@ -232,7 +232,7 @@ function Index() {
             filters={filters}
             setFilters={setFilters}
             view={view}
-            setView={setView}
+            setView={(v) => setView({ ...view, ...v, density: (v.density as Density) ?? view.density })}
             onScan={handleScan}
             onExport={handleExport}
             scanning={mutation.isPending}
