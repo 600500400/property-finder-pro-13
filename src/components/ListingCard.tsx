@@ -2,6 +2,8 @@ import type { Listing } from "@/lib/scanner/types";
 import { MapPin, ExternalLink, TrendingUp, TrendingDown, Coins, Clock } from "lucide-react";
 import { AIAnalysisButton } from "./AIAnalysisDialog";
 
+export type Density = "card" | "compact" | "list";
+
 function yieldClass(stars: number | undefined): string {
   switch (stars) {
     case 5: return "text-[var(--color-success)]";
@@ -75,7 +77,13 @@ function fmtMil(n: number): string {
   return n.toLocaleString("cs-CZ");
 }
 
-export function ListingCard({ listing }: { listing: Listing }) {
+export function ListingCard({ listing, density = "card" }: { listing: Listing; density?: Density }) {
+  if (density === "list") return <ListingRow listing={listing} />;
+  if (density === "compact") return <ListingCompact listing={listing} />;
+  return <ListingFull listing={listing} />;
+}
+
+function ListingFull({ listing }: { listing: Listing }) {
   const inv = listing.invest;
   const fresh = freshnessBadge(listing.published_at);
   const dateText = fmtDate(listing.published_at);
@@ -96,7 +104,6 @@ export function ListingCard({ listing }: { listing: Listing }) {
       className="group flex flex-col overflow-hidden rounded-xl border border-border bg-card transition-all hover:-translate-y-0.5 hover:border-primary/50 hover:shadow-lg hover:shadow-primary/5"
     >
       <div className="flex flex-1 flex-col gap-2 p-3">
-        {/* Header: source + badges (ownership, anuita, fresh) */}
         <div className="flex items-center justify-between gap-2">
           <span className="rounded-md bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-primary">
             {listing.source}
@@ -119,10 +126,8 @@ export function ListingCard({ listing }: { listing: Listing }) {
           </div>
         </div>
 
-        {/* Title */}
         <h3 className="line-clamp-2 text-sm font-semibold leading-snug text-foreground">{listing.name}</h3>
 
-        {/* Ownership flag — výrazný štítek */}
         <div>
           <span
             title={own.full}
@@ -132,7 +137,6 @@ export function ListingCard({ listing }: { listing: Listing }) {
           </span>
         </div>
 
-        {/* Locality */}
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           {listing.locality && (
             <span className="flex min-w-0 items-center gap-1">
@@ -142,8 +146,6 @@ export function ListingCard({ listing }: { listing: Listing }) {
           )}
         </div>
 
-
-        {/* Price + area + Kč/m² */}
         <div className="flex items-end justify-between gap-2 pt-1">
           <div className="flex flex-col">
             <span className="font-mono text-lg font-bold text-primary leading-tight">{listing.price_text}</span>
@@ -188,7 +190,6 @@ export function ListingCard({ listing }: { listing: Listing }) {
           </div>
         )}
       </div>
-
 
       {inv && (
         <div className={`grid grid-cols-2 gap-2 border-t border-border p-3 ${verdictBg(inv.stars)}`}>
@@ -251,7 +252,6 @@ export function ListingCard({ listing }: { listing: Listing }) {
             <div className="mt-2 flex justify-end">
               <AIAnalysisButton listing={listing} />
             </div>
-
           </div>
         </div>
       )}
@@ -259,3 +259,117 @@ export function ListingCard({ listing }: { listing: Listing }) {
   );
 }
 
+function ListingCompact({ listing }: { listing: Listing }) {
+  const inv = listing.invest;
+  const ownershipKey = listing.ownership ?? "jine";
+  const own = OWNERSHIP_LABEL[ownershipKey] ?? OWNERSHIP_LABEL.jine;
+  const fresh = freshnessBadge(listing.published_at);
+  const isFallbackDate = listing.published_at_source === "fallback_now";
+  return (
+    <a
+      href={listing.url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="group flex flex-col gap-1.5 rounded-lg border border-border bg-card p-2.5 transition hover:border-primary/50"
+    >
+      <div className="flex items-center justify-between gap-1">
+        <span className="rounded-sm bg-primary/10 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-primary">
+          {listing.source}
+        </span>
+        {listing.anuity?.has_anuity && (
+          <span className="rounded-sm border border-red-500/50 bg-red-500/15 px-1 py-0.5 text-[8px] font-bold text-red-300">
+            +ANUITA
+          </span>
+        )}
+        {fresh && !isFallbackDate && (
+          <span className={`rounded-sm px-1 py-0.5 text-[8px] font-bold ${badgeClass(fresh)}`}>{fresh}</span>
+        )}
+      </div>
+      <h3 className="line-clamp-2 text-xs font-semibold leading-snug text-foreground">{listing.name}</h3>
+      <span
+        title={own.full}
+        className={`inline-flex w-fit items-center rounded-sm px-1.5 py-0.5 text-[10px] font-bold ${own.cls}`}
+      >
+        {own.short}
+      </span>
+      {listing.locality && (
+        <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+          <MapPin className="h-2.5 w-2.5 shrink-0" />
+          <span className="truncate">{listing.locality}</span>
+        </div>
+      )}
+      <div className="mt-auto flex items-end justify-between gap-1 pt-1">
+        <span className="font-mono text-sm font-bold leading-tight text-primary">{listing.price_text}</span>
+        {listing.area && (
+          <span className="font-mono text-[10px] text-muted-foreground">{listing.area}</span>
+        )}
+      </div>
+      {inv && (
+        <div className={`flex items-center justify-between rounded-sm border px-1.5 py-1 text-[10px] ${verdictBg(inv.stars)}`}>
+          <span className={`font-mono font-semibold ${yieldClass(inv.stars)}`}>{inv.net_yield}% čistý</span>
+          <span className={`font-mono tracking-wider ${yieldClass(inv.stars)}`}>
+            {"★".repeat(inv.stars)}
+          </span>
+        </div>
+      )}
+    </a>
+  );
+}
+
+function ListingRow({ listing }: { listing: Listing }) {
+  const inv = listing.invest;
+  const ownershipKey = listing.ownership ?? "jine";
+  const own = OWNERSHIP_LABEL[ownershipKey] ?? OWNERSHIP_LABEL.jine;
+  return (
+    <a
+      href={listing.url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="group flex items-center gap-3 border-b border-border bg-card px-3 py-2 transition hover:bg-muted/30"
+    >
+      {listing.img ? (
+        <img
+          src={listing.img}
+          alt=""
+          loading="lazy"
+          className="h-14 w-14 shrink-0 rounded-md object-cover"
+        />
+      ) : (
+        <div className="h-14 w-14 shrink-0 rounded-md bg-muted" />
+      )}
+      <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+        <div className="flex items-center gap-1.5">
+          <span className="rounded-sm bg-primary/10 px-1.5 py-0 text-[9px] font-semibold uppercase tracking-wider text-primary">
+            {listing.source}
+          </span>
+          <span
+            title={own.full}
+            className={`rounded-sm px-1.5 py-0 text-[10px] font-bold ${own.cls}`}
+          >
+            {own.short}
+          </span>
+          {listing.anuity?.has_anuity && (
+            <span className="rounded-sm border border-red-500/50 bg-red-500/15 px-1 py-0 text-[9px] font-bold text-red-300">
+              +ANUITA
+            </span>
+          )}
+        </div>
+        <h3 className="truncate text-xs font-semibold text-foreground">{listing.name}</h3>
+        {listing.locality && (
+          <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+            <MapPin className="h-2.5 w-2.5 shrink-0" />
+            <span className="truncate">{listing.locality}</span>
+          </div>
+        )}
+      </div>
+      <div className="flex shrink-0 flex-col items-end gap-0.5">
+        <span className="font-mono text-sm font-bold text-primary">{listing.price_text}</span>
+        {inv && (
+          <span className={`font-mono text-[10px] font-semibold ${yieldClass(inv.stars)}`}>
+            {inv.net_yield}% · {"★".repeat(inv.stars)}
+          </span>
+        )}
+      </div>
+    </a>
+  );
+}
