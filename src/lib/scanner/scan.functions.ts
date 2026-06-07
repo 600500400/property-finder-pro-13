@@ -61,7 +61,7 @@ const DETAIL_URL_PATTERN: Partial<Record<SourceKey, RegExp>> = {
   annonce: /annonce\.cz\/inzerat\//i,
   hyperinzerce: /hyperinzerce\.cz\/.+\/inzerat\/\d+/i,
   idnes: /reality\.idnes\.cz\/detail\//i,
-  realitymix: /realitymix\.cz\/(?:detail\/|reality\/[^/]+\/(?:prodej|pronajem)\/[^/]+\/[^/]+)/i,
+  realitymix: /realitymix\.cz\/detail\//i,
 };
 
 async function timed(key: SourceKey, fn: () => Promise<Listing[]>): Promise<{
