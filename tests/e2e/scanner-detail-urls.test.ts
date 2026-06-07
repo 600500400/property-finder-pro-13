@@ -21,13 +21,13 @@ import { resolveOwnership } from "../../src/lib/scanner/ownership";
 
 // Stejný whitelist jako v scan.functions.ts – kdyby se tam změnil, sjednoťte.
 const DETAIL_URL_PATTERN: Record<SourceKey, RegExp> = {
-  sreality: /sreality\.cz\/(detail|hledani)\/.+\/\d+/i,
+  sreality: /sreality\.cz\/(?:detail\/.+\/\d+|hledani\/[^?]+\?id=\d+)/i,
   bazos: /reality\.bazos\.cz\/inzerat\//i,
   bezrealitky: /bezrealitky\.cz\/nemovitosti-byty-domy\/[^/]+/i,
   annonce: /annonce\.cz\/inzerat\//i,
   hyperinzerce: /hyperinzerce\.cz\/.+\/inzerat\/\d+/i,
   idnes: /reality\.idnes\.cz\/detail\//i,
-  realitymix: /realitymix\.cz\/detail\//i,
+  realitymix: /realitymix\.cz\/(?:detail\/|reality\/[^/]+\/(?:prodej|pronajem)\/[^/]+\/[^/]+)/i,
 };
 
 const baseFilters: ScanFilters = {

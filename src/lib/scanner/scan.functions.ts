@@ -55,13 +55,13 @@ const HTTP_FETCHERS: Partial<Record<SourceKey, (f: ScanFilters) => Promise<Listi
 
 // Whitelist regexů pro „skutečné" URL detailu (ne kategorie / seznam).
 const DETAIL_URL_PATTERN: Partial<Record<SourceKey, RegExp>> = {
-  sreality: /sreality\.cz\/(detail|hledani)\/.+\/\d+/i,
+  sreality: /sreality\.cz\/(?:detail\/.+\/\d+|hledani\/[^?]+\?id=\d+)/i,
   bazos: /reality\.bazos\.cz\/inzerat\//i,
   bezrealitky: /bezrealitky\.cz\/nemovitosti-byty-domy\/[^/]+/i,
   annonce: /annonce\.cz\/inzerat\//i,
   hyperinzerce: /hyperinzerce\.cz\/.+\/inzerat\/\d+/i,
   idnes: /reality\.idnes\.cz\/detail\//i,
-  realitymix: /realitymix\.cz\/detail\//i,
+  realitymix: /realitymix\.cz\/(?:detail\/|reality\/[^/]+\/(?:prodej|pronajem)\/[^/]+\/[^/]+)/i,
 };
 
 async function timed(key: SourceKey, fn: () => Promise<Listing[]>): Promise<{
