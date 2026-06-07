@@ -36,6 +36,8 @@ function badgeClass(type: "api" | "html" | "browser") {
 
 interface ViewOptions {
   dedupe: boolean;
+  // další klíče (např. density) může vlastník view držet také, FilterSidebar je nečte.
+  [k: string]: unknown;
 }
 
 
