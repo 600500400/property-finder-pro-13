@@ -110,7 +110,7 @@ export async function runSourceScrape(
         url: l.url,
         image_url: l.img || null,
         description_snippet: l.description_snippet || null,
-        raw_data: l as unknown as Record<string, unknown>,
+        raw_data: JSON.parse(JSON.stringify(l)),
         last_seen_at: now,
         is_active: true,
       };
