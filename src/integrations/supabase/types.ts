@@ -38,6 +38,75 @@ export type Database = {
         }
         Relationships: []
       }
+      listings: {
+        Row: {
+          area_m2: number | null
+          city: string | null
+          deal_type: string | null
+          description_snippet: string | null
+          external_id: string
+          first_seen_at: string
+          id: string
+          image_url: string | null
+          is_active: boolean
+          kraj: string | null
+          last_seen_at: string
+          ownership: string | null
+          ownership_confidence: string | null
+          price: number | null
+          price_per_m2: number | null
+          property_type: string | null
+          raw_data: Json
+          source: string
+          title: string | null
+          url: string
+        }
+        Insert: {
+          area_m2?: number | null
+          city?: string | null
+          deal_type?: string | null
+          description_snippet?: string | null
+          external_id: string
+          first_seen_at?: string
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          kraj?: string | null
+          last_seen_at?: string
+          ownership?: string | null
+          ownership_confidence?: string | null
+          price?: number | null
+          price_per_m2?: number | null
+          property_type?: string | null
+          raw_data?: Json
+          source: string
+          title?: string | null
+          url: string
+        }
+        Update: {
+          area_m2?: number | null
+          city?: string | null
+          deal_type?: string | null
+          description_snippet?: string | null
+          external_id?: string
+          first_seen_at?: string
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          kraj?: string | null
+          last_seen_at?: string
+          ownership?: string | null
+          ownership_confidence?: string | null
+          price?: number | null
+          price_per_m2?: number | null
+          property_type?: string | null
+          raw_data?: Json
+          source?: string
+          title?: string | null
+          url?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -170,6 +239,54 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      scrape_runs: {
+        Row: {
+          deal_type: string | null
+          duration_ms: number | null
+          error_message: string | null
+          finished_at: string | null
+          id: string
+          items_deactivated: number
+          items_found: number
+          items_new: number
+          items_updated: number
+          property_type: string | null
+          source: string
+          started_at: string
+          status: string
+        }
+        Insert: {
+          deal_type?: string | null
+          duration_ms?: number | null
+          error_message?: string | null
+          finished_at?: string | null
+          id?: string
+          items_deactivated?: number
+          items_found?: number
+          items_new?: number
+          items_updated?: number
+          property_type?: string | null
+          source: string
+          started_at?: string
+          status?: string
+        }
+        Update: {
+          deal_type?: string | null
+          duration_ms?: number | null
+          error_message?: string | null
+          finished_at?: string | null
+          id?: string
+          items_deactivated?: number
+          items_found?: number
+          items_new?: number
+          items_updated?: number
+          property_type?: string | null
+          source?: string
+          started_at?: string
+          status?: string
+        }
+        Relationships: []
       }
     }
     Views: {
