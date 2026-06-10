@@ -14,6 +14,13 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedSavedRouteImport } from './routes/_authenticated/saved'
 import { Route as ApiPublicHooksRunSchedulesRouteImport } from './routes/api/public/hooks/run-schedules'
+import { Route as ApiPublicCronScrapeSrealityRouteImport } from './routes/api/public/cron/scrape-sreality'
+import { Route as ApiPublicCronScrapeRealitymixRouteImport } from './routes/api/public/cron/scrape-realitymix'
+import { Route as ApiPublicCronScrapeIdnesRouteImport } from './routes/api/public/cron/scrape-idnes'
+import { Route as ApiPublicCronScrapeHyperinzerceRouteImport } from './routes/api/public/cron/scrape-hyperinzerce'
+import { Route as ApiPublicCronScrapeBezrealitkyRouteImport } from './routes/api/public/cron/scrape-bezrealitky'
+import { Route as ApiPublicCronScrapeBazosRouteImport } from './routes/api/public/cron/scrape-bazos'
+import { Route as ApiPublicCronScrapeAnnonceRouteImport } from './routes/api/public/cron/scrape-annonce'
 
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
@@ -40,17 +47,73 @@ const ApiPublicHooksRunSchedulesRoute =
     path: '/api/public/hooks/run-schedules',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicCronScrapeSrealityRoute =
+  ApiPublicCronScrapeSrealityRouteImport.update({
+    id: '/api/public/cron/scrape-sreality',
+    path: '/api/public/cron/scrape-sreality',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicCronScrapeRealitymixRoute =
+  ApiPublicCronScrapeRealitymixRouteImport.update({
+    id: '/api/public/cron/scrape-realitymix',
+    path: '/api/public/cron/scrape-realitymix',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicCronScrapeIdnesRoute =
+  ApiPublicCronScrapeIdnesRouteImport.update({
+    id: '/api/public/cron/scrape-idnes',
+    path: '/api/public/cron/scrape-idnes',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicCronScrapeHyperinzerceRoute =
+  ApiPublicCronScrapeHyperinzerceRouteImport.update({
+    id: '/api/public/cron/scrape-hyperinzerce',
+    path: '/api/public/cron/scrape-hyperinzerce',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicCronScrapeBezrealitkyRoute =
+  ApiPublicCronScrapeBezrealitkyRouteImport.update({
+    id: '/api/public/cron/scrape-bezrealitky',
+    path: '/api/public/cron/scrape-bezrealitky',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicCronScrapeBazosRoute =
+  ApiPublicCronScrapeBazosRouteImport.update({
+    id: '/api/public/cron/scrape-bazos',
+    path: '/api/public/cron/scrape-bazos',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicCronScrapeAnnonceRoute =
+  ApiPublicCronScrapeAnnonceRouteImport.update({
+    id: '/api/public/cron/scrape-annonce',
+    path: '/api/public/cron/scrape-annonce',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/saved': typeof AuthenticatedSavedRoute
+  '/api/public/cron/scrape-annonce': typeof ApiPublicCronScrapeAnnonceRoute
+  '/api/public/cron/scrape-bazos': typeof ApiPublicCronScrapeBazosRoute
+  '/api/public/cron/scrape-bezrealitky': typeof ApiPublicCronScrapeBezrealitkyRoute
+  '/api/public/cron/scrape-hyperinzerce': typeof ApiPublicCronScrapeHyperinzerceRoute
+  '/api/public/cron/scrape-idnes': typeof ApiPublicCronScrapeIdnesRoute
+  '/api/public/cron/scrape-realitymix': typeof ApiPublicCronScrapeRealitymixRoute
+  '/api/public/cron/scrape-sreality': typeof ApiPublicCronScrapeSrealityRoute
   '/api/public/hooks/run-schedules': typeof ApiPublicHooksRunSchedulesRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/saved': typeof AuthenticatedSavedRoute
+  '/api/public/cron/scrape-annonce': typeof ApiPublicCronScrapeAnnonceRoute
+  '/api/public/cron/scrape-bazos': typeof ApiPublicCronScrapeBazosRoute
+  '/api/public/cron/scrape-bezrealitky': typeof ApiPublicCronScrapeBezrealitkyRoute
+  '/api/public/cron/scrape-hyperinzerce': typeof ApiPublicCronScrapeHyperinzerceRoute
+  '/api/public/cron/scrape-idnes': typeof ApiPublicCronScrapeIdnesRoute
+  '/api/public/cron/scrape-realitymix': typeof ApiPublicCronScrapeRealitymixRoute
+  '/api/public/cron/scrape-sreality': typeof ApiPublicCronScrapeSrealityRoute
   '/api/public/hooks/run-schedules': typeof ApiPublicHooksRunSchedulesRoute
 }
 export interface FileRoutesById {
@@ -59,19 +122,55 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/_authenticated/saved': typeof AuthenticatedSavedRoute
+  '/api/public/cron/scrape-annonce': typeof ApiPublicCronScrapeAnnonceRoute
+  '/api/public/cron/scrape-bazos': typeof ApiPublicCronScrapeBazosRoute
+  '/api/public/cron/scrape-bezrealitky': typeof ApiPublicCronScrapeBezrealitkyRoute
+  '/api/public/cron/scrape-hyperinzerce': typeof ApiPublicCronScrapeHyperinzerceRoute
+  '/api/public/cron/scrape-idnes': typeof ApiPublicCronScrapeIdnesRoute
+  '/api/public/cron/scrape-realitymix': typeof ApiPublicCronScrapeRealitymixRoute
+  '/api/public/cron/scrape-sreality': typeof ApiPublicCronScrapeSrealityRoute
   '/api/public/hooks/run-schedules': typeof ApiPublicHooksRunSchedulesRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/saved' | '/api/public/hooks/run-schedules'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/saved'
+    | '/api/public/cron/scrape-annonce'
+    | '/api/public/cron/scrape-bazos'
+    | '/api/public/cron/scrape-bezrealitky'
+    | '/api/public/cron/scrape-hyperinzerce'
+    | '/api/public/cron/scrape-idnes'
+    | '/api/public/cron/scrape-realitymix'
+    | '/api/public/cron/scrape-sreality'
+    | '/api/public/hooks/run-schedules'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/saved' | '/api/public/hooks/run-schedules'
+  to:
+    | '/'
+    | '/auth'
+    | '/saved'
+    | '/api/public/cron/scrape-annonce'
+    | '/api/public/cron/scrape-bazos'
+    | '/api/public/cron/scrape-bezrealitky'
+    | '/api/public/cron/scrape-hyperinzerce'
+    | '/api/public/cron/scrape-idnes'
+    | '/api/public/cron/scrape-realitymix'
+    | '/api/public/cron/scrape-sreality'
+    | '/api/public/hooks/run-schedules'
   id:
     | '__root__'
     | '/'
     | '/_authenticated'
     | '/auth'
     | '/_authenticated/saved'
+    | '/api/public/cron/scrape-annonce'
+    | '/api/public/cron/scrape-bazos'
+    | '/api/public/cron/scrape-bezrealitky'
+    | '/api/public/cron/scrape-hyperinzerce'
+    | '/api/public/cron/scrape-idnes'
+    | '/api/public/cron/scrape-realitymix'
+    | '/api/public/cron/scrape-sreality'
     | '/api/public/hooks/run-schedules'
   fileRoutesById: FileRoutesById
 }
@@ -79,6 +178,13 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
+  ApiPublicCronScrapeAnnonceRoute: typeof ApiPublicCronScrapeAnnonceRoute
+  ApiPublicCronScrapeBazosRoute: typeof ApiPublicCronScrapeBazosRoute
+  ApiPublicCronScrapeBezrealitkyRoute: typeof ApiPublicCronScrapeBezrealitkyRoute
+  ApiPublicCronScrapeHyperinzerceRoute: typeof ApiPublicCronScrapeHyperinzerceRoute
+  ApiPublicCronScrapeIdnesRoute: typeof ApiPublicCronScrapeIdnesRoute
+  ApiPublicCronScrapeRealitymixRoute: typeof ApiPublicCronScrapeRealitymixRoute
+  ApiPublicCronScrapeSrealityRoute: typeof ApiPublicCronScrapeSrealityRoute
   ApiPublicHooksRunSchedulesRoute: typeof ApiPublicHooksRunSchedulesRoute
 }
 
@@ -119,6 +225,55 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksRunSchedulesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/cron/scrape-sreality': {
+      id: '/api/public/cron/scrape-sreality'
+      path: '/api/public/cron/scrape-sreality'
+      fullPath: '/api/public/cron/scrape-sreality'
+      preLoaderRoute: typeof ApiPublicCronScrapeSrealityRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/cron/scrape-realitymix': {
+      id: '/api/public/cron/scrape-realitymix'
+      path: '/api/public/cron/scrape-realitymix'
+      fullPath: '/api/public/cron/scrape-realitymix'
+      preLoaderRoute: typeof ApiPublicCronScrapeRealitymixRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/cron/scrape-idnes': {
+      id: '/api/public/cron/scrape-idnes'
+      path: '/api/public/cron/scrape-idnes'
+      fullPath: '/api/public/cron/scrape-idnes'
+      preLoaderRoute: typeof ApiPublicCronScrapeIdnesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/cron/scrape-hyperinzerce': {
+      id: '/api/public/cron/scrape-hyperinzerce'
+      path: '/api/public/cron/scrape-hyperinzerce'
+      fullPath: '/api/public/cron/scrape-hyperinzerce'
+      preLoaderRoute: typeof ApiPublicCronScrapeHyperinzerceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/cron/scrape-bezrealitky': {
+      id: '/api/public/cron/scrape-bezrealitky'
+      path: '/api/public/cron/scrape-bezrealitky'
+      fullPath: '/api/public/cron/scrape-bezrealitky'
+      preLoaderRoute: typeof ApiPublicCronScrapeBezrealitkyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/cron/scrape-bazos': {
+      id: '/api/public/cron/scrape-bazos'
+      path: '/api/public/cron/scrape-bazos'
+      fullPath: '/api/public/cron/scrape-bazos'
+      preLoaderRoute: typeof ApiPublicCronScrapeBazosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/cron/scrape-annonce': {
+      id: '/api/public/cron/scrape-annonce'
+      path: '/api/public/cron/scrape-annonce'
+      fullPath: '/api/public/cron/scrape-annonce'
+      preLoaderRoute: typeof ApiPublicCronScrapeAnnonceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -137,8 +292,25 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
+  ApiPublicCronScrapeAnnonceRoute: ApiPublicCronScrapeAnnonceRoute,
+  ApiPublicCronScrapeBazosRoute: ApiPublicCronScrapeBazosRoute,
+  ApiPublicCronScrapeBezrealitkyRoute: ApiPublicCronScrapeBezrealitkyRoute,
+  ApiPublicCronScrapeHyperinzerceRoute: ApiPublicCronScrapeHyperinzerceRoute,
+  ApiPublicCronScrapeIdnesRoute: ApiPublicCronScrapeIdnesRoute,
+  ApiPublicCronScrapeRealitymixRoute: ApiPublicCronScrapeRealitymixRoute,
+  ApiPublicCronScrapeSrealityRoute: ApiPublicCronScrapeSrealityRoute,
   ApiPublicHooksRunSchedulesRoute: ApiPublicHooksRunSchedulesRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
