@@ -1,59 +1,93 @@
-# Plán: regresní testy  + mobilní UX
 
-## Část A — Regresní E2E
+# Etapa 1 — Centralizovaný scheduled scraping (revize po feedbacku)
 
-Pro kompletní regresní testy zjisti funkčnost všech zdrojů dát apod.
+## Změny oproti původnímu plánu
+1. **Per-combo granularita** — každý cron tick = jedna kombinace `(dealType, propertyType)`. Endpoint přijímá JSON body, `runSourceScrape(sourceKey, dealType, propertyType)`.
+2. **Redukovaná matice pro Firecrawl** — jen `byty + domy` × `prodej + pronajem` = 4 combos/zdroj.
+3. **Cron volá published URL**, nikoli preview. Komentář v INSERT SQL: po každém publish/změně domény URL re-verify.
+4. **URL normalizace** ve `deriveExternalId` (strip query/hash) před SHA1 fallbackem.
+5. **`try/finally`** v `runSourceScrape` — žádný řádek v `scrape_runs` nesmí zůstat ve `status='running'`.
 
-1. **Rozšířit `tests/e2e/scanner-detail-urls.test.ts**` o asserce na `ownership`:
-  - Pro každý zdroj zavoláme fetcher (`fetchSreality`, `fetchBazos`, …).
-  - U každého listingu zkontrolujeme, že `parseOwnership(name+locality+description_snippet)` vrátí `osobni | druzstevni | jine` (žádné `undefined` po fallbacku) — testujeme stejnou pipeline jako produkce (helper `resolveOwnership` extrahovaný z `scan-internal.server.ts`).
-  - Pro vzorek prvních 2 inzerátů per zdroj stáhneme detailovou stránku (sreality přes `detailInfo`, ostatní fetchem URL) a porovnáme, že detekce z plného textu detailu se neliší od štítku zobrazeného v seznamu (nebo se mění jen `low → high`, nikdy `osobni ↔ druzstevni`).
-2. **Nový soubor `src/lib/scanner/ownership.ts**` — vytáhne `resolveOwnership(listing, filters)` z duplikovaného kódu v `scan.functions.ts` a `scan-internal.server.ts`, aby test i produkce volaly totéž (DRY oprava nalezeného nesouladu).
-3. **Statistický práh**: test selže, pokud >50 % inzerátů zdroje skončí jako `jine` s `confidence: "low"` — to indikuje rozbitý scraper.
-4. Spustit `bunx vitest run tests/e2e/scanner-detail-urls.test.ts`, opravit zdroje, kde test spadne (zejména doplnit chybějící `description_snippet` u Annonce a Hyperinzerce, pokud je tam štítek často `JINÉ`).
+## 1. Databáze (1 migrace)
 
-## Část B — Mobilní UX: skrývatelné filtry + hustota výpisu
+**`public.listings`** + **`public.scrape_runs`** (sloupce, indexy, RLS, GRANTy beze změn proti minulé verzi). Klíčové:
+- `unique (source, external_id)`, `price_per_m2` generated column, `is_active` pro soft-delete po 7 dnech.
+- `scrape_runs` přidáno: `deal_type text`, `property_type text` (sloupce pro per-combo logging).
+- RLS: `listings` SELECT only `authenticated`; `scrape_runs` SELECT `authenticated`. Mutace přes `service_role`.
 
-Cíl: na iPhonu (390 px) má uživatel napoprvé jasný panel filtrů, ale po prvním skenu se filtry sbalí, aby šlo rolovat výsledky. Zároveň přepínač zobrazení **Karty / Kompakt / Seznam**.
+## 2. Per-source TanStack routes
 
-### B1. Sticky kolaps panel filtrů (mobile only)
+`src/routes/api/public/cron/scrape-<source>.ts` (7 souborů). Každá:
+```ts
+POST → {
+  verifyCronSecret(request);
+  const { dealType, propertyType } = await request.json();
+  const result = await runSourceScrape('sreality', dealType, propertyType);
+  return Response.json(result);
+}
+```
 
-- V `src/routes/index.tsx` přidat stav `filtersOpen` (default `true`; po prvním úspěšném `mutation.isSuccess` jednorázově `false`).
-- `FilterSidebar` na mobilu (`md:hidden` varianta) přebalit do `<Sheet>` / `<Collapsible>`:
-  - Když je zavřený, zobrazí se **sticky filter chip bar** pod hlavičkou: `[Prodej · Byty · Celá ČR · 4 zdroje]  [Upravit]  [Skenovat]`.
-  - Klik na „Upravit" otevře plnostránkový `Sheet` s plnými filtry (reuse existující `FilterSidebar`).
-  - Desktop (`md:`) zůstává beze změny — postranní panel 300 px.
-- `MobileScanFooter` zachovat jen pro stav „filtry zavřené, zatím žádná data" (rychlé spuštění skenu).
+**`src/lib/scanner/persist.server.ts`**:
+- `runSourceScrape(sourceKey, dealType, propertyType)`:
+  1. `insert scrape_runs (status='running', source, deal_type, property_type)` → uloženo `runId`.
+  2. `try { … } catch { update status='error', error_message } finally { pokud status ještě 'running', update na 'error' s "unexpected termination" }` — garantuje žádný věčný `running` řádek.
+  3. Sestaví `ScanFilters` se zadanou kombinací (`region=""`, prázdný `price_min/max`, vysoký `per_source_limit`).
+  4. Zavolá existující `HTTP_FETCHERS[sourceKey](filters)`.
+  5. Pro každý `Listing`: `resolveOwnership`, `deriveExternalId(source, url)` (viz níže).
+  6. `UPSERT` do `listings` přes `(source, external_id)`: insert → `first_seen_at=now`, existing → refresh `last_seen_at`, price, title, raw_data, `is_active=true`.
+  7. Soft-delete: `UPDATE listings SET is_active=false WHERE source=$1 AND deal_type=$2 AND property_type=$3 AND last_seen_at < now() - interval '7 days'`.
+  8. `update scrape_runs (status='success', counters, duration_ms, finished_at=now)`.
 
-### B2. Přepínač hustoty výpisu
+**`src/lib/scanner/external-id.ts`**:
+```ts
+export function deriveExternalId(source: string, url: string): string {
+  // 1) Pokud URL má numerické ID v posledním segmentu → použij ho.
+  // 2) Jinak normalizuj URL: strip query string a hash, lowercase host,
+  //    trailing slash → '', a vrať SHA1(prvních 16 znaků).
+}
+```
 
-- Nový stav `density: "card" | "compact" | "list"` (v `view`, persistován do `localStorage`).
-- Přepínač v hlavičce výpisu (vedle počtu výsledků): tři ikony `LayoutGrid` / `Rows3` / `List`.
-- V `ListingCard.tsx` přidat prop `density`:
-  - **card** (default) — současný layout, 1 sloupec na mobilu.
-  - **compact** — bez obrázku galerie/AI bloku, 2 sloupce na mobilu (`grid-cols-2`), zachovat OV/DV štítek + cena + výnos hvězdy.
-  - **list** — řádkový layout (mini-thumb 56 px vlevo, vpravo název + cena + štítek vlastnictví + ★), 1 řádek per inzerát, ideální pro rychlý scan.
-- Grid třídy v `index.tsx` se odvodí podle `density`:
-  - card: `grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 …`
-  - compact: `grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 …`
-  - list: `flex flex-col divide-y`
+**`src/lib/scanner/cron-auth.server.ts`**: konstantní porovnání `Authorization: Bearer <CRON_SECRET>`.
 
-### B3. Drobnosti
+## 3. Plánování cronu (pg_cron)
 
-- Po prvním úspěšném skenu auto-scroll k prvnímu výsledku (`scrollIntoView`).
-- Sticky chip bar má `backdrop-blur` + `bg-background/80`, aby zůstal čitelný nad výsledky.
-- Po změně filtru (na mobilu, panel zavřený) chip bar bliká primárním okrajem 1 s — signál „spusť nový sken".
+INSERT SQL s komentářem:
+```sql
+-- DŮLEŽITÉ: Po každém publish projektu nebo změně domény ověř, že tato URL
+-- stále vede na PUBLISHED build (https://property-finder-pro-13.lovable.app),
+-- nikoli na preview. Při změně URL re-INSERT s novými hodnotami.
+```
 
-## Technické poznámky
+**Fast (sreality, bezrealitky, bazos)** — plná matice `prodej/pronajem × byty/domy/pozemky/komercni/ostatni` = 10 combos × 3 zdroje = 30 cron jobů, každé 3 h, limit 100.
 
-- Žádné změny v scraper-business-logice mimo doplnění `description_snippet` tam, kde to test odhalí.
-- Žádný nový npm balík — `Sheet`, `Collapsible`, `Tooltip` už jsou v shadcn/ui.
-- Mobilní layout řešen čistě Tailwind breakpointy (`md:`), žádný JS detekce zařízení mimo existující `useIsMobile` (použít pro auto-collapse po skenu).
+**Firecrawl (hyperinzerce, realitymix, annonce, idnes)** — redukovaná matice `prodej/pronajem × byty/domy` = 4 combos × 4 zdroje = 16 cron jobů, každých 12 h, limit 50.
 
-## Pořadí implementace
+Spread po minutách (např. fast: `0,2,4,…,28 */3 * * *`, firecrawl: `0,3,6,…,45 */12 * * *`) — žádné dva combos pro stejný zdroj neběží zároveň.
 
-1. Extrakce `resolveOwnership` → DRY.
-2. Rozšíření vitest souboru → spuštění → oprava nalezených zdrojů.
-3. Density toggle (lokální, žádné zdrojové změny).
-4. Mobilní kolaps filtrů + chip bar.
-5. Vizuální QA na 390×844 (iPhone) přes browser preview.
+**Očekávané Firecrawl náklady:**
+- 4 zdroje × 4 combos × 2 běhy/den × 50 listingů/combo = **1 600 listing-fetches/den** (max strop). Reálně se cap stane plnit jen u větších kategorií (byty/prodej) → ~800–1 200 req/den.
+- Pro porovnání: současný live-scan při jednom kliknutí vytáhne 20/zdroj × 4 zdroje = 80 req. Nový model = ekvivalent ~10–15 user-klikání/den, ale rozprostřený.
+
+## 4. Ověření po nasazení
+
+1. Manuální curl na každý ze 7 endpointů se vzorovým body `{"dealType":"prodej","propertyType":"byty"}` → status 200, `scrape_runs` row `status='success'`, `items_found > 0`.
+2. `SELECT source, deal_type, property_type, count(*) FROM listings GROUP BY 1,2,3` — všechny očekávané kombinace mají řádky.
+3. `SELECT * FROM cron.job WHERE jobname LIKE 'scrape-%'` — 46 jobů registrovaných (30 fast + 16 firecrawl).
+4. Re-run téhož combo → převažuje `items_updated`, ne `items_new`.
+5. Záměrný error (např. dočasně shodit CRON_SECRET) → `scrape_runs.status='error'` během vteřin, nikdy `running` na déle než trvání jednoho běhu.
+6. RLS smoke test: anonymous `select` na `listings` selže, authenticated projde.
+
+## Soubory
+
+**Nové:**
+- `src/lib/scanner/persist.server.ts`
+- `src/lib/scanner/external-id.ts`
+- `src/lib/scanner/cron-auth.server.ts`
+- `src/routes/api/public/cron/scrape-{sreality,bezrealitky,bazos,hyperinzerce,realitymix,annonce,idnes}.ts`
+
+**Editované:** žádné — stávající `sources/*.server.ts`, `ownership.ts`, `valuation.ts`, `rent-benchmark.server.ts` se re-usují beze změny. UI nedotýkat.
+
+**Migrace:** 1× (tabulky + RLS + GRANTy + indexy).
+**Insert SQL** (ne migrace): 46× `cron.schedule(...)` s komentem o re-verify URL.
+**Secret:** `CRON_SECRET` (přes `add_secret`, 32B random).
+
