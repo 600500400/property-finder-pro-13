@@ -1,13 +1,18 @@
 import { timingSafeEqual } from "crypto";
 
+/**
+ * Verify cron request. Per Lovable convention, /api/public/* bypasses auth on
+ * published sites; we additionally check the `apikey` header matches the
+ * project's publishable key as a basic guard against accidental triggers.
+ * pg_cron sends it as `apikey: <SUPABASE_PUBLISHABLE_KEY>`.
+ */
 export function verifyCronSecret(request: Request): boolean {
-  const secret = process.env.CRON_SECRET;
-  if (!secret) return false;
-  const header = request.headers.get("authorization") || "";
-  const token = header.startsWith("Bearer ") ? header.slice(7) : header;
-  if (!token) return false;
-  const a = Buffer.from(token);
-  const b = Buffer.from(secret);
+  const expected = process.env.SUPABASE_PUBLISHABLE_KEY;
+  if (!expected) return false;
+  const provided = request.headers.get("apikey") || "";
+  if (!provided) return false;
+  const a = Buffer.from(provided);
+  const b = Buffer.from(expected);
   if (a.length !== b.length) return false;
   try {
     return timingSafeEqual(a, b);
