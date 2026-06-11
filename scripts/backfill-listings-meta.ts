@@ -16,11 +16,10 @@ function sql(q: string): string {
   return execSync(`psql -At -F'\u001f' -c ${JSON.stringify(q)}`, { encoding: "utf8", maxBuffer: 256 * 1024 * 1024 });
 }
 
-function sqlExec(q: string) {
-  const tmp = mkdtempSync(join(tmpdir(), "bf-"));
-  const f = join(tmp, "q.sql");
+function sqlExec(q: string, idx: number) {
+  const f = `/tmp/backfill-batch-${idx}.sql`;
   writeFileSync(f, q);
-  execSync(`psql -v ON_ERROR_STOP=1 -f ${f}`, { stdio: "inherit" });
+  console.log(`Wrote batch ${idx} → ${f}`);
 }
 
 function esc(s: string): string {
@@ -72,8 +71,7 @@ FROM (VALUES
 ${values}
 ) AS v(id, kraj, area)
 WHERE l.id = v.id;`;
-  sqlExec(q);
-  process.stdout.write(`  applied ${Math.min(i + BATCH, updates.length)} / ${updates.length}\r`);
+  sqlExec(q, i / BATCH);
 }
-console.log("\nDone.");
+console.log(`\nWrote ${Math.ceil(updates.length / BATCH)} batches.`);
 
