@@ -29,6 +29,7 @@ function verdictBg(stars: number | undefined): string {
 function badgeClass(badge: string): string {
   if (badge === "Placené") return "bg-muted text-muted-foreground border border-border";
   if (badge === "HOT 🔥") return "bg-red-500 text-white";
+  if (badge === "Nové") return "bg-emerald-500 text-white";
   if (badge === "NOVÝ" || badge === "NEW") return "bg-primary text-primary-foreground";
   if (badge === "Tento týden") return "bg-sky-500/80 text-white";
   return "bg-background/80 text-foreground";
@@ -40,7 +41,7 @@ function freshnessBadge(iso: string | undefined): string | null {
   if (isNaN(t)) return null;
   const h = (Date.now() - t) / 3_600_000;
   if (h < 0) return null;
-  if (h <= 24) return "HOT 🔥";
+  if (h <= 24) return "Nové";
   if (h <= 72) return "NOVÝ";
   if (h <= 24 * 7) return "Tento týden";
   return null;
