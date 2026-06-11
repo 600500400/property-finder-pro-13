@@ -2,7 +2,7 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import type { DealType, Listing, PropertyType, ScanFilters, SourceKey } from "./types";
 import { resolveOwnership } from "./ownership";
 import { deriveExternalId } from "./external-id";
-import { regionFromLocality, sanitizeAreaM2, derivePricePerM2 } from "./kraj-mapping";
+import { regionFromLocality, sanitizeAreaM2 } from "./kraj-mapping";
 
 import { fetchSreality } from "./sources/sreality.server";
 import { fetchBezrealitky } from "./sources/bezrealitky.server";
@@ -109,7 +109,7 @@ export async function runSourceScrape(
         kraj,
         city: l.locality || null,
         area_m2,
-        price_per_m2: derivePricePerM2(price, area_m2),
+        // price_per_m2 is a generated column — do not set
         ownership: own.ownership,
         ownership_confidence: own.ownership_confidence,
         url: l.url,

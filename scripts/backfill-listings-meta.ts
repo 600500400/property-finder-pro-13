@@ -8,7 +8,7 @@ import { execSync } from "node:child_process";
 import { writeFileSync, mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { regionFromLocality, sanitizeAreaM2, derivePricePerM2 } from "../src/lib/scanner/kraj-mapping";
+import { regionFromLocality, sanitizeAreaM2 } from "../src/lib/scanner/kraj-mapping";
 
 interface Row { id: string; city: string | null; price: number | null; area_m2: number | null; kraj: string | null; price_per_m2: number | null }
 
@@ -43,19 +43,17 @@ const rows: Row[] = raw.trim().split("\n").filter(Boolean).map(line => {
 console.log(`Loaded ${rows.length} listings.`);
 
 let changed = 0;
-const updates: Array<{ id: string; kraj: string | null; area: number | null; ppm: number | null }> = [];
+const updates: Array<{ id: string; kraj: string | null; area: number | null }> = [];
 for (const r of rows) {
   const newKraj = regionFromLocality(r.city);
   const newArea = sanitizeAreaM2(r.area_m2);
-  const newPpm = derivePricePerM2(r.price, newArea);
-  if (newKraj !== r.kraj || newArea !== r.area_m2 || newPpm !== r.price_per_m2) {
-    updates.push({ id: r.id, kraj: newKraj, area: newArea, ppm: newPpm });
+  if (newKraj !== r.kraj || newArea !== r.area_m2) {
+    updates.push({ id: r.id, kraj: newKraj, area: newArea });
     changed++;
   }
 }
 
 console.log(`Need to update ${changed} rows.`);
-
 let krajMapped = 0;
 for (const u of updates) if (u.kraj) krajMapped++;
 console.log(`  rows that will receive a kraj: ${krajMapped}`);
@@ -66,16 +64,16 @@ for (let i = 0; i < updates.length; i += BATCH) {
   const values = slice.map(u => {
     const k = u.kraj ? `'${esc(u.kraj)}'` : "NULL";
     const a = u.area == null ? "NULL" : String(u.area);
-    const p = u.ppm == null ? "NULL" : String(u.ppm);
-    return `('${u.id}'::uuid, ${k}::text, ${a}::numeric, ${p}::integer)`;
+    return `('${u.id}'::uuid, ${k}::text, ${a}::numeric)`;
   }).join(",\n");
   const q = `UPDATE public.listings AS l
-SET kraj = v.kraj, area_m2 = v.area, price_per_m2 = v.ppm
+SET kraj = v.kraj, area_m2 = v.area
 FROM (VALUES
 ${values}
-) AS v(id, kraj, area, ppm)
+) AS v(id, kraj, area)
 WHERE l.id = v.id;`;
   sqlExec(q);
   process.stdout.write(`  applied ${Math.min(i + BATCH, updates.length)} / ${updates.length}\r`);
 }
 console.log("\nDone.");
+
