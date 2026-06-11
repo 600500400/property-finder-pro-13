@@ -273,35 +273,6 @@ export function FilterSidebar({ filters, setFilters, view, setView, onExport, ca
   );
 }
 
-export function MobileScanFooter({
-  onScan, onExport, scanning, canExport, sourcesCount,
-}: {
-  onScan: () => void;
-  onExport: () => void;
-  scanning: boolean;
-  canExport: boolean;
-  sourcesCount: number;
-}) {
-  return (
-    <div className="fixed inset-x-0 bottom-0 z-40 flex gap-2 border-t border-border bg-[var(--color-surface)]/95 p-3 backdrop-blur md:hidden">
-      <button
-        onClick={onScan}
-        disabled={scanning || sourcesCount === 0}
-        className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-bold text-primary-foreground transition hover:opacity-90 disabled:opacity-50"
-      >
-        {scanning ? <Loader2 className="h-4 w-4 animate-spin" /> : <Zap className="h-4 w-4" />}
-        {scanning ? "Skenuji..." : "Skenovat"}
-      </button>
-      <button
-        onClick={onExport}
-        disabled={!canExport}
-        className="flex items-center justify-center gap-2 rounded-xl border border-primary/60 bg-transparent px-4 py-3 text-sm font-semibold text-primary transition hover:bg-primary/10 disabled:cursor-not-allowed disabled:border-border disabled:text-muted-foreground"
-      >
-        <Download className="h-4 w-4" />
-      </button>
-    </div>
-  );
-}
 
 function Section({ label, children }: { label: string; children: React.ReactNode }) {
   return (
