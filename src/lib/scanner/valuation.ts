@@ -299,10 +299,22 @@ export function cleanText(s: unknown): string {
 
 export function parseArea(text: string | null | undefined): number | undefined {
   if (!text) return undefined;
-  const m = String(text).match(/(\d{1,5})\s*m[²2]/i);
-  if (!m) return undefined;
-  const n = parseInt(m[1], 10);
-  return n > 0 && n < 100000 ? n : undefined;
+  // Match integer with optional Czech decimal (comma or dot) immediately
+  // before "m2" / "m²". Avoids the bug where "62,24 m2" was parsed as 24.
+  const s = String(text);
+  const re = /(\d{1,4})(?:[.,](\d{1,2}))?\s*m[²2]/gi;
+  let best: number | undefined;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(s)) !== null) {
+    const whole = parseInt(m[1], 10);
+    const frac = m[2] ? parseInt(m[2], 10) / Math.pow(10, m[2].length) : 0;
+    const n = Math.round(whole + frac);
+    if (n > 0 && n < 100000) {
+      best = n;
+      break; // first occurrence near "m2" wins
+    }
+  }
+  return best;
 }
 
 export function parseOwnership(text: string | undefined | null): Ownership | undefined {
