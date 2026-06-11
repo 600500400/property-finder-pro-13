@@ -34,7 +34,8 @@ const FilterSchema = z.object({
 export const queryListings = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => FilterSchema.parse(data))
   .handler(async ({ data }): Promise<ScanResult> => {
-    const filters = data as ScanFilters & { freshness: "" | "24h" | "7d" };
+    type QF = ScanFilters & { freshness: "" | "24h" | "7d" };
+    const filters: QF = data as QF;
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { getBenchmark } = await import("@/lib/scanner/rent-benchmark.server");
     const { indexRentComps, computeHybridYield, type RentComp } = await import("./yield.server");
@@ -143,6 +144,3 @@ export const queryListings = createServerFn({ method: "POST" })
       },
     };
   });
-
-void Date; // keep types-only side-effect
-export const __qts = (n: number) => n;
