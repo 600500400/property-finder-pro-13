@@ -21,6 +21,7 @@ import { Route as ApiPublicCronScrapeHyperinzerceRouteImport } from './routes/ap
 import { Route as ApiPublicCronScrapeBezrealitkyRouteImport } from './routes/api/public/cron/scrape-bezrealitky'
 import { Route as ApiPublicCronScrapeBazosRouteImport } from './routes/api/public/cron/scrape-bazos'
 import { Route as ApiPublicCronScrapeAnnonceRouteImport } from './routes/api/public/cron/scrape-annonce'
+import { Route as ApiPublicCronBackfillMetaRouteImport } from './routes/api/public/cron/backfill-meta'
 
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
@@ -89,11 +90,18 @@ const ApiPublicCronScrapeAnnonceRoute =
     path: '/api/public/cron/scrape-annonce',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicCronBackfillMetaRoute =
+  ApiPublicCronBackfillMetaRouteImport.update({
+    id: '/api/public/cron/backfill-meta',
+    path: '/api/public/cron/backfill-meta',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/saved': typeof AuthenticatedSavedRoute
+  '/api/public/cron/backfill-meta': typeof ApiPublicCronBackfillMetaRoute
   '/api/public/cron/scrape-annonce': typeof ApiPublicCronScrapeAnnonceRoute
   '/api/public/cron/scrape-bazos': typeof ApiPublicCronScrapeBazosRoute
   '/api/public/cron/scrape-bezrealitky': typeof ApiPublicCronScrapeBezrealitkyRoute
@@ -107,6 +115,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/saved': typeof AuthenticatedSavedRoute
+  '/api/public/cron/backfill-meta': typeof ApiPublicCronBackfillMetaRoute
   '/api/public/cron/scrape-annonce': typeof ApiPublicCronScrapeAnnonceRoute
   '/api/public/cron/scrape-bazos': typeof ApiPublicCronScrapeBazosRoute
   '/api/public/cron/scrape-bezrealitky': typeof ApiPublicCronScrapeBezrealitkyRoute
@@ -122,6 +131,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/_authenticated/saved': typeof AuthenticatedSavedRoute
+  '/api/public/cron/backfill-meta': typeof ApiPublicCronBackfillMetaRoute
   '/api/public/cron/scrape-annonce': typeof ApiPublicCronScrapeAnnonceRoute
   '/api/public/cron/scrape-bazos': typeof ApiPublicCronScrapeBazosRoute
   '/api/public/cron/scrape-bezrealitky': typeof ApiPublicCronScrapeBezrealitkyRoute
@@ -137,6 +147,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/saved'
+    | '/api/public/cron/backfill-meta'
     | '/api/public/cron/scrape-annonce'
     | '/api/public/cron/scrape-bazos'
     | '/api/public/cron/scrape-bezrealitky'
@@ -150,6 +161,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/saved'
+    | '/api/public/cron/backfill-meta'
     | '/api/public/cron/scrape-annonce'
     | '/api/public/cron/scrape-bazos'
     | '/api/public/cron/scrape-bezrealitky'
@@ -164,6 +176,7 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/auth'
     | '/_authenticated/saved'
+    | '/api/public/cron/backfill-meta'
     | '/api/public/cron/scrape-annonce'
     | '/api/public/cron/scrape-bazos'
     | '/api/public/cron/scrape-bezrealitky'
@@ -178,6 +191,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
+  ApiPublicCronBackfillMetaRoute: typeof ApiPublicCronBackfillMetaRoute
   ApiPublicCronScrapeAnnonceRoute: typeof ApiPublicCronScrapeAnnonceRoute
   ApiPublicCronScrapeBazosRoute: typeof ApiPublicCronScrapeBazosRoute
   ApiPublicCronScrapeBezrealitkyRoute: typeof ApiPublicCronScrapeBezrealitkyRoute
@@ -274,6 +288,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicCronScrapeAnnonceRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/cron/backfill-meta': {
+      id: '/api/public/cron/backfill-meta'
+      path: '/api/public/cron/backfill-meta'
+      fullPath: '/api/public/cron/backfill-meta'
+      preLoaderRoute: typeof ApiPublicCronBackfillMetaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -292,6 +313,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
+  ApiPublicCronBackfillMetaRoute: ApiPublicCronBackfillMetaRoute,
   ApiPublicCronScrapeAnnonceRoute: ApiPublicCronScrapeAnnonceRoute,
   ApiPublicCronScrapeBazosRoute: ApiPublicCronScrapeBazosRoute,
   ApiPublicCronScrapeBezrealitkyRoute: ApiPublicCronScrapeBezrealitkyRoute,

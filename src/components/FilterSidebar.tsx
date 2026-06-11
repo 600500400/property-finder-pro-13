@@ -1,5 +1,5 @@
 import type { ScanFilters, SourceKey } from "@/lib/scanner/types";
-import { Download, Zap, Loader2, Save, Trash2, Bookmark, Cloud } from "lucide-react";
+import { Download, Save, Trash2, Bookmark, Cloud } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { upsertSavedFilter } from "@/lib/saved/saved.functions";
@@ -47,9 +47,7 @@ interface Props {
   setFilters: (f: ScanFilters) => void;
   view: ViewOptions;
   setView: (v: ViewOptions) => void;
-  onScan: () => void;
   onExport: () => void;
-  scanning: boolean;
   canExport: boolean;
 }
 
@@ -68,7 +66,7 @@ function savePresets(list: Preset[]) {
   try { localStorage.setItem(PRESET_KEY, JSON.stringify(list)); } catch { /* ignore */ }
 }
 
-export function FilterSidebar({ filters, setFilters, view, setView, onScan, onExport, scanning, canExport }: Props) {
+export function FilterSidebar({ filters, setFilters, view, setView, onExport, canExport }: Props) {
   const [presets, setPresets] = useState<Preset[]>([]);
   const [isAuthed, setIsAuthed] = useState(false);
   const [cloudMsg, setCloudMsg] = useState<string | null>(null);
@@ -169,13 +167,6 @@ export function FilterSidebar({ filters, setFilters, view, setView, onScan, onEx
         </div>
       </Section>
 
-      <Section label="Počet inzerátů na zdroj">
-        <Select value={String(filters.per_source_limit)} onChange={(v) => update("per_source_limit", Number(v))}
-          options={[["10", "10"], ["20", "20 (doporučeno)"], ["30", "30"], ["50", "50"], ["100", "100 (max)"]]} />
-        <p className="text-[10px] leading-relaxed text-muted-foreground">
-          Vyšší limit = pomalejší sken a více zatížení portálů.
-        </p>
-      </Section>
 
       <Section label="Zdroje dat">
         <div className="mb-1 flex gap-1.5">
@@ -268,16 +259,8 @@ export function FilterSidebar({ filters, setFilters, view, setView, onScan, onEx
         )}
       </Section>
 
-      {/* Desktop action buttons */}
+      {/* Desktop action button — export only (live scan removed, data is now DB-backed) */}
       <div className="mt-auto hidden flex-col gap-2 pt-2 md:flex">
-        <button
-          onClick={onScan}
-          disabled={scanning || filters.sources.length === 0}
-          className="flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-bold text-primary-foreground transition hover:opacity-90 disabled:opacity-50"
-        >
-          {scanning ? <Loader2 className="h-4 w-4 animate-spin" /> : <Zap className="h-4 w-4" />}
-          {scanning ? "Skenuji..." : "Skenovat nemovitosti"}
-        </button>
         <button
           onClick={onExport}
           disabled={!canExport}
@@ -290,35 +273,6 @@ export function FilterSidebar({ filters, setFilters, view, setView, onScan, onEx
   );
 }
 
-export function MobileScanFooter({
-  onScan, onExport, scanning, canExport, sourcesCount,
-}: {
-  onScan: () => void;
-  onExport: () => void;
-  scanning: boolean;
-  canExport: boolean;
-  sourcesCount: number;
-}) {
-  return (
-    <div className="fixed inset-x-0 bottom-0 z-40 flex gap-2 border-t border-border bg-[var(--color-surface)]/95 p-3 backdrop-blur md:hidden">
-      <button
-        onClick={onScan}
-        disabled={scanning || sourcesCount === 0}
-        className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-bold text-primary-foreground transition hover:opacity-90 disabled:opacity-50"
-      >
-        {scanning ? <Loader2 className="h-4 w-4 animate-spin" /> : <Zap className="h-4 w-4" />}
-        {scanning ? "Skenuji..." : "Skenovat"}
-      </button>
-      <button
-        onClick={onExport}
-        disabled={!canExport}
-        className="flex items-center justify-center gap-2 rounded-xl border border-primary/60 bg-transparent px-4 py-3 text-sm font-semibold text-primary transition hover:bg-primary/10 disabled:cursor-not-allowed disabled:border-border disabled:text-muted-foreground"
-      >
-        <Download className="h-4 w-4" />
-      </button>
-    </div>
-  );
-}
 
 function Section({ label, children }: { label: string; children: React.ReactNode }) {
   return (

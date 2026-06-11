@@ -2,6 +2,7 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import type { DealType, Listing, PropertyType, ScanFilters, SourceKey } from "./types";
 import { resolveOwnership } from "./ownership";
 import { deriveExternalId } from "./external-id";
+import { regionFromLocality, sanitizeAreaM2 } from "./kraj-mapping";
 
 import { fetchSreality } from "./sources/sreality.server";
 import { fetchBezrealitky } from "./sources/bezrealitky.server";
@@ -95,16 +96,20 @@ export async function runSourceScrape(
         .eq("external_id", external_id)
         .maybeSingle();
 
+      const area_m2 = sanitizeAreaM2(l.area_m2 ?? null);
+      const kraj = regionFromLocality(l.locality);
+      const price = l.price || null;
       const row = {
         source: sourceKey,
         external_id,
         title: l.name || null,
-        price: l.price || null,
+        price,
         deal_type: dealType,
         property_type: propertyType,
-        kraj: null as string | null,
+        kraj,
         city: l.locality || null,
-        area_m2: l.area_m2 ?? null,
+        area_m2,
+        // price_per_m2 is a generated column — do not set
         ownership: own.ownership,
         ownership_confidence: own.ownership_confidence,
         url: l.url,
