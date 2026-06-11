@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import type { Listing, ScanFilters, ScanResult, SourceKey } from "@/lib/scanner/types";
+import type { RentComp } from "./yield.server";
 
 const SOURCE_LABEL: Record<SourceKey, string> = {
   sreality: "Sreality",
@@ -38,9 +39,9 @@ export const queryListings = createServerFn({ method: "POST" })
     const filters: QF = data as QF;
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { getBenchmark } = await import("@/lib/scanner/rent-benchmark.server");
-    const { indexRentComps, computeHybridYield, type RentComp } = await import("./yield.server");
+    const { indexRentComps, computeHybridYield } = await import("./yield.server");
 
-    const startedAt = Date.now();
+    
 
     // ----- main query -----
     let q = supabaseAdmin
