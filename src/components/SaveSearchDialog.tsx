@@ -2,7 +2,9 @@ import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { upsertSavedSearch } from "@/lib/alerts/saved-searches.functions";
 import type { ScanFilters } from "@/lib/scanner/types";
-import { X, Loader2 } from "lucide-react";
+import { X, Loader2, Crown } from "lucide-react";
+import { usePlan } from "@/hooks/usePlan";
+import { UpgradeModal } from "./UpgradeModal";
 
 interface Props {
   open: boolean;
@@ -35,11 +37,14 @@ function suggestName(f: ScanFilters): string {
 
 export function SaveSearchDialog({ open, onClose, filters, defaultName }: Props) {
   const upsert = useServerFn(upsertSavedSearch);
+  const { data: plan } = usePlan();
+  const isPremium = plan?.is_premium ?? false;
   const [name, setName] = useState(defaultName ?? suggestName(filters));
   const [frequency, setFrequency] = useState<"instant" | "daily">("daily");
   const [minYield, setMinYield] = useState<string>("");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [upgrade, setUpgrade] = useState<string | null>(null);
 
   if (!open) return null;
 
