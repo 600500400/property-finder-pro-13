@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
-import { LogIn, LogOut, Bookmark, User as UserIcon } from "lucide-react";
+import { LogIn, LogOut, Bookmark, User as UserIcon, Dog } from "lucide-react";
 import type { User } from "@supabase/supabase-js";
 
 export function UserMenu() {
