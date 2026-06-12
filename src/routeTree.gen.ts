@@ -9,11 +9,13 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as CenikRouteImport } from './routes/cenik'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedWatchdogsRouteImport } from './routes/_authenticated/watchdogs'
 import { Route as AuthenticatedSavedRouteImport } from './routes/_authenticated/saved'
+import { Route as ApiPublicStripeWebhookRouteImport } from './routes/api/public/stripe/webhook'
 import { Route as ApiPublicHooksRunSchedulesRouteImport } from './routes/api/public/hooks/run-schedules'
 import { Route as ApiPublicCronScrapeSrealityRouteImport } from './routes/api/public/cron/scrape-sreality'
 import { Route as ApiPublicCronScrapeRealitymixRouteImport } from './routes/api/public/cron/scrape-realitymix'
@@ -26,6 +28,11 @@ import { Route as ApiPublicCronDailyDigestRouteImport } from './routes/api/publi
 import { Route as ApiPublicCronBackfillMetaRouteImport } from './routes/api/public/cron/backfill-meta'
 import { Route as ApiPublicCronBackfillAreaRouteImport } from './routes/api/public/cron/backfill-area'
 
+const CenikRoute = CenikRouteImport.update({
+  id: '/cenik',
+  path: '/cenik',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
@@ -49,6 +56,11 @@ const AuthenticatedSavedRoute = AuthenticatedSavedRouteImport.update({
   id: '/saved',
   path: '/saved',
   getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const ApiPublicStripeWebhookRoute = ApiPublicStripeWebhookRouteImport.update({
+  id: '/api/public/stripe/webhook',
+  path: '/api/public/stripe/webhook',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicHooksRunSchedulesRoute =
   ApiPublicHooksRunSchedulesRouteImport.update({
@@ -120,6 +132,7 @@ const ApiPublicCronBackfillAreaRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/cenik': typeof CenikRoute
   '/saved': typeof AuthenticatedSavedRoute
   '/watchdogs': typeof AuthenticatedWatchdogsRoute
   '/api/public/cron/backfill-area': typeof ApiPublicCronBackfillAreaRoute
@@ -133,10 +146,12 @@ export interface FileRoutesByFullPath {
   '/api/public/cron/scrape-realitymix': typeof ApiPublicCronScrapeRealitymixRoute
   '/api/public/cron/scrape-sreality': typeof ApiPublicCronScrapeSrealityRoute
   '/api/public/hooks/run-schedules': typeof ApiPublicHooksRunSchedulesRoute
+  '/api/public/stripe/webhook': typeof ApiPublicStripeWebhookRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/cenik': typeof CenikRoute
   '/saved': typeof AuthenticatedSavedRoute
   '/watchdogs': typeof AuthenticatedWatchdogsRoute
   '/api/public/cron/backfill-area': typeof ApiPublicCronBackfillAreaRoute
@@ -150,12 +165,14 @@ export interface FileRoutesByTo {
   '/api/public/cron/scrape-realitymix': typeof ApiPublicCronScrapeRealitymixRoute
   '/api/public/cron/scrape-sreality': typeof ApiPublicCronScrapeSrealityRoute
   '/api/public/hooks/run-schedules': typeof ApiPublicHooksRunSchedulesRoute
+  '/api/public/stripe/webhook': typeof ApiPublicStripeWebhookRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
+  '/cenik': typeof CenikRoute
   '/_authenticated/saved': typeof AuthenticatedSavedRoute
   '/_authenticated/watchdogs': typeof AuthenticatedWatchdogsRoute
   '/api/public/cron/backfill-area': typeof ApiPublicCronBackfillAreaRoute
@@ -169,12 +186,14 @@ export interface FileRoutesById {
   '/api/public/cron/scrape-realitymix': typeof ApiPublicCronScrapeRealitymixRoute
   '/api/public/cron/scrape-sreality': typeof ApiPublicCronScrapeSrealityRoute
   '/api/public/hooks/run-schedules': typeof ApiPublicHooksRunSchedulesRoute
+  '/api/public/stripe/webhook': typeof ApiPublicStripeWebhookRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
     | '/auth'
+    | '/cenik'
     | '/saved'
     | '/watchdogs'
     | '/api/public/cron/backfill-area'
@@ -188,10 +207,12 @@ export interface FileRouteTypes {
     | '/api/public/cron/scrape-realitymix'
     | '/api/public/cron/scrape-sreality'
     | '/api/public/hooks/run-schedules'
+    | '/api/public/stripe/webhook'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/auth'
+    | '/cenik'
     | '/saved'
     | '/watchdogs'
     | '/api/public/cron/backfill-area'
@@ -205,11 +226,13 @@ export interface FileRouteTypes {
     | '/api/public/cron/scrape-realitymix'
     | '/api/public/cron/scrape-sreality'
     | '/api/public/hooks/run-schedules'
+    | '/api/public/stripe/webhook'
   id:
     | '__root__'
     | '/'
     | '/_authenticated'
     | '/auth'
+    | '/cenik'
     | '/_authenticated/saved'
     | '/_authenticated/watchdogs'
     | '/api/public/cron/backfill-area'
@@ -223,12 +246,14 @@ export interface FileRouteTypes {
     | '/api/public/cron/scrape-realitymix'
     | '/api/public/cron/scrape-sreality'
     | '/api/public/hooks/run-schedules'
+    | '/api/public/stripe/webhook'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
+  CenikRoute: typeof CenikRoute
   ApiPublicCronBackfillAreaRoute: typeof ApiPublicCronBackfillAreaRoute
   ApiPublicCronBackfillMetaRoute: typeof ApiPublicCronBackfillMetaRoute
   ApiPublicCronDailyDigestRoute: typeof ApiPublicCronDailyDigestRoute
@@ -240,10 +265,18 @@ export interface RootRouteChildren {
   ApiPublicCronScrapeRealitymixRoute: typeof ApiPublicCronScrapeRealitymixRoute
   ApiPublicCronScrapeSrealityRoute: typeof ApiPublicCronScrapeSrealityRoute
   ApiPublicHooksRunSchedulesRoute: typeof ApiPublicHooksRunSchedulesRoute
+  ApiPublicStripeWebhookRoute: typeof ApiPublicStripeWebhookRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/cenik': {
+      id: '/cenik'
+      path: '/cenik'
+      fullPath: '/cenik'
+      preLoaderRoute: typeof CenikRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/auth': {
       id: '/auth'
       path: '/auth'
@@ -278,6 +311,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/saved'
       preLoaderRoute: typeof AuthenticatedSavedRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/api/public/stripe/webhook': {
+      id: '/api/public/stripe/webhook'
+      path: '/api/public/stripe/webhook'
+      fullPath: '/api/public/stripe/webhook'
+      preLoaderRoute: typeof ApiPublicStripeWebhookRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/public/hooks/run-schedules': {
       id: '/api/public/hooks/run-schedules'
@@ -376,6 +416,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
+  CenikRoute: CenikRoute,
   ApiPublicCronBackfillAreaRoute: ApiPublicCronBackfillAreaRoute,
   ApiPublicCronBackfillMetaRoute: ApiPublicCronBackfillMetaRoute,
   ApiPublicCronDailyDigestRoute: ApiPublicCronDailyDigestRoute,
@@ -387,6 +428,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicCronScrapeRealitymixRoute: ApiPublicCronScrapeRealitymixRoute,
   ApiPublicCronScrapeSrealityRoute: ApiPublicCronScrapeSrealityRoute,
   ApiPublicHooksRunSchedulesRoute: ApiPublicHooksRunSchedulesRoute,
+  ApiPublicStripeWebhookRoute: ApiPublicStripeWebhookRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
