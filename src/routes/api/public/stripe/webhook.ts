@@ -24,7 +24,7 @@ async function upsertFromSubscription(sub: StripeSub) {
   const { getStripe } = await import("@/lib/billing/stripe.server");
 
   // user_id resolution: subscription metadata → customer metadata → existing row
-  let userId = sub.metadata?.user_id;
+  let userId: string | undefined = sub.metadata?.user_id;
   if (!userId) {
     const stripe = getStripe();
     const customer = await stripe.customers.retrieve(sub.customer);
