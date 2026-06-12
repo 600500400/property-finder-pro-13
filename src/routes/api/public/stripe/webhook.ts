@@ -46,8 +46,9 @@ async function upsertFromSubscription(sub: StripeSub) {
   const plan = (await planFromSub(sub)) ?? "premium_monthly";
   const cpe = sub.current_period_end ? new Date(sub.current_period_end * 1000).toISOString() : null;
 
+  const uid: string = userId;
   await supabaseAdmin.from("subscriptions").upsert({
-    user_id: userId,
+    user_id: uid,
     plan,
     status: sub.status,
     stripe_customer_id: sub.customer,
