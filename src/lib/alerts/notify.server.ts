@@ -66,6 +66,15 @@ export async function processInstantAlerts(opts: {
   });
   if (candidate.length === 0) return { users_notified: 0, emails_sent: 0 };
 
+  // Premium gate: instant alerts are a Premium-only feature.
+  const { isUserPremium } = await import("@/lib/billing/premium.server");
+  const uniqueUsers = [...new Set(candidate.map((s) => s.user_id))];
+  const premiumFlags = await Promise.all(uniqueUsers.map((u) => isUserPremium(u)));
+  const premiumSet = new Set(uniqueUsers.filter((_, i) => premiumFlags[i]));
+  const premiumCandidate = candidate.filter((s) => premiumSet.has(s.user_id));
+  if (premiumCandidate.length === 0) return { users_notified: 0, emails_sent: 0 };
+
+
   const { data: listings } = await supabaseAdmin
     .from("listings")
     .select("source, title, price, deal_type, property_type, kraj, city, area_m2, ownership, url, image_url, first_seen_at")
