@@ -27,11 +27,18 @@ export function UserMenu() {
   return (
     <div className="flex items-center gap-1.5">
       <Link
+        to="/watchdogs"
+        className="flex items-center gap-1.5 rounded-lg border border-border bg-[var(--color-surface-2)] px-2.5 py-1 text-xs font-semibold text-foreground hover:border-primary/50"
+      >
+        <Dog className="h-3.5 w-3.5 text-primary" /> Hlídací psi
+      </Link>
+      <Link
         to="/saved"
         className="flex items-center gap-1.5 rounded-lg border border-border bg-[var(--color-surface-2)] px-2.5 py-1 text-xs font-semibold text-foreground hover:border-primary/50"
       >
         <Bookmark className="h-3.5 w-3.5 text-primary" /> Uložené
       </Link>
+
       <span className="hidden items-center gap-1 text-xs text-muted-foreground md:flex">
         <UserIcon className="h-3.5 w-3.5" /> {user.email}
       </span>
