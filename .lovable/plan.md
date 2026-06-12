@@ -1,93 +1,149 @@
+# Etapa 3 — Hlídací psi (saved searches with email alerts)
 
-# Etapa 1 — Centralizovaný scheduled scraping (revize po feedbacku)
+## Pre-check ✅
+Counted `cron.job WHERE jobname LIKE 'scrape-%'` → **46 jobs** (sreality 10, bezrealitky 10, bazos 10, annonce 4, hyperinzerce 4, idnes 4, realitymix 4). Firecrawl jobs are intact — no re-creation needed.
 
-## Změny oproti původnímu plánu
-1. **Per-combo granularita** — každý cron tick = jedna kombinace `(dealType, propertyType)`. Endpoint přijímá JSON body, `runSourceScrape(sourceKey, dealType, propertyType)`.
-2. **Redukovaná matice pro Firecrawl** — jen `byty + domy` × `prodej + pronajem` = 4 combos/zdroj.
-3. **Cron volá published URL**, nikoli preview. Komentář v INSERT SQL: po každém publish/změně domény URL re-verify.
-4. **URL normalizace** ve `deriveExternalId` (strip query/hash) před SHA1 fallbackem.
-5. **`try/finally`** v `runSourceScrape` — žádný řádek v `scrape_runs` nesmí zůstat ve `status='running'`.
+## Scope
+1. New table `saved_searches` + `email_log`
+2. UI: "Uložit hledání" button on FilterSidebar + modal + `/watchdogs` management page
+3. Matching engine (`match.server.ts`) reusing hybrid yield logic
+4. Delivery: instant (post-scrape hook) + daily digest (06:00 UTC cron)
+5. Resend integration using `onboarding@resend.dev` sandbox sender
+6. Czech texts, dark design, rate-safe
 
-## 1. Databáze (1 migrace)
+---
 
-**`public.listings`** + **`public.scrape_runs`** (sloupce, indexy, RLS, GRANTy beze změn proti minulé verzi). Klíčové:
-- `unique (source, external_id)`, `price_per_m2` generated column, `is_active` pro soft-delete po 7 dnech.
-- `scrape_runs` přidáno: `deal_type text`, `property_type text` (sloupce pro per-combo logging).
-- RLS: `listings` SELECT only `authenticated`; `scrape_runs` SELECT `authenticated`. Mutace přes `service_role`.
+## 1. Database (migration)
 
-## 2. Per-source TanStack routes
-
-`src/routes/api/public/cron/scrape-<source>.ts` (7 souborů). Každá:
-```ts
-POST → {
-  verifyCronSecret(request);
-  const { dealType, propertyType } = await request.json();
-  const result = await runSourceScrape('sreality', dealType, propertyType);
-  return Response.json(result);
-}
-```
-
-**`src/lib/scanner/persist.server.ts`**:
-- `runSourceScrape(sourceKey, dealType, propertyType)`:
-  1. `insert scrape_runs (status='running', source, deal_type, property_type)` → uloženo `runId`.
-  2. `try { … } catch { update status='error', error_message } finally { pokud status ještě 'running', update na 'error' s "unexpected termination" }` — garantuje žádný věčný `running` řádek.
-  3. Sestaví `ScanFilters` se zadanou kombinací (`region=""`, prázdný `price_min/max`, vysoký `per_source_limit`).
-  4. Zavolá existující `HTTP_FETCHERS[sourceKey](filters)`.
-  5. Pro každý `Listing`: `resolveOwnership`, `deriveExternalId(source, url)` (viz níže).
-  6. `UPSERT` do `listings` přes `(source, external_id)`: insert → `first_seen_at=now`, existing → refresh `last_seen_at`, price, title, raw_data, `is_active=true`.
-  7. Soft-delete: `UPDATE listings SET is_active=false WHERE source=$1 AND deal_type=$2 AND property_type=$3 AND last_seen_at < now() - interval '7 days'`.
-  8. `update scrape_runs (status='success', counters, duration_ms, finished_at=now)`.
-
-**`src/lib/scanner/external-id.ts`**:
-```ts
-export function deriveExternalId(source: string, url: string): string {
-  // 1) Pokud URL má numerické ID v posledním segmentu → použij ho.
-  // 2) Jinak normalizuj URL: strip query string a hash, lowercase host,
-  //    trailing slash → '', a vrať SHA1(prvních 16 znaků).
-}
-```
-
-**`src/lib/scanner/cron-auth.server.ts`**: konstantní porovnání `Authorization: Bearer <CRON_SECRET>`.
-
-## 3. Plánování cronu (pg_cron)
-
-INSERT SQL s komentářem:
 ```sql
--- DŮLEŽITÉ: Po každém publish projektu nebo změně domény ověř, že tato URL
--- stále vede na PUBLISHED build (https://property-finder-pro-13.lovable.app),
--- nikoli na preview. Při změně URL re-INSERT s novými hodnotami.
+create table public.saved_searches (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  name text not null,
+  filters jsonb not null,
+  min_yield numeric,
+  frequency text not null check (frequency in ('instant','daily')),
+  is_active boolean not null default true,
+  created_at timestamptz not null default now(),
+  last_notified_at timestamptz
+);
+create index on public.saved_searches(user_id);
+create index on public.saved_searches(is_active, frequency);
+
+grant select, insert, update, delete on public.saved_searches to authenticated;
+grant all on public.saved_searches to service_role;
+alter table public.saved_searches enable row level security;
+create policy "own_saved_searches" on public.saved_searches
+  for all to authenticated using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+create table public.email_log (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null,
+  search_id uuid,
+  listings_count int not null default 0,
+  status text not null,           -- 'sent' | 'error' | 'skipped'
+  error text,
+  created_at timestamptz not null default now()
+);
+grant select on public.email_log to authenticated;
+grant all on public.email_log to service_role;
+alter table public.email_log enable row level security;
+create policy "own_email_log" on public.email_log
+  for select to authenticated using (auth.uid() = user_id);
 ```
 
-**Fast (sreality, bezrealitky, bazos)** — plná matice `prodej/pronajem × byty/domy/pozemky/komercni/ostatni` = 10 combos × 3 zdroje = 30 cron jobů, každé 3 h, limit 100.
+## 2. Matching module — `src/lib/alerts/match.server.ts`
+- Pure function `matchesSearch(listing, search, { bench, rentIndex }): boolean`
+- Reuses `computeHybridYield` from `yield.server.ts` so min_yield uses identical math as the UI
+- Filter checks: deal_type, property_type, kraj, sources, price_min/max (freshness intentionally ignored)
+- Unit-test fixtures in `tests/match.test.ts` (Vitest): match/no-match by region, by price band, by min_yield threshold
 
-**Firecrawl (hyperinzerce, realitymix, annonce, idnes)** — redukovaná matice `prodej/pronajem × byty/domy` = 4 combos × 4 zdroje = 16 cron jobů, každých 12 h, limit 50.
+## 3. UI
 
-Spread po minutách (např. fast: `0,2,4,…,28 */3 * * *`, firecrawl: `0,3,6,…,45 */12 * * *`) — žádné dva combos pro stejný zdroj neběží zároveň.
+**FilterSidebar.tsx** — add "💾 Uložit hledání" button beneath existing controls.
+- Logged-out: disabled `<Button>` wrapped in tooltip "Přihlaste se pro uložení hledání"
+- Logged-in: opens `<SaveSearchDialog>` (new component) — fields:
+  - Název (auto-prefill: `"{deal_type} {property_type} {kraj} do {price_max}"`)
+  - Frekvence: radio Denní souhrn (06:00) / Okamžitě
+  - Min. výnos % (optional number)
 
-**Očekávané Firecrawl náklady:**
-- 4 zdroje × 4 combos × 2 běhy/den × 50 listingů/combo = **1 600 listing-fetches/den** (max strop). Reálně se cap stane plnit jen u větších kategorií (byty/prodej) → ~800–1 200 req/den.
-- Pro porovnání: současný live-scan při jednom kliknutí vytáhne 20/zdroj × 4 zdroje = 80 req. Nový model = ekvivalent ~10–15 user-klikání/den, ale rozprostřený.
+**New route `src/routes/_authenticated/watchdogs.tsx`** ("Moji hlídací psi"):
+- Lists user's saved searches with name, frequency badge, filters summary, last_notified_at
+- Per-row actions: ✏️ Upravit / ⏸ Pozastavit/Spustit / 🗑 Smazat
+- Empty state CTA back to scanner
 
-## 4. Ověření po nasazení
+**Server functions** in `src/lib/alerts/saved-searches.functions.ts`:
+`listSavedSearches`, `createSavedSearch`, `updateSavedSearch`, `deleteSavedSearch`, `toggleSavedSearch` — all using `requireSupabaseAuth`.
 
-1. Manuální curl na každý ze 7 endpointů se vzorovým body `{"dealType":"prodej","propertyType":"byty"}` → status 200, `scrape_runs` row `status='success'`, `items_found > 0`.
-2. `SELECT source, deal_type, property_type, count(*) FROM listings GROUP BY 1,2,3` — všechny očekávané kombinace mají řádky.
-3. `SELECT * FROM cron.job WHERE jobname LIKE 'scrape-%'` — 46 jobů registrovaných (30 fast + 16 firecrawl).
-4. Re-run téhož combo → převažuje `items_updated`, ne `items_new`.
-5. Záměrný error (např. dočasně shodit CRON_SECRET) → `scrape_runs.status='error'` během vteřin, nikdy `running` na déle než trvání jednoho běhu.
-6. RLS smoke test: anonymous `select` na `listings` selže, authenticated projde.
+Add nav link to UserMenu.
 
-## Soubory
+## 4. Delivery
 
-**Nové:**
-- `src/lib/scanner/persist.server.ts`
-- `src/lib/scanner/external-id.ts`
-- `src/lib/scanner/cron-auth.server.ts`
-- `src/routes/api/public/cron/scrape-{sreality,bezrealitky,bazos,hyperinzerce,realitymix,annonce,idnes}.ts`
+### a) Instant — post-scrape hook
+In `src/lib/scanner/persist.server.ts`, after the upsert loop, track which URLs were genuinely new (currently counted as `newCount`); collect their full rows and call new `processInstantAlerts(newListings)` from `src/lib/alerts/notify.server.ts`:
+- Load active `frequency='instant'` saved_searches
+- For each user: match listings, take up to 10 hits, send ONE email per user per scrape run, update `last_notified_at`
+- Log each attempt in `email_log`
 
-**Editované:** žádné — stávající `sources/*.server.ts`, `ownership.ts`, `valuation.ts`, `rent-benchmark.server.ts` se re-usují beze změny. UI nedotýkat.
+### b) Daily digest — cron
+New route `src/routes/api/public/cron/daily-digest.ts` (Bearer `CRON_SECRET` via existing `verifyCronSecret`):
+- For each active `frequency='daily'` search: query `listings` where `first_seen_at > coalesce(last_notified_at, created_at)` AND `is_active=true` AND filters match
+- Group per user → one digest email (cap 50 listings total, 10 per search section)
+- Update `last_notified_at = now()`; log to `email_log`
+- Skip user entirely when 0 matches
 
-**Migrace:** 1× (tabulky + RLS + GRANTy + indexy).
-**Insert SQL** (ne migrace): 46× `cron.schedule(...)` s komentem o re-verify URL.
-**Secret:** `CRON_SECRET` (přes `add_secret`, 32B random).
+pg_cron (via `supabase--insert`):
+```sql
+select cron.schedule('daily-digest','0 6 * * *', $$
+  select net.http_post(
+    url:='https://project--46a95943-c9d6-44b9-b4b6-4d3db3fc4a74.lovable.app/api/public/cron/daily-digest',
+    headers:=jsonb_build_object('Authorization','Bearer '||current_setting('app.cron_secret', true)),
+    body:='{}'::jsonb
+  );
+$$);
+```
+*Note:* `CRON_SECRET` is already used by existing scrape routes — same Postgres setting pattern that's currently in use will be reused (will inspect existing scrape cron entries to copy the exact header form).
 
+## 5. Email templates (`src/lib/alerts/email.ts`)
+- `renderInstantEmail({ searchName, listings })` and `renderDigestEmail({ sections })`
+- HTML: dark theme matching app (bg #0f172a-ish), listing cards with image, title, price (Kč), lokalita, výnos badge (color by stars), CTA "Zobrazit inzerát"
+- Footer: "Spravovat hlídací psy" → `https://<published>/watchdogs`
+- Plain-text fallback generated alongside HTML
+- Subject (instant): `🏠 {n} nových nemovitostí — {search_name}`
+- Subject (digest): `🏠 Denní souhrn: {n} nových nemovitostí`
+
+Send via Resend REST API (`from: 'Hlídací pes <onboarding@resend.dev>'`). Will request `RESEND_API_KEY` secret right after plan approval (user said they'll provide it).
+
+## 6. Rate safety
+- Instant: max 1 email per user per scrape run (group by user_id before send)
+- Digest: max 50 listings total per user email, 10 per search section
+- Skip send when listings_count = 0 (log status='skipped' only when explicitly needed; otherwise no log row)
+- `email_log` lets us audit and later add per-user daily cap if abuse appears
+
+## Files
+
+**New**
+- `supabase/migrations/<ts>_saved_searches.sql`
+- `src/lib/alerts/match.server.ts`
+- `src/lib/alerts/notify.server.ts`
+- `src/lib/alerts/email.ts`
+- `src/lib/alerts/resend.server.ts`
+- `src/lib/alerts/saved-searches.functions.ts`
+- `src/components/SaveSearchDialog.tsx`
+- `src/routes/_authenticated/watchdogs.tsx`
+- `src/routes/api/public/cron/daily-digest.ts`
+- `tests/match.test.ts`
+
+**Edited**
+- `src/components/FilterSidebar.tsx` (add Uložit button)
+- `src/components/UserMenu.tsx` (add Watchdogs link)
+- `src/lib/scanner/persist.server.ts` (collect new listings → call `processInstantAlerts`)
+
+## Deliverables / acceptance
+- Logged-in user can save a search, see it on `/watchdogs`, pause/edit/delete
+- After a scrape run with new matches, instant subscriber receives one Czech email
+- 06:00 UTC cron sends digest for daily subscribers
+- All sends recorded in `email_log`
+- Sandbox caveat surfaced in UI: small note on watchdogs page "Aktuálně doručujeme jen na e-mail majitele Resend účtu (sandbox). Po ověření domény dorazí na vaši adresu."
+
+After approval I'll request `RESEND_API_KEY` via the secrets tool, then implement.
