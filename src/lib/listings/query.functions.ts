@@ -40,6 +40,12 @@ export const queryListings = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { getBenchmark } = await import("@/lib/scanner/rent-benchmark.server");
     const { indexRentComps, computeHybridYield } = await import("./yield.server");
+    const { viewerIsPremium } = await import("@/lib/billing/premium.server");
+
+    const isPremium = await viewerIsPremium();
+    const FREE_RESULT_CAP = 20;
+
+
 
     
 
