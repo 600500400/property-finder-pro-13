@@ -82,6 +82,7 @@ export async function runSourceScrape(
     const now = new Date().toISOString();
     let newCount = 0;
     let updatedCount = 0;
+    const newUrls: string[] = [];
 
     for (const l of listings) {
       if (!l.url) continue;
@@ -127,12 +128,17 @@ export async function runSourceScrape(
         console.error(`[persist:${sourceKey}] upsert error`, upErr.message);
         continue;
       }
-      if (existing) updatedCount++;
-      else newCount++;
+      if (existing) {
+        updatedCount++;
+      } else {
+        newCount++;
+        newUrls.push(l.url);
+      }
     }
 
     counts.items_new = newCount;
     counts.items_updated = updatedCount;
+
 
     // Soft-delete stale listings for this combination
     const cutoff = new Date(Date.now() - 7 * 24 * 3600 * 1000).toISOString();
@@ -147,7 +153,18 @@ export async function runSourceScrape(
       .select("id");
     counts.items_deactivated = deactivated?.length ?? 0;
 
+    // Instant watchdog alerts — best-effort, never break the scrape run
+    if (newUrls.length > 0) {
+      try {
+        const { processInstantAlerts } = await import("@/lib/alerts/notify.server");
+        await processInstantAlerts({ source: sourceKey, dealType, propertyType, newUrls });
+      } catch (alertErr) {
+        console.error(`[persist:${sourceKey}] instant-alert error`, alertErr);
+      }
+    }
+
     finalStatus = "success";
+
   } catch (e) {
     errorMessage = e instanceof Error ? e.message : String(e);
     console.error(`[persist:${sourceKey}] run failed`, errorMessage);

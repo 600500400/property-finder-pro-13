@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthenticatedWatchdogsRouteImport } from './routes/_authenticated/watchdogs'
 import { Route as AuthenticatedSavedRouteImport } from './routes/_authenticated/saved'
 import { Route as ApiPublicHooksRunSchedulesRouteImport } from './routes/api/public/hooks/run-schedules'
 import { Route as ApiPublicCronScrapeSrealityRouteImport } from './routes/api/public/cron/scrape-sreality'
@@ -21,6 +22,7 @@ import { Route as ApiPublicCronScrapeHyperinzerceRouteImport } from './routes/ap
 import { Route as ApiPublicCronScrapeBezrealitkyRouteImport } from './routes/api/public/cron/scrape-bezrealitky'
 import { Route as ApiPublicCronScrapeBazosRouteImport } from './routes/api/public/cron/scrape-bazos'
 import { Route as ApiPublicCronScrapeAnnonceRouteImport } from './routes/api/public/cron/scrape-annonce'
+import { Route as ApiPublicCronDailyDigestRouteImport } from './routes/api/public/cron/daily-digest'
 import { Route as ApiPublicCronBackfillMetaRouteImport } from './routes/api/public/cron/backfill-meta'
 import { Route as ApiPublicCronBackfillAreaRouteImport } from './routes/api/public/cron/backfill-area'
 
@@ -37,6 +39,11 @@ const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedWatchdogsRoute = AuthenticatedWatchdogsRouteImport.update({
+  id: '/watchdogs',
+  path: '/watchdogs',
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedSavedRoute = AuthenticatedSavedRouteImport.update({
   id: '/saved',
@@ -91,6 +98,12 @@ const ApiPublicCronScrapeAnnonceRoute =
     path: '/api/public/cron/scrape-annonce',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicCronDailyDigestRoute =
+  ApiPublicCronDailyDigestRouteImport.update({
+    id: '/api/public/cron/daily-digest',
+    path: '/api/public/cron/daily-digest',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicCronBackfillMetaRoute =
   ApiPublicCronBackfillMetaRouteImport.update({
     id: '/api/public/cron/backfill-meta',
@@ -108,8 +121,10 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/saved': typeof AuthenticatedSavedRoute
+  '/watchdogs': typeof AuthenticatedWatchdogsRoute
   '/api/public/cron/backfill-area': typeof ApiPublicCronBackfillAreaRoute
   '/api/public/cron/backfill-meta': typeof ApiPublicCronBackfillMetaRoute
+  '/api/public/cron/daily-digest': typeof ApiPublicCronDailyDigestRoute
   '/api/public/cron/scrape-annonce': typeof ApiPublicCronScrapeAnnonceRoute
   '/api/public/cron/scrape-bazos': typeof ApiPublicCronScrapeBazosRoute
   '/api/public/cron/scrape-bezrealitky': typeof ApiPublicCronScrapeBezrealitkyRoute
@@ -123,8 +138,10 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/saved': typeof AuthenticatedSavedRoute
+  '/watchdogs': typeof AuthenticatedWatchdogsRoute
   '/api/public/cron/backfill-area': typeof ApiPublicCronBackfillAreaRoute
   '/api/public/cron/backfill-meta': typeof ApiPublicCronBackfillMetaRoute
+  '/api/public/cron/daily-digest': typeof ApiPublicCronDailyDigestRoute
   '/api/public/cron/scrape-annonce': typeof ApiPublicCronScrapeAnnonceRoute
   '/api/public/cron/scrape-bazos': typeof ApiPublicCronScrapeBazosRoute
   '/api/public/cron/scrape-bezrealitky': typeof ApiPublicCronScrapeBezrealitkyRoute
@@ -140,8 +157,10 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/_authenticated/saved': typeof AuthenticatedSavedRoute
+  '/_authenticated/watchdogs': typeof AuthenticatedWatchdogsRoute
   '/api/public/cron/backfill-area': typeof ApiPublicCronBackfillAreaRoute
   '/api/public/cron/backfill-meta': typeof ApiPublicCronBackfillMetaRoute
+  '/api/public/cron/daily-digest': typeof ApiPublicCronDailyDigestRoute
   '/api/public/cron/scrape-annonce': typeof ApiPublicCronScrapeAnnonceRoute
   '/api/public/cron/scrape-bazos': typeof ApiPublicCronScrapeBazosRoute
   '/api/public/cron/scrape-bezrealitky': typeof ApiPublicCronScrapeBezrealitkyRoute
@@ -157,8 +176,10 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/saved'
+    | '/watchdogs'
     | '/api/public/cron/backfill-area'
     | '/api/public/cron/backfill-meta'
+    | '/api/public/cron/daily-digest'
     | '/api/public/cron/scrape-annonce'
     | '/api/public/cron/scrape-bazos'
     | '/api/public/cron/scrape-bezrealitky'
@@ -172,8 +193,10 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/saved'
+    | '/watchdogs'
     | '/api/public/cron/backfill-area'
     | '/api/public/cron/backfill-meta'
+    | '/api/public/cron/daily-digest'
     | '/api/public/cron/scrape-annonce'
     | '/api/public/cron/scrape-bazos'
     | '/api/public/cron/scrape-bezrealitky'
@@ -188,8 +211,10 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/auth'
     | '/_authenticated/saved'
+    | '/_authenticated/watchdogs'
     | '/api/public/cron/backfill-area'
     | '/api/public/cron/backfill-meta'
+    | '/api/public/cron/daily-digest'
     | '/api/public/cron/scrape-annonce'
     | '/api/public/cron/scrape-bazos'
     | '/api/public/cron/scrape-bezrealitky'
@@ -206,6 +231,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   ApiPublicCronBackfillAreaRoute: typeof ApiPublicCronBackfillAreaRoute
   ApiPublicCronBackfillMetaRoute: typeof ApiPublicCronBackfillMetaRoute
+  ApiPublicCronDailyDigestRoute: typeof ApiPublicCronDailyDigestRoute
   ApiPublicCronScrapeAnnonceRoute: typeof ApiPublicCronScrapeAnnonceRoute
   ApiPublicCronScrapeBazosRoute: typeof ApiPublicCronScrapeBazosRoute
   ApiPublicCronScrapeBezrealitkyRoute: typeof ApiPublicCronScrapeBezrealitkyRoute
@@ -238,6 +264,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/watchdogs': {
+      id: '/_authenticated/watchdogs'
+      path: '/watchdogs'
+      fullPath: '/watchdogs'
+      preLoaderRoute: typeof AuthenticatedWatchdogsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/saved': {
       id: '/_authenticated/saved'
@@ -302,6 +335,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicCronScrapeAnnonceRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/cron/daily-digest': {
+      id: '/api/public/cron/daily-digest'
+      path: '/api/public/cron/daily-digest'
+      fullPath: '/api/public/cron/daily-digest'
+      preLoaderRoute: typeof ApiPublicCronDailyDigestRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/cron/backfill-meta': {
       id: '/api/public/cron/backfill-meta'
       path: '/api/public/cron/backfill-meta'
@@ -321,10 +361,12 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedSavedRoute: typeof AuthenticatedSavedRoute
+  AuthenticatedWatchdogsRoute: typeof AuthenticatedWatchdogsRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSavedRoute: AuthenticatedSavedRoute,
+  AuthenticatedWatchdogsRoute: AuthenticatedWatchdogsRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
@@ -336,6 +378,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   ApiPublicCronBackfillAreaRoute: ApiPublicCronBackfillAreaRoute,
   ApiPublicCronBackfillMetaRoute: ApiPublicCronBackfillMetaRoute,
+  ApiPublicCronDailyDigestRoute: ApiPublicCronDailyDigestRoute,
   ApiPublicCronScrapeAnnonceRoute: ApiPublicCronScrapeAnnonceRoute,
   ApiPublicCronScrapeBazosRoute: ApiPublicCronScrapeBazosRoute,
   ApiPublicCronScrapeBezrealitkyRoute: ApiPublicCronScrapeBezrealitkyRoute,
