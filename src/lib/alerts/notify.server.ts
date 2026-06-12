@@ -81,12 +81,12 @@ export async function processInstantAlerts(opts: {
     .in("url", opts.newUrls);
   if (!listings || listings.length === 0) return { users_notified: 0, emails_sent: 0 };
 
-  const needYield = candidate.some((s) => s.min_yield != null);
+  const needYield = premiumCandidate.some((s) => s.min_yield != null);
   const ctx = needYield ? await loadCtx() : undefined;
 
   // Group matched listings by user, dedupe URLs
   const perUser = new Map<string, { name: string; searchId: string; items: EmailListing[]; urls: Set<string> }>();
-  for (const s of candidate) {
+  for (const s of premiumCandidate) {
     for (const l of listings as MatchListing[]) {
       if (!matchesSearch(l, s, ctx)) continue;
       let entry = perUser.get(s.user_id);
