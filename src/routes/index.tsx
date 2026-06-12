@@ -10,8 +10,10 @@ import { FilterSidebar } from "@/components/FilterSidebar";
 import { ListingCard, type Density } from "@/components/ListingCard";
 import { ListingCardSkeleton } from "@/components/ListingCardSkeleton";
 import { UserMenu } from "@/components/UserMenu";
+import { UpgradeBanner } from "@/components/UpgradeBanner";
+import { UpgradeModal } from "@/components/UpgradeModal";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { Radar, SlidersHorizontal, LayoutGrid, Rows3, List, Download } from "lucide-react";
+import { Radar, SlidersHorizontal, LayoutGrid, Rows3, List, Download, Crown } from "lucide-react";
 
 export const Route = createFileRoute("/")({
   head: () => ({
