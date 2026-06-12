@@ -153,7 +153,18 @@ export async function runSourceScrape(
       .select("id");
     counts.items_deactivated = deactivated?.length ?? 0;
 
+    // Instant watchdog alerts — best-effort, never break the scrape run
+    if (newUrls.length > 0) {
+      try {
+        const { processInstantAlerts } = await import("@/lib/alerts/notify.server");
+        await processInstantAlerts({ source: sourceKey, dealType, propertyType, newUrls });
+      } catch (alertErr) {
+        console.error(`[persist:${sourceKey}] instant-alert error`, alertErr);
+      }
+    }
+
     finalStatus = "success";
+
   } catch (e) {
     errorMessage = e instanceof Error ? e.message : String(e);
     console.error(`[persist:${sourceKey}] run failed`, errorMessage);
