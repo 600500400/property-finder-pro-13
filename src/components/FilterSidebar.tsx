@@ -232,7 +232,23 @@ export function FilterSidebar({ filters, setFilters, view, setView, onExport, ca
           options={[["date_desc", "Nejnovější ↓"], ["source", "Dle zdroje"], ["price_asc", "Cena ↑"], ["price_desc", "Cena ↓"], ["yield", "Výnos ↓"]]} />
       </Section>
 
+      <Section label="Hlídací pes">
+        <button
+          type="button"
+          onClick={() => isAuthed && setWatchdogOpen(true)}
+          disabled={!isAuthed}
+          title={isAuthed ? "Uložit hledání jako hlídacího psa" : "Přihlaste se pro uložení hledání"}
+          className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-primary/60 bg-primary/10 px-3 py-2 text-xs font-semibold text-primary hover:bg-primary/15 disabled:cursor-not-allowed disabled:border-border disabled:bg-[var(--color-surface-2)] disabled:text-muted-foreground"
+        >
+          <Dog className="h-3.5 w-3.5" /> {isAuthed ? "Uložit hledání" : "Přihlaste se pro hlídacího psa"}
+        </button>
+        <p className="text-[10px] leading-relaxed text-muted-foreground">
+          Dostaneš e-mail, jakmile přibyde nový inzerát odpovídající tomuto filtru.
+        </p>
+      </Section>
+
       <Section label="Presety filtrů">
+
         <div className="flex gap-1.5">
           <button type="button" onClick={handleSavePreset}
             className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-border bg-[var(--color-surface-2)] px-2 py-1.5 text-xs text-foreground hover:border-primary/50">
