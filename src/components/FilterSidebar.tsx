@@ -1,9 +1,12 @@
 import type { ScanFilters, SourceKey } from "@/lib/scanner/types";
-import { Download, Save, Trash2, Bookmark, Cloud } from "lucide-react";
+import { Download, Save, Trash2, Bookmark, Cloud, Dog } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { upsertSavedFilter } from "@/lib/saved/saved.functions";
 import { supabase } from "@/integrations/supabase/client";
+import { SaveSearchDialog } from "@/components/SaveSearchDialog";
+
+
 
 
 const REGIONS: Array<[ScanFilters["region"], string]> = [
