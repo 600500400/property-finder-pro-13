@@ -203,6 +203,13 @@ function Index() {
             </div>
           </div>
 
+          {!isLoading && data && !isPremium && <UpgradeBanner />}
+          {freeCapped && (
+            <div className="mb-3 rounded-md border border-amber-500/30 bg-amber-500/5 p-2 text-center text-xs text-amber-200/90">
+              Free plán zobrazuje max. <strong>20 výsledků</strong> · <button className="underline" onClick={() => setUpgradeReason("Odemkni neomezené výsledky.")}>upgradovat</button>
+            </div>
+          )}
+
           {isLoading && (
             <div className={gridClass(view.density)}>
               {Array.from({ length: 8 }).map((_, i) => <ListingCardSkeleton key={i} />)}
@@ -229,9 +236,11 @@ function Index() {
           )}
         </main>
       </div>
+      <UpgradeModal open={!!upgradeReason} onClose={() => setUpgradeReason(null)} reason={upgradeReason ?? undefined} />
     </div>
   );
 }
+
 
 function FreshnessToggle({ value, onChange, compact }: { value: Freshness; onChange: (v: Freshness) => void; compact?: boolean }) {
   const opts: Array<[Freshness, string]> = [["", "Vše"], ["24h", "Novinky 24 h"], ["7d", "Novinky 7 dní"]];
