@@ -73,7 +73,9 @@ export function FilterSidebar({ filters, setFilters, view, setView, onExport, ca
   const [presets, setPresets] = useState<Preset[]>([]);
   const [isAuthed, setIsAuthed] = useState(false);
   const [cloudMsg, setCloudMsg] = useState<string | null>(null);
+  const [watchdogOpen, setWatchdogOpen] = useState(false);
   const saveCloud = useServerFn(upsertSavedFilter);
+
 
   useEffect(() => { setPresets(loadPresets()); }, []);
   useEffect(() => {
