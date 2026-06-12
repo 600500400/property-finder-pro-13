@@ -154,6 +154,8 @@ export const queryListings = createServerFn({ method: "POST" })
         benchmark_source: bench.source,
         benchmark_live_okresy: bench.live_okresy,
         benchmark_static_okresy: bench.static_okresy,
+        is_premium: isPremium,
+        free_capped: !isPremium && results.length >= FREE_RESULT_CAP,
       },
     };
   });
