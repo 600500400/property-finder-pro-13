@@ -61,7 +61,12 @@ export function SaveSearchDialog({ open, onClose, filters, defaultName }: Props)
       }});
       onClose();
     } catch (e) {
-      setErr(e instanceof Error ? e.message : String(e));
+      const msg = e instanceof Error ? e.message : String(e);
+      if (msg.includes("UPGRADE_REQUIRED")) {
+        setUpgrade(msg.replace(/.*UPGRADE_REQUIRED:\s*/, ""));
+      } else {
+        setErr(msg);
+      }
     } finally {
       setBusy(false);
     }
