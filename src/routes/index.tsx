@@ -67,6 +67,7 @@ function Index() {
   const [filters, setFilters] = useState(DEFAULT_FILTERS);
   const [view, setView] = useState<ViewOptions>(DEFAULT_VIEW);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+  const [upgradeReason, setUpgradeReason] = useState<string | null>(null);
 
   useEffect(() => {
     try {
@@ -103,7 +104,14 @@ function Index() {
     return sortListings(arr, filters.sort_by);
   }, [data?.results, view.dedupe, filters.sort_by]);
 
+  const isPremium = data?.meta?.is_premium ?? false;
+  const freeCapped = data?.meta?.free_capped ?? false;
+
   const handleExport = () => {
+    if (!isPremium) {
+      setUpgradeReason("CSV export je součástí Premia.");
+      return;
+    }
     if (!listings.length) return;
     const csv = toCsv(listings);
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
