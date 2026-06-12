@@ -28,6 +28,21 @@ export const upsertSavedSearch = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => UpsertInput.parse(input))
   .handler(async ({ data, context }) => {
+    const { isUserPremium } = await import("@/lib/billing/premium.server");
+    const isPremium = await isUserPremium(context.userId);
+
+    // Plan gates
+    if (!isPremium && data.frequency === "instant") {
+      throw new Error("UPGRADE_REQUIRED: Okamžitá upozornění jsou k dispozici v Premiu.");
+    }
+    if (!isPremium && !data.id) {
+      const { count } = await context.supabase
+        .from("saved_searches").select("id", { count: "exact", head: true });
+      if ((count ?? 0) >= 1) {
+        throw new Error("UPGRADE_REQUIRED: Free plán umožňuje 1 hlídacího psa. Premium = neomezeno.");
+      }
+    }
+
     const payload = {
       name: data.name,
       filters: data.filters as never,

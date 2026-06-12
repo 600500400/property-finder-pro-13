@@ -2,7 +2,9 @@ import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { upsertSavedSearch } from "@/lib/alerts/saved-searches.functions";
 import type { ScanFilters } from "@/lib/scanner/types";
-import { X, Loader2 } from "lucide-react";
+import { X, Loader2, Crown } from "lucide-react";
+import { usePlan } from "@/hooks/usePlan";
+import { UpgradeModal } from "./UpgradeModal";
 
 interface Props {
   open: boolean;
@@ -35,11 +37,14 @@ function suggestName(f: ScanFilters): string {
 
 export function SaveSearchDialog({ open, onClose, filters, defaultName }: Props) {
   const upsert = useServerFn(upsertSavedSearch);
+  const { data: plan } = usePlan();
+  const isPremium = plan?.is_premium ?? false;
   const [name, setName] = useState(defaultName ?? suggestName(filters));
   const [frequency, setFrequency] = useState<"instant" | "daily">("daily");
   const [minYield, setMinYield] = useState<string>("");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [upgrade, setUpgrade] = useState<string | null>(null);
 
   if (!open) return null;
 
@@ -56,7 +61,12 @@ export function SaveSearchDialog({ open, onClose, filters, defaultName }: Props)
       }});
       onClose();
     } catch (e) {
-      setErr(e instanceof Error ? e.message : String(e));
+      const msg = e instanceof Error ? e.message : String(e);
+      if (msg.includes("UPGRADE_REQUIRED")) {
+        setUpgrade(msg.replace(/.*UPGRADE_REQUIRED:\s*/, ""));
+      } else {
+        setErr(msg);
+      }
     } finally {
       setBusy(false);
     }
@@ -92,10 +102,13 @@ export function SaveSearchDialog({ open, onClose, filters, defaultName }: Props)
             <div className="font-semibold">Denní souhrn</div>
             <div className="text-[11px] text-muted-foreground">06:00 ráno</div>
           </button>
-          <button type="button" onClick={() => setFrequency("instant")}
-            className={`rounded-lg border px-3 py-2 text-sm transition ${frequency === "instant" ? "border-primary bg-primary/10 text-foreground" : "border-border bg-[var(--color-surface-2)] text-muted-foreground hover:border-primary/40"}`}>
-            <div className="font-semibold">Okamžitě</div>
-            <div className="text-[11px] text-muted-foreground">po každém skenu</div>
+          <button type="button"
+            onClick={() => { if (!isPremium) { setUpgrade("Okamžitá upozornění jsou součástí Premia."); return; } setFrequency("instant"); }}
+            className={`relative rounded-lg border px-3 py-2 text-sm transition ${frequency === "instant" ? "border-primary bg-primary/10 text-foreground" : "border-border bg-[var(--color-surface-2)] text-muted-foreground hover:border-primary/40"}`}>
+            <div className="flex items-center justify-center gap-1 font-semibold">
+              Okamžitě {!isPremium && <Crown className="h-3 w-3 text-amber-400" />}
+            </div>
+            <div className="text-[11px] text-muted-foreground">{isPremium ? "po každém skenu" : "Premium"}</div>
           </button>
         </div>
 
@@ -124,6 +137,7 @@ export function SaveSearchDialog({ open, onClose, filters, defaultName }: Props)
           </button>
         </div>
       </form>
+      <UpgradeModal open={!!upgrade} onClose={() => setUpgrade(null)} reason={upgrade ?? undefined} />
     </div>
   );
 }

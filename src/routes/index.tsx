@@ -10,8 +10,10 @@ import { FilterSidebar } from "@/components/FilterSidebar";
 import { ListingCard, type Density } from "@/components/ListingCard";
 import { ListingCardSkeleton } from "@/components/ListingCardSkeleton";
 import { UserMenu } from "@/components/UserMenu";
+import { UpgradeBanner } from "@/components/UpgradeBanner";
+import { UpgradeModal } from "@/components/UpgradeModal";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { Radar, SlidersHorizontal, LayoutGrid, Rows3, List, Download } from "lucide-react";
+import { Radar, SlidersHorizontal, LayoutGrid, Rows3, List, Download, Crown } from "lucide-react";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -65,6 +67,7 @@ function Index() {
   const [filters, setFilters] = useState(DEFAULT_FILTERS);
   const [view, setView] = useState<ViewOptions>(DEFAULT_VIEW);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+  const [upgradeReason, setUpgradeReason] = useState<string | null>(null);
 
   useEffect(() => {
     try {
@@ -101,7 +104,14 @@ function Index() {
     return sortListings(arr, filters.sort_by);
   }, [data?.results, view.dedupe, filters.sort_by]);
 
+  const isPremium = data?.meta?.is_premium ?? false;
+  const freeCapped = data?.meta?.free_capped ?? false;
+
   const handleExport = () => {
+    if (!isPremium) {
+      setUpgradeReason("CSV export je součástí Premia.");
+      return;
+    }
     if (!listings.length) return;
     const csv = toCsv(listings);
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
@@ -156,9 +166,9 @@ function Index() {
           </SheetContent>
         </Sheet>
         <FreshnessToggle value={filters.freshness} onChange={(v) => setFilters({ ...filters, freshness: v })} compact />
-        <button onClick={handleExport} disabled={!listings.length}
+        <button onClick={handleExport} disabled={isPremium && !listings.length}
           className="ml-auto flex shrink-0 items-center gap-1 rounded-full border border-primary/50 px-3 py-1.5 text-xs font-semibold text-primary disabled:opacity-40">
-          <Download className="h-3.5 w-3.5" /> CSV
+          <Download className="h-3.5 w-3.5" /> CSV {!isPremium && <Crown className="h-3 w-3 text-amber-400" />}
         </button>
       </div>
 
@@ -193,6 +203,13 @@ function Index() {
             </div>
           </div>
 
+          {!isLoading && data && !isPremium && <UpgradeBanner />}
+          {freeCapped && (
+            <div className="mb-3 rounded-md border border-amber-500/30 bg-amber-500/5 p-2 text-center text-xs text-amber-200/90">
+              Free plán zobrazuje max. <strong>20 výsledků</strong> · <button className="underline" onClick={() => setUpgradeReason("Odemkni neomezené výsledky.")}>upgradovat</button>
+            </div>
+          )}
+
           {isLoading && (
             <div className={gridClass(view.density)}>
               {Array.from({ length: 8 }).map((_, i) => <ListingCardSkeleton key={i} />)}
@@ -219,9 +236,11 @@ function Index() {
           )}
         </main>
       </div>
+      <UpgradeModal open={!!upgradeReason} onClose={() => setUpgradeReason(null)} reason={upgradeReason ?? undefined} />
     </div>
   );
 }
+
 
 function FreshnessToggle({ value, onChange, compact }: { value: Freshness; onChange: (v: Freshness) => void; compact?: boolean }) {
   const opts: Array<[Freshness, string]> = [["", "Vše"], ["24h", "Novinky 24 h"], ["7d", "Novinky 7 dní"]];
