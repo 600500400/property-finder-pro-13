@@ -166,9 +166,9 @@ function Index() {
           </SheetContent>
         </Sheet>
         <FreshnessToggle value={filters.freshness} onChange={(v) => setFilters({ ...filters, freshness: v })} compact />
-        <button onClick={handleExport} disabled={!listings.length}
+        <button onClick={handleExport} disabled={isPremium && !listings.length}
           className="ml-auto flex shrink-0 items-center gap-1 rounded-full border border-primary/50 px-3 py-1.5 text-xs font-semibold text-primary disabled:opacity-40">
-          <Download className="h-3.5 w-3.5" /> CSV
+          <Download className="h-3.5 w-3.5" /> CSV {!isPremium && <Crown className="h-3 w-3 text-amber-400" />}
         </button>
       </div>
 
