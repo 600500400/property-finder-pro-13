@@ -102,10 +102,13 @@ export function SaveSearchDialog({ open, onClose, filters, defaultName }: Props)
             <div className="font-semibold">Denní souhrn</div>
             <div className="text-[11px] text-muted-foreground">06:00 ráno</div>
           </button>
-          <button type="button" onClick={() => setFrequency("instant")}
-            className={`rounded-lg border px-3 py-2 text-sm transition ${frequency === "instant" ? "border-primary bg-primary/10 text-foreground" : "border-border bg-[var(--color-surface-2)] text-muted-foreground hover:border-primary/40"}`}>
-            <div className="font-semibold">Okamžitě</div>
-            <div className="text-[11px] text-muted-foreground">po každém skenu</div>
+          <button type="button"
+            onClick={() => { if (!isPremium) { setUpgrade("Okamžitá upozornění jsou součástí Premia."); return; } setFrequency("instant"); }}
+            className={`relative rounded-lg border px-3 py-2 text-sm transition ${frequency === "instant" ? "border-primary bg-primary/10 text-foreground" : "border-border bg-[var(--color-surface-2)] text-muted-foreground hover:border-primary/40"}`}>
+            <div className="flex items-center justify-center gap-1 font-semibold">
+              Okamžitě {!isPremium && <Crown className="h-3 w-3 text-amber-400" />}
+            </div>
+            <div className="text-[11px] text-muted-foreground">{isPremium ? "po každém skenu" : "Premium"}</div>
           </button>
         </div>
 
@@ -134,6 +137,7 @@ export function SaveSearchDialog({ open, onClose, filters, defaultName }: Props)
           </button>
         </div>
       </form>
+      <UpgradeModal open={!!upgrade} onClose={() => setUpgrade(null)} reason={upgrade ?? undefined} />
     </div>
   );
 }
