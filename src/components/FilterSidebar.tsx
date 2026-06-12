@@ -290,9 +290,12 @@ export function FilterSidebar({ filters, setFilters, view, setView, onExport, ca
           <Download className="h-4 w-4" /> Export CSV
         </button>
       </div>
+
+      <SaveSearchDialog open={watchdogOpen} onClose={() => setWatchdogOpen(false)} filters={filters} />
     </aside>
   );
 }
+
 
 
 function Section({ label, children }: { label: string; children: React.ReactNode }) {
