@@ -1,149 +1,122 @@
-# Etapa 3 — Hlídací psi (saved searches with email alerts)
+# Etapa 4 — Stripe Subscriptions & Freemium Gating
 
-## Pre-check ✅
-Counted `cron.job WHERE jobname LIKE 'scrape-%'` → **46 jobs** (sreality 10, bezrealitky 10, bazos 10, annonce 4, hyperinzerce 4, idnes 4, realitymix 4). Firecrawl jobs are intact — no re-creation needed.
+User-provided BYOK Stripe in TEST mode. Sandbox `sk_test_…` will be requested after plan approval and stored as `STRIPE_SECRET_KEY` (+ `STRIPE_WEBHOOK_SECRET` after webhook is created in Stripe dashboard).
 
-## Scope
-1. New table `saved_searches` + `email_log`
-2. UI: "Uložit hledání" button on FilterSidebar + modal + `/watchdogs` management page
-3. Matching engine (`match.server.ts`) reusing hybrid yield logic
-4. Delivery: instant (post-scrape hook) + daily digest (06:00 UTC cron)
-5. Resend integration using `onboarding@resend.dev` sandbox sender
-6. Czech texts, dark design, rate-safe
+## Plans
+
+| Capability | FREE | PREMIUM |
+|---|---|---|
+| Listings freshness | exclude < 24 h | real-time |
+| Results per query | max 20 | unlimited |
+| Saved searches | max 1, daily only | unlimited, instant + daily |
+| CSV export | ❌ | ✅ |
+
+PREMIUM: **349 Kč/měsíc** nebo **3 490 Kč/rok** (CZK).
 
 ---
 
 ## 1. Database (migration)
 
 ```sql
-create table public.saved_searches (
+create table public.subscriptions (
   id uuid primary key default gen_random_uuid(),
-  user_id uuid not null references auth.users(id) on delete cascade,
-  name text not null,
-  filters jsonb not null,
-  min_yield numeric,
-  frequency text not null check (frequency in ('instant','daily')),
-  is_active boolean not null default true,
-  created_at timestamptz not null default now(),
-  last_notified_at timestamptz
-);
-create index on public.saved_searches(user_id);
-create index on public.saved_searches(is_active, frequency);
-
-grant select, insert, update, delete on public.saved_searches to authenticated;
-grant all on public.saved_searches to service_role;
-alter table public.saved_searches enable row level security;
-create policy "own_saved_searches" on public.saved_searches
-  for all to authenticated using (auth.uid() = user_id) with check (auth.uid() = user_id);
-
-create table public.email_log (
-  id uuid primary key default gen_random_uuid(),
-  user_id uuid not null,
-  search_id uuid,
-  listings_count int not null default 0,
-  status text not null,           -- 'sent' | 'error' | 'skipped'
-  error text,
+  user_id uuid not null unique references auth.users(id) on delete cascade,
+  stripe_customer_id text unique,
+  stripe_subscription_id text unique,
+  status text,                       -- active|trialing|past_due|canceled|incomplete|…
+  plan text,                         -- 'monthly'|'yearly'|null
+  current_period_end timestamptz,
+  updated_at timestamptz not null default now(),
   created_at timestamptz not null default now()
 );
-grant select on public.email_log to authenticated;
-grant all on public.email_log to service_role;
-alter table public.email_log enable row level security;
-create policy "own_email_log" on public.email_log
+grant select on public.subscriptions to authenticated;
+grant all on public.subscriptions to service_role;
+alter table public.subscriptions enable row level security;
+create policy "own_subscription_read" on public.subscriptions
   for select to authenticated using (auth.uid() = user_id);
+-- writes only via service_role (webhook)
+create index on public.subscriptions(stripe_customer_id);
 ```
 
-## 2. Matching module — `src/lib/alerts/match.server.ts`
-- Pure function `matchesSearch(listing, search, { bench, rentIndex }): boolean`
-- Reuses `computeHybridYield` from `yield.server.ts` so min_yield uses identical math as the UI
-- Filter checks: deal_type, property_type, kraj, sources, price_min/max (freshness intentionally ignored)
-- Unit-test fixtures in `tests/match.test.ts` (Vitest): match/no-match by region, by price band, by min_yield threshold
+## 2. Stripe wiring
 
-## 3. UI
+`src/lib/billing/stripe.server.ts` — lazy Stripe client (`new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: '2024-…' })`).
 
-**FilterSidebar.tsx** — add "💾 Uložit hledání" button beneath existing controls.
-- Logged-out: disabled `<Button>` wrapped in tooltip "Přihlaste se pro uložení hledání"
-- Logged-in: opens `<SaveSearchDialog>` (new component) — fields:
-  - Název (auto-prefill: `"{deal_type} {property_type} {kraj} do {price_max}"`)
-  - Frekvence: radio Denní souhrn (06:00) / Okamžitě
-  - Min. výnos % (optional number)
+`src/lib/billing/products.server.ts` — `ensureProducts()` idempotent: looks up product by metadata key `app=realityscanner-premium`; if missing, creates Product + 2 recurring Prices (CZK 349 monthly, CZK 3 490 yearly) with lookup keys `premium_monthly` / `premium_yearly`. Returns price IDs. Called lazily on first checkout / on `/api/public/cron/ensure-products` (manual one-shot).
 
-**New route `src/routes/_authenticated/watchdogs.tsx`** ("Moji hlídací psi"):
-- Lists user's saved searches with name, frequency badge, filters summary, last_notified_at
-- Per-row actions: ✏️ Upravit / ⏸ Pozastavit/Spustit / 🗑 Smazat
-- Empty state CTA back to scanner
+`src/lib/billing/plan.server.ts` — **`getUserPlan(userId)`** → `'free' | 'premium'`. Premium when `status in ('active','trialing')` AND `current_period_end > now()`. Used by every gate.
 
-**Server functions** in `src/lib/alerts/saved-searches.functions.ts`:
-`listSavedSearches`, `createSavedSearch`, `updateSavedSearch`, `deleteSavedSearch`, `toggleSavedSearch` — all using `requireSupabaseAuth`.
+## 3. Server-side gates (NOT UI-only)
 
-Add nav link to UserMenu.
+- **`queryListings`** (`src/lib/listings/query.functions.ts`): after auth resolution, if plan='free' → force `freshness` to exclude listings with `first_seen_at > now() - 24h` AND slice results to 20. Public/anon visitors = treated as free.
+- **`upsertSavedSearch`**: if free → reject when `frequency='instant'` OR when count of existing active searches ≥ 1 (on insert). Returns typed error `{ code:'upgrade_required' }`.
+- **CSV export**: move from client-side to new server fn `exportListingsCsv` requiring auth + premium; returns CSV string. Client downloads via blob. Free users → 403.
+- **`processInstantAlerts`** (`notify.server.ts`): filter saved_searches to only those whose owner has premium plan; non-premium instant rows silently demoted (treated as daily by digest job).
+- **Daily digest** already covers everyone — no change needed beyond including demoted instant searches (already daily-equivalent).
 
-## 4. Delivery
+## 4. Checkout & Portal server functions
 
-### a) Instant — post-scrape hook
-In `src/lib/scanner/persist.server.ts`, after the upsert loop, track which URLs were genuinely new (currently counted as `newCount`); collect their full rows and call new `processInstantAlerts(newListings)` from `src/lib/alerts/notify.server.ts`:
-- Load active `frequency='instant'` saved_searches
-- For each user: match listings, take up to 10 hits, send ONE email per user per scrape run, update `last_notified_at`
-- Log each attempt in `email_log`
+`src/lib/billing/billing.functions.ts` (all `requireSupabaseAuth`):
+- `createCheckoutSession({ interval: 'monthly'|'yearly' })` → ensures Stripe customer (create if missing, store on subscriptions row stub), creates Checkout Session `mode:'subscription'`, line_items=[price], `client_reference_id=user_id`, `metadata:{user_id}`, `subscription_data.metadata:{user_id}`, success `/cenik?success=1`, cancel `/cenik?canceled=1`. Returns `{ url }`.
+- `createPortalSession()` → Stripe Billing Portal session, returns `{ url }`.
+- `getMyPlan()` → `{ plan, status, current_period_end, stripe_customer_id }` for UI.
 
-### b) Daily digest — cron
-New route `src/routes/api/public/cron/daily-digest.ts` (Bearer `CRON_SECRET` via existing `verifyCronSecret`):
-- For each active `frequency='daily'` search: query `listings` where `first_seen_at > coalesce(last_notified_at, created_at)` AND `is_active=true` AND filters match
-- Group per user → one digest email (cap 50 listings total, 10 per search section)
-- Update `last_notified_at = now()`; log to `email_log`
-- Skip user entirely when 0 matches
+## 5. Webhook
 
-pg_cron (via `supabase--insert`):
-```sql
-select cron.schedule('daily-digest','0 6 * * *', $$
-  select net.http_post(
-    url:='https://project--46a95943-c9d6-44b9-b4b6-4d3db3fc4a74.lovable.app/api/public/cron/daily-digest',
-    headers:=jsonb_build_object('Authorization','Bearer '||current_setting('app.cron_secret', true)),
-    body:='{}'::jsonb
-  );
-$$);
-```
-*Note:* `CRON_SECRET` is already used by existing scrape routes — same Postgres setting pattern that's currently in use will be reused (will inspect existing scrape cron entries to copy the exact header form).
+`src/routes/api/public/billing/stripe-webhook.ts` (raw body + signature verify via `STRIPE_WEBHOOK_SECRET`):
 
-## 5. Email templates (`src/lib/alerts/email.ts`)
-- `renderInstantEmail({ searchName, listings })` and `renderDigestEmail({ sections })`
-- HTML: dark theme matching app (bg #0f172a-ish), listing cards with image, title, price (Kč), lokalita, výnos badge (color by stars), CTA "Zobrazit inzerát"
-- Footer: "Spravovat hlídací psy" → `https://<published>/watchdogs`
-- Plain-text fallback generated alongside HTML
-- Subject (instant): `🏠 {n} nových nemovitostí — {search_name}`
-- Subject (digest): `🏠 Denní souhrn: {n} nových nemovitostí`
+Events handled:
+- `checkout.session.completed` → read `metadata.user_id`, expand subscription, upsert subscriptions row.
+- `customer.subscription.created|updated|deleted` → upsert by `stripe_subscription_id`; resolve user via existing row's user_id OR `subscription.metadata.user_id`. Map `items.data[0].price.lookup_key` → plan ('monthly'/'yearly').
+- `invoice.paid` → ensure status='active' and refresh current_period_end.
+- `invoice.payment_failed` → status='past_due'.
 
-Send via Resend REST API (`from: 'Hlídací pes <onboarding@resend.dev>'`). Will request `RESEND_API_KEY` secret right after plan approval (user said they'll provide it).
+NEVER trust email matching. If user_id missing → log + 200 (avoid retries storm).
 
-## 6. Rate safety
-- Instant: max 1 email per user per scrape run (group by user_id before send)
-- Digest: max 50 listings total per user email, 10 per search section
-- Skip send when listings_count = 0 (log status='skipped' only when explicitly needed; otherwise no log row)
-- `email_log` lets us audit and later add per-user daily cap if abuse appears
+## 6. UI (Czech, dark)
 
-## Files
+- **`/cenik`** (public route): two cards Zdarma / Premium (benefit list, ✓/✗), interval toggle Měsíčně/Ročně (with "ušetříte 2 mes."), CTA "Aktivovat Premium" → calls `createCheckoutSession` → `window.location = url`. Logged-out CTA → redirect `/auth?next=/cenik`. Handle `?success=1` / `?canceled=1` toast.
+- **Header plan badge**: `<PlanBadge />` in `UserMenu` row (gold "Premium" pill / muted "Free").
+- **Upgrade banner** above results when free user has freshness="24h" or hits 20-cap: "Nejlepší investice mizí během hodin — Premium vidí nové inzeráty okamžitě." with link to /cenik.
+- **UserMenu**: "Správa předplatného" item (premium only) → calls `createPortalSession` → redirect.
+- **SaveSearchDialog**: if free → disable "Okamžitě" radio with tooltip; on submit-and-would-exceed-limit → open `<UpgradeDialog>` instead of saving.
+- **CSV button**: free → click opens `<UpgradeDialog>`.
+- **`<UpgradeDialog>`** shared component with CTA to /cenik.
+- `/watchdogs` shows lock icon next to instant rows for free users (after demotion).
+
+## 7. Secrets request
+
+After plan approval: `secrets--add_secret(['STRIPE_SECRET_KEY','STRIPE_WEBHOOK_SECRET'])`. User pastes test-mode `sk_test_…`. After first deploy I'll give the webhook URL `https://property-finder-pro-13.lovable.app/api/public/billing/stripe-webhook` to register in Stripe dashboard → returns `whsec_…`.
+
+## 8. Files
 
 **New**
-- `supabase/migrations/<ts>_saved_searches.sql`
-- `src/lib/alerts/match.server.ts`
-- `src/lib/alerts/notify.server.ts`
-- `src/lib/alerts/email.ts`
-- `src/lib/alerts/resend.server.ts`
-- `src/lib/alerts/saved-searches.functions.ts`
-- `src/components/SaveSearchDialog.tsx`
-- `src/routes/_authenticated/watchdogs.tsx`
-- `src/routes/api/public/cron/daily-digest.ts`
-- `tests/match.test.ts`
+- migration `subscriptions.sql`
+- `src/lib/billing/stripe.server.ts`
+- `src/lib/billing/products.server.ts`
+- `src/lib/billing/plan.server.ts`
+- `src/lib/billing/billing.functions.ts`
+- `src/routes/api/public/billing/stripe-webhook.ts`
+- `src/routes/cenik.tsx`
+- `src/components/PlanBadge.tsx`
+- `src/components/UpgradeDialog.tsx`
+- `src/components/UpgradeBanner.tsx`
+- `src/lib/listings/export.functions.ts` (server CSV)
+- `tests/plan-gates.test.ts`
 
 **Edited**
-- `src/components/FilterSidebar.tsx` (add Uložit button)
-- `src/components/UserMenu.tsx` (add Watchdogs link)
-- `src/lib/scanner/persist.server.ts` (collect new listings → call `processInstantAlerts`)
+- `src/lib/listings/query.functions.ts` (free gate)
+- `src/lib/alerts/saved-searches.functions.ts` (count + frequency gate)
+- `src/lib/alerts/notify.server.ts` (premium-only instant)
+- `src/components/SaveSearchDialog.tsx` (instant disabled + upgrade modal)
+- `src/components/FilterSidebar.tsx` (CSV gate hook)
+- `src/components/UserMenu.tsx` (badge + portal link)
+- `src/routes/index.tsx` (upgrade banner, server-driven CSV)
 
-## Deliverables / acceptance
-- Logged-in user can save a search, see it on `/watchdogs`, pause/edit/delete
-- After a scrape run with new matches, instant subscriber receives one Czech email
-- 06:00 UTC cron sends digest for daily subscribers
-- All sends recorded in `email_log`
-- Sandbox caveat surfaced in UI: small note on watchdogs page "Aktuálně doručujeme jen na e-mail majitele Resend účtu (sandbox). Po ověření domény dorazí na vaši adresu."
+## 9. Acceptance / test checklist (provided after build)
 
-After approval I'll request `RESEND_API_KEY` via the secrets tool, then implement.
+Will include: create test acct → upgrade with 4242 4242 4242 4242 → verify webhook fires → DB row appears → header badge flips → instant alerts work → cancel via portal → falls back to free after period end → free user blocked at queryListings/save/csv.
+
+---
+
+After approval I'll request the two secrets, then implement.
