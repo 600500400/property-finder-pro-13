@@ -108,6 +108,8 @@ export interface ScanMeta {
   benchmark_static_okresy?: number;
   filtered_foreign?: number;
   filtered_reasons?: Record<string, number>;
+  is_premium?: boolean;
+  free_capped?: boolean;
 }
 
 
