@@ -36,7 +36,7 @@ async function upsertFromSubscription(sub: StripeSub) {
       .select("user_id")
       .eq("stripe_customer_id", sub.customer)
       .maybeSingle();
-    userId = row?.user_id;
+    userId = row?.user_id ?? undefined;
   }
   if (!userId) {
     console.warn("[stripe-webhook] no user_id for subscription", sub.id);
