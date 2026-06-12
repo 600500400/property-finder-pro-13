@@ -67,12 +67,18 @@ export const queryListings = createServerFn({ method: "POST" })
       q = q.gte("first_seen_at", new Date(Date.now() - 7 * 24 * 3600_000).toISOString());
     }
 
+    // FREE plan: exclude listings first seen in the last 24h (real-time gated)
+    if (!isPremium) {
+      q = q.lt("first_seen_at", new Date(Date.now() - 24 * 3600_000).toISOString());
+    }
+
     // Server-side ordering (date/price only — yield is post-computed)
     if (filters.sort_by === "price_asc") q = q.order("price", { ascending: true, nullsFirst: false });
     else if (filters.sort_by === "price_desc") q = q.order("price", { ascending: false, nullsFirst: false });
     else q = q.order("first_seen_at", { ascending: false });
 
-    q = q.limit(500);
+    q = q.limit(isPremium ? 500 : FREE_RESULT_CAP);
+
 
     const { data: rows, error } = await q;
     if (error) throw new Error(error.message);
