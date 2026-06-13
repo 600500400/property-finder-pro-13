@@ -44,7 +44,10 @@ async function upsertFromSubscription(sub: StripeSub) {
   }
 
   const plan = (await planFromSub(sub)) ?? "premium_monthly";
-  const cpe = sub.current_period_end ? new Date(sub.current_period_end * 1000).toISOString() : null;
+  // Stripe API 2026-05-27 (dahlia) moved current_period_end from the subscription
+  // to the subscription item. Read item first, fall back to legacy field.
+  const cpeUnix = sub.items?.data?.[0]?.current_period_end ?? sub.current_period_end ?? null;
+  const cpe = cpeUnix ? new Date(cpeUnix * 1000).toISOString() : null;
 
   const uid: string = userId;
   await supabaseAdmin.from("subscriptions").upsert({
