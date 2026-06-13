@@ -10,6 +10,12 @@ type StripeSub = {
   metadata: Record<string, string>;
 };
 
+async function retrieveFullSubscription(subscriptionId: string): Promise<StripeSub> {
+  const { getStripe } = await import("@/lib/billing/stripe.server");
+  const stripe = getStripe();
+  return await stripe.subscriptions.retrieve(subscriptionId) as unknown as StripeSub;
+}
+
 async function planFromSub(sub: StripeSub): Promise<"premium_monthly" | "premium_yearly" | null> {
   const meta = sub.metadata?.plan;
   if (meta === "premium_monthly" || meta === "premium_yearly") return meta;
@@ -47,6 +53,9 @@ async function upsertFromSubscription(sub: StripeSub) {
   // Stripe API 2026-05-27 (dahlia) moved current_period_end from the subscription
   // to the subscription item. Read item first, fall back to legacy field.
   const cpeUnix = sub.items?.data?.[0]?.current_period_end ?? sub.current_period_end ?? null;
+  if (!cpeUnix && sub.status !== "canceled") {
+    console.warn("[stripe-webhook] missing current_period_end", { subscription: sub.id, status: sub.status });
+  }
   const cpe = cpeUnix ? new Date(cpeUnix * 1000).toISOString() : null;
 
   const uid: string = userId;
@@ -96,17 +105,18 @@ export const Route = createFileRoute("/api/public/stripe/webhook")({
             case "checkout.session.completed": {
               const session = event.data.object as { subscription?: string };
               if (session.subscription) {
-                const sub = await stripe.subscriptions.retrieve(session.subscription);
-                await upsertFromSubscription(sub as unknown as StripeSub);
+                await upsertFromSubscription(await retrieveFullSubscription(session.subscription));
               }
               break;
             }
             case "customer.subscription.created":
             case "customer.subscription.updated":
             case "customer.subscription.resumed":
-            case "customer.subscription.paused":
-              await upsertFromSubscription(event.data.object as unknown as StripeSub);
+            case "customer.subscription.paused": {
+              const eventSub = event.data.object as unknown as StripeSub;
+              await upsertFromSubscription(await retrieveFullSubscription(eventSub.id));
               break;
+            }
             case "customer.subscription.deleted": {
               const sub = event.data.object as unknown as StripeSub;
               await markFree(sub.customer);
@@ -115,8 +125,7 @@ export const Route = createFileRoute("/api/public/stripe/webhook")({
             case "invoice.payment_failed": {
               const inv = event.data.object as { subscription?: string };
               if (inv.subscription) {
-                const sub = await stripe.subscriptions.retrieve(inv.subscription);
-                await upsertFromSubscription(sub as unknown as StripeSub);
+                await upsertFromSubscription(await retrieveFullSubscription(inv.subscription));
               }
               break;
             }
