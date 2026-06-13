@@ -4,9 +4,9 @@ type StripeSub = {
   id: string;
   customer: string;
   status: string;
-  current_period_end: number;
+  current_period_end?: number | null;
   cancel_at_period_end: boolean;
-  items: { data: Array<{ price: { recurring: { interval: string } | null } }> };
+  items: { data: Array<{ current_period_end?: number | null; price: { recurring: { interval: string } | null } }> };
   metadata: Record<string, string>;
 };
 
