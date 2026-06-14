@@ -291,6 +291,12 @@ export function FilterSidebar({ filters, setFilters, view, setView, onExport, ca
         </button>
       </div>
 
+      <div className="mt-3 hidden flex-wrap items-center gap-x-3 gap-y-1 border-t border-border pt-3 text-[11px] text-muted-foreground md:flex">
+        <Link to="/cenik" className="hover:text-foreground">Ceník</Link>
+        <Link to="/obchodni-podminky" className="hover:text-foreground">Obchodní podmínky</Link>
+        <Link to="/ochrana-osobnich-udaju" className="hover:text-foreground">Soukromí</Link>
+      </div>
+
       <SaveSearchDialog open={watchdogOpen} onClose={() => setWatchdogOpen(false)} filters={filters} />
     </aside>
   );
