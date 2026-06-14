@@ -124,7 +124,7 @@ function Index() {
   };
 
   return (
-    <div className="flex h-screen flex-col bg-background text-foreground">
+    <div className="flex h-[100dvh] min-h-0 flex-col bg-background text-foreground">
       <header className="sticky top-0 z-30 flex items-center gap-3 border-b border-border bg-[var(--color-surface)] px-5 py-3">
         <Radar className="h-5 w-5 text-primary" />
         <div className="text-base font-bold tracking-tight">
