@@ -9,6 +9,8 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as OchranaOsobnichUdajuRouteImport } from './routes/ochrana-osobnich-udaju'
+import { Route as ObchodniPodminkyRouteImport } from './routes/obchodni-podminky'
 import { Route as CenikRouteImport } from './routes/cenik'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
@@ -25,9 +27,17 @@ import { Route as ApiPublicCronScrapeBezrealitkyRouteImport } from './routes/api
 import { Route as ApiPublicCronScrapeBazosRouteImport } from './routes/api/public/cron/scrape-bazos'
 import { Route as ApiPublicCronScrapeAnnonceRouteImport } from './routes/api/public/cron/scrape-annonce'
 import { Route as ApiPublicCronDailyDigestRouteImport } from './routes/api/public/cron/daily-digest'
-import { Route as ApiPublicCronBackfillMetaRouteImport } from './routes/api/public/cron/backfill-meta'
-import { Route as ApiPublicCronBackfillAreaRouteImport } from './routes/api/public/cron/backfill-area'
 
+const OchranaOsobnichUdajuRoute = OchranaOsobnichUdajuRouteImport.update({
+  id: '/ochrana-osobnich-udaju',
+  path: '/ochrana-osobnich-udaju',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ObchodniPodminkyRoute = ObchodniPodminkyRouteImport.update({
+  id: '/obchodni-podminky',
+  path: '/obchodni-podminky',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CenikRoute = CenikRouteImport.update({
   id: '/cenik',
   path: '/cenik',
@@ -116,27 +126,15 @@ const ApiPublicCronDailyDigestRoute =
     path: '/api/public/cron/daily-digest',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiPublicCronBackfillMetaRoute =
-  ApiPublicCronBackfillMetaRouteImport.update({
-    id: '/api/public/cron/backfill-meta',
-    path: '/api/public/cron/backfill-meta',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiPublicCronBackfillAreaRoute =
-  ApiPublicCronBackfillAreaRouteImport.update({
-    id: '/api/public/cron/backfill-area',
-    path: '/api/public/cron/backfill-area',
-    getParentRoute: () => rootRouteImport,
-  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/cenik': typeof CenikRoute
+  '/obchodni-podminky': typeof ObchodniPodminkyRoute
+  '/ochrana-osobnich-udaju': typeof OchranaOsobnichUdajuRoute
   '/saved': typeof AuthenticatedSavedRoute
   '/watchdogs': typeof AuthenticatedWatchdogsRoute
-  '/api/public/cron/backfill-area': typeof ApiPublicCronBackfillAreaRoute
-  '/api/public/cron/backfill-meta': typeof ApiPublicCronBackfillMetaRoute
   '/api/public/cron/daily-digest': typeof ApiPublicCronDailyDigestRoute
   '/api/public/cron/scrape-annonce': typeof ApiPublicCronScrapeAnnonceRoute
   '/api/public/cron/scrape-bazos': typeof ApiPublicCronScrapeBazosRoute
@@ -152,10 +150,10 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/cenik': typeof CenikRoute
+  '/obchodni-podminky': typeof ObchodniPodminkyRoute
+  '/ochrana-osobnich-udaju': typeof OchranaOsobnichUdajuRoute
   '/saved': typeof AuthenticatedSavedRoute
   '/watchdogs': typeof AuthenticatedWatchdogsRoute
-  '/api/public/cron/backfill-area': typeof ApiPublicCronBackfillAreaRoute
-  '/api/public/cron/backfill-meta': typeof ApiPublicCronBackfillMetaRoute
   '/api/public/cron/daily-digest': typeof ApiPublicCronDailyDigestRoute
   '/api/public/cron/scrape-annonce': typeof ApiPublicCronScrapeAnnonceRoute
   '/api/public/cron/scrape-bazos': typeof ApiPublicCronScrapeBazosRoute
@@ -173,10 +171,10 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/cenik': typeof CenikRoute
+  '/obchodni-podminky': typeof ObchodniPodminkyRoute
+  '/ochrana-osobnich-udaju': typeof OchranaOsobnichUdajuRoute
   '/_authenticated/saved': typeof AuthenticatedSavedRoute
   '/_authenticated/watchdogs': typeof AuthenticatedWatchdogsRoute
-  '/api/public/cron/backfill-area': typeof ApiPublicCronBackfillAreaRoute
-  '/api/public/cron/backfill-meta': typeof ApiPublicCronBackfillMetaRoute
   '/api/public/cron/daily-digest': typeof ApiPublicCronDailyDigestRoute
   '/api/public/cron/scrape-annonce': typeof ApiPublicCronScrapeAnnonceRoute
   '/api/public/cron/scrape-bazos': typeof ApiPublicCronScrapeBazosRoute
@@ -194,10 +192,10 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/cenik'
+    | '/obchodni-podminky'
+    | '/ochrana-osobnich-udaju'
     | '/saved'
     | '/watchdogs'
-    | '/api/public/cron/backfill-area'
-    | '/api/public/cron/backfill-meta'
     | '/api/public/cron/daily-digest'
     | '/api/public/cron/scrape-annonce'
     | '/api/public/cron/scrape-bazos'
@@ -213,10 +211,10 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/cenik'
+    | '/obchodni-podminky'
+    | '/ochrana-osobnich-udaju'
     | '/saved'
     | '/watchdogs'
-    | '/api/public/cron/backfill-area'
-    | '/api/public/cron/backfill-meta'
     | '/api/public/cron/daily-digest'
     | '/api/public/cron/scrape-annonce'
     | '/api/public/cron/scrape-bazos'
@@ -233,10 +231,10 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/auth'
     | '/cenik'
+    | '/obchodni-podminky'
+    | '/ochrana-osobnich-udaju'
     | '/_authenticated/saved'
     | '/_authenticated/watchdogs'
-    | '/api/public/cron/backfill-area'
-    | '/api/public/cron/backfill-meta'
     | '/api/public/cron/daily-digest'
     | '/api/public/cron/scrape-annonce'
     | '/api/public/cron/scrape-bazos'
@@ -254,8 +252,8 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
   CenikRoute: typeof CenikRoute
-  ApiPublicCronBackfillAreaRoute: typeof ApiPublicCronBackfillAreaRoute
-  ApiPublicCronBackfillMetaRoute: typeof ApiPublicCronBackfillMetaRoute
+  ObchodniPodminkyRoute: typeof ObchodniPodminkyRoute
+  OchranaOsobnichUdajuRoute: typeof OchranaOsobnichUdajuRoute
   ApiPublicCronDailyDigestRoute: typeof ApiPublicCronDailyDigestRoute
   ApiPublicCronScrapeAnnonceRoute: typeof ApiPublicCronScrapeAnnonceRoute
   ApiPublicCronScrapeBazosRoute: typeof ApiPublicCronScrapeBazosRoute
@@ -270,6 +268,20 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/ochrana-osobnich-udaju': {
+      id: '/ochrana-osobnich-udaju'
+      path: '/ochrana-osobnich-udaju'
+      fullPath: '/ochrana-osobnich-udaju'
+      preLoaderRoute: typeof OchranaOsobnichUdajuRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/obchodni-podminky': {
+      id: '/obchodni-podminky'
+      path: '/obchodni-podminky'
+      fullPath: '/obchodni-podminky'
+      preLoaderRoute: typeof ObchodniPodminkyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/cenik': {
       id: '/cenik'
       path: '/cenik'
@@ -382,20 +394,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicCronDailyDigestRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/cron/backfill-meta': {
-      id: '/api/public/cron/backfill-meta'
-      path: '/api/public/cron/backfill-meta'
-      fullPath: '/api/public/cron/backfill-meta'
-      preLoaderRoute: typeof ApiPublicCronBackfillMetaRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/cron/backfill-area': {
-      id: '/api/public/cron/backfill-area'
-      path: '/api/public/cron/backfill-area'
-      fullPath: '/api/public/cron/backfill-area'
-      preLoaderRoute: typeof ApiPublicCronBackfillAreaRouteImport
-      parentRoute: typeof rootRouteImport
-    }
   }
 }
 
@@ -417,8 +415,8 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   CenikRoute: CenikRoute,
-  ApiPublicCronBackfillAreaRoute: ApiPublicCronBackfillAreaRoute,
-  ApiPublicCronBackfillMetaRoute: ApiPublicCronBackfillMetaRoute,
+  ObchodniPodminkyRoute: ObchodniPodminkyRoute,
+  OchranaOsobnichUdajuRoute: OchranaOsobnichUdajuRoute,
   ApiPublicCronDailyDigestRoute: ApiPublicCronDailyDigestRoute,
   ApiPublicCronScrapeAnnonceRoute: ApiPublicCronScrapeAnnonceRoute,
   ApiPublicCronScrapeBazosRoute: ApiPublicCronScrapeBazosRoute,

@@ -6,6 +6,7 @@ import { createCheckoutSession, createPortalSession } from "@/lib/billing/checko
 import { usePlan } from "@/hooks/usePlan";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect } from "react";
+import { Footer } from "@/components/Footer";
 
 export const Route = createFileRoute("/cenik")({
   head: () => ({
@@ -155,7 +156,14 @@ function Pricing() {
         <p className="mt-8 text-center text-xs text-muted-foreground">
           Platba přes Stripe · zrušení kdykoli · sandbox / TEST MODE
         </p>
+        <p className="mt-3 text-center text-xs text-muted-foreground">
+          Aktivací předplatného souhlasíte s{" "}
+          <Link to="/obchodni-podminky" className="text-primary hover:underline">obchodními podmínkami</Link>{" "}
+          a berete na vědomí{" "}
+          <Link to="/ochrana-osobnich-udaju" className="text-primary hover:underline">ochranu osobních údajů</Link>.
+        </p>
       </main>
+      <Footer />
     </div>
   );
 }
