@@ -25,8 +25,6 @@ import { Route as ApiPublicCronScrapeBezrealitkyRouteImport } from './routes/api
 import { Route as ApiPublicCronScrapeBazosRouteImport } from './routes/api/public/cron/scrape-bazos'
 import { Route as ApiPublicCronScrapeAnnonceRouteImport } from './routes/api/public/cron/scrape-annonce'
 import { Route as ApiPublicCronDailyDigestRouteImport } from './routes/api/public/cron/daily-digest'
-import { Route as ApiPublicCronBackfillMetaRouteImport } from './routes/api/public/cron/backfill-meta'
-import { Route as ApiPublicCronBackfillAreaRouteImport } from './routes/api/public/cron/backfill-area'
 
 const CenikRoute = CenikRouteImport.update({
   id: '/cenik',
@@ -116,18 +114,6 @@ const ApiPublicCronDailyDigestRoute =
     path: '/api/public/cron/daily-digest',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiPublicCronBackfillMetaRoute =
-  ApiPublicCronBackfillMetaRouteImport.update({
-    id: '/api/public/cron/backfill-meta',
-    path: '/api/public/cron/backfill-meta',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiPublicCronBackfillAreaRoute =
-  ApiPublicCronBackfillAreaRouteImport.update({
-    id: '/api/public/cron/backfill-area',
-    path: '/api/public/cron/backfill-area',
-    getParentRoute: () => rootRouteImport,
-  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -135,8 +121,6 @@ export interface FileRoutesByFullPath {
   '/cenik': typeof CenikRoute
   '/saved': typeof AuthenticatedSavedRoute
   '/watchdogs': typeof AuthenticatedWatchdogsRoute
-  '/api/public/cron/backfill-area': typeof ApiPublicCronBackfillAreaRoute
-  '/api/public/cron/backfill-meta': typeof ApiPublicCronBackfillMetaRoute
   '/api/public/cron/daily-digest': typeof ApiPublicCronDailyDigestRoute
   '/api/public/cron/scrape-annonce': typeof ApiPublicCronScrapeAnnonceRoute
   '/api/public/cron/scrape-bazos': typeof ApiPublicCronScrapeBazosRoute
@@ -154,8 +138,6 @@ export interface FileRoutesByTo {
   '/cenik': typeof CenikRoute
   '/saved': typeof AuthenticatedSavedRoute
   '/watchdogs': typeof AuthenticatedWatchdogsRoute
-  '/api/public/cron/backfill-area': typeof ApiPublicCronBackfillAreaRoute
-  '/api/public/cron/backfill-meta': typeof ApiPublicCronBackfillMetaRoute
   '/api/public/cron/daily-digest': typeof ApiPublicCronDailyDigestRoute
   '/api/public/cron/scrape-annonce': typeof ApiPublicCronScrapeAnnonceRoute
   '/api/public/cron/scrape-bazos': typeof ApiPublicCronScrapeBazosRoute
@@ -175,8 +157,6 @@ export interface FileRoutesById {
   '/cenik': typeof CenikRoute
   '/_authenticated/saved': typeof AuthenticatedSavedRoute
   '/_authenticated/watchdogs': typeof AuthenticatedWatchdogsRoute
-  '/api/public/cron/backfill-area': typeof ApiPublicCronBackfillAreaRoute
-  '/api/public/cron/backfill-meta': typeof ApiPublicCronBackfillMetaRoute
   '/api/public/cron/daily-digest': typeof ApiPublicCronDailyDigestRoute
   '/api/public/cron/scrape-annonce': typeof ApiPublicCronScrapeAnnonceRoute
   '/api/public/cron/scrape-bazos': typeof ApiPublicCronScrapeBazosRoute
@@ -196,8 +176,6 @@ export interface FileRouteTypes {
     | '/cenik'
     | '/saved'
     | '/watchdogs'
-    | '/api/public/cron/backfill-area'
-    | '/api/public/cron/backfill-meta'
     | '/api/public/cron/daily-digest'
     | '/api/public/cron/scrape-annonce'
     | '/api/public/cron/scrape-bazos'
@@ -215,8 +193,6 @@ export interface FileRouteTypes {
     | '/cenik'
     | '/saved'
     | '/watchdogs'
-    | '/api/public/cron/backfill-area'
-    | '/api/public/cron/backfill-meta'
     | '/api/public/cron/daily-digest'
     | '/api/public/cron/scrape-annonce'
     | '/api/public/cron/scrape-bazos'
@@ -235,8 +211,6 @@ export interface FileRouteTypes {
     | '/cenik'
     | '/_authenticated/saved'
     | '/_authenticated/watchdogs'
-    | '/api/public/cron/backfill-area'
-    | '/api/public/cron/backfill-meta'
     | '/api/public/cron/daily-digest'
     | '/api/public/cron/scrape-annonce'
     | '/api/public/cron/scrape-bazos'
@@ -254,8 +228,6 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
   CenikRoute: typeof CenikRoute
-  ApiPublicCronBackfillAreaRoute: typeof ApiPublicCronBackfillAreaRoute
-  ApiPublicCronBackfillMetaRoute: typeof ApiPublicCronBackfillMetaRoute
   ApiPublicCronDailyDigestRoute: typeof ApiPublicCronDailyDigestRoute
   ApiPublicCronScrapeAnnonceRoute: typeof ApiPublicCronScrapeAnnonceRoute
   ApiPublicCronScrapeBazosRoute: typeof ApiPublicCronScrapeBazosRoute
@@ -382,20 +354,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicCronDailyDigestRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/cron/backfill-meta': {
-      id: '/api/public/cron/backfill-meta'
-      path: '/api/public/cron/backfill-meta'
-      fullPath: '/api/public/cron/backfill-meta'
-      preLoaderRoute: typeof ApiPublicCronBackfillMetaRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/cron/backfill-area': {
-      id: '/api/public/cron/backfill-area'
-      path: '/api/public/cron/backfill-area'
-      fullPath: '/api/public/cron/backfill-area'
-      preLoaderRoute: typeof ApiPublicCronBackfillAreaRouteImport
-      parentRoute: typeof rootRouteImport
-    }
   }
 }
 
@@ -417,8 +375,6 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   CenikRoute: CenikRoute,
-  ApiPublicCronBackfillAreaRoute: ApiPublicCronBackfillAreaRoute,
-  ApiPublicCronBackfillMetaRoute: ApiPublicCronBackfillMetaRoute,
   ApiPublicCronDailyDigestRoute: ApiPublicCronDailyDigestRoute,
   ApiPublicCronScrapeAnnonceRoute: ApiPublicCronScrapeAnnonceRoute,
   ApiPublicCronScrapeBazosRoute: ApiPublicCronScrapeBazosRoute,
@@ -433,3 +389,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
