@@ -17,6 +17,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedWatchdogsRouteImport } from './routes/_authenticated/watchdogs'
 import { Route as AuthenticatedSavedRouteImport } from './routes/_authenticated/saved'
+import { Route as AuthenticatedHealthRouteImport } from './routes/_authenticated/health'
 import { Route as ApiPublicStripeWebhookRouteImport } from './routes/api/public/stripe/webhook'
 import { Route as ApiPublicHooksRunSchedulesRouteImport } from './routes/api/public/hooks/run-schedules'
 import { Route as ApiPublicCronScrapeSrealityRouteImport } from './routes/api/public/cron/scrape-sreality'
@@ -26,6 +27,7 @@ import { Route as ApiPublicCronScrapeHyperinzerceRouteImport } from './routes/ap
 import { Route as ApiPublicCronScrapeBezrealitkyRouteImport } from './routes/api/public/cron/scrape-bezrealitky'
 import { Route as ApiPublicCronScrapeBazosRouteImport } from './routes/api/public/cron/scrape-bazos'
 import { Route as ApiPublicCronScrapeAnnonceRouteImport } from './routes/api/public/cron/scrape-annonce'
+import { Route as ApiPublicCronHealthCheckRouteImport } from './routes/api/public/cron/health-check'
 import { Route as ApiPublicCronDailyDigestRouteImport } from './routes/api/public/cron/daily-digest'
 
 const OchranaOsobnichUdajuRoute = OchranaOsobnichUdajuRouteImport.update({
@@ -65,6 +67,11 @@ const AuthenticatedWatchdogsRoute = AuthenticatedWatchdogsRouteImport.update({
 const AuthenticatedSavedRoute = AuthenticatedSavedRouteImport.update({
   id: '/saved',
   path: '/saved',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedHealthRoute = AuthenticatedHealthRouteImport.update({
+  id: '/health',
+  path: '/health',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const ApiPublicStripeWebhookRoute = ApiPublicStripeWebhookRouteImport.update({
@@ -120,6 +127,12 @@ const ApiPublicCronScrapeAnnonceRoute =
     path: '/api/public/cron/scrape-annonce',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicCronHealthCheckRoute =
+  ApiPublicCronHealthCheckRouteImport.update({
+    id: '/api/public/cron/health-check',
+    path: '/api/public/cron/health-check',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicCronDailyDigestRoute =
   ApiPublicCronDailyDigestRouteImport.update({
     id: '/api/public/cron/daily-digest',
@@ -133,9 +146,11 @@ export interface FileRoutesByFullPath {
   '/cenik': typeof CenikRoute
   '/obchodni-podminky': typeof ObchodniPodminkyRoute
   '/ochrana-osobnich-udaju': typeof OchranaOsobnichUdajuRoute
+  '/health': typeof AuthenticatedHealthRoute
   '/saved': typeof AuthenticatedSavedRoute
   '/watchdogs': typeof AuthenticatedWatchdogsRoute
   '/api/public/cron/daily-digest': typeof ApiPublicCronDailyDigestRoute
+  '/api/public/cron/health-check': typeof ApiPublicCronHealthCheckRoute
   '/api/public/cron/scrape-annonce': typeof ApiPublicCronScrapeAnnonceRoute
   '/api/public/cron/scrape-bazos': typeof ApiPublicCronScrapeBazosRoute
   '/api/public/cron/scrape-bezrealitky': typeof ApiPublicCronScrapeBezrealitkyRoute
@@ -152,9 +167,11 @@ export interface FileRoutesByTo {
   '/cenik': typeof CenikRoute
   '/obchodni-podminky': typeof ObchodniPodminkyRoute
   '/ochrana-osobnich-udaju': typeof OchranaOsobnichUdajuRoute
+  '/health': typeof AuthenticatedHealthRoute
   '/saved': typeof AuthenticatedSavedRoute
   '/watchdogs': typeof AuthenticatedWatchdogsRoute
   '/api/public/cron/daily-digest': typeof ApiPublicCronDailyDigestRoute
+  '/api/public/cron/health-check': typeof ApiPublicCronHealthCheckRoute
   '/api/public/cron/scrape-annonce': typeof ApiPublicCronScrapeAnnonceRoute
   '/api/public/cron/scrape-bazos': typeof ApiPublicCronScrapeBazosRoute
   '/api/public/cron/scrape-bezrealitky': typeof ApiPublicCronScrapeBezrealitkyRoute
@@ -173,9 +190,11 @@ export interface FileRoutesById {
   '/cenik': typeof CenikRoute
   '/obchodni-podminky': typeof ObchodniPodminkyRoute
   '/ochrana-osobnich-udaju': typeof OchranaOsobnichUdajuRoute
+  '/_authenticated/health': typeof AuthenticatedHealthRoute
   '/_authenticated/saved': typeof AuthenticatedSavedRoute
   '/_authenticated/watchdogs': typeof AuthenticatedWatchdogsRoute
   '/api/public/cron/daily-digest': typeof ApiPublicCronDailyDigestRoute
+  '/api/public/cron/health-check': typeof ApiPublicCronHealthCheckRoute
   '/api/public/cron/scrape-annonce': typeof ApiPublicCronScrapeAnnonceRoute
   '/api/public/cron/scrape-bazos': typeof ApiPublicCronScrapeBazosRoute
   '/api/public/cron/scrape-bezrealitky': typeof ApiPublicCronScrapeBezrealitkyRoute
@@ -194,9 +213,11 @@ export interface FileRouteTypes {
     | '/cenik'
     | '/obchodni-podminky'
     | '/ochrana-osobnich-udaju'
+    | '/health'
     | '/saved'
     | '/watchdogs'
     | '/api/public/cron/daily-digest'
+    | '/api/public/cron/health-check'
     | '/api/public/cron/scrape-annonce'
     | '/api/public/cron/scrape-bazos'
     | '/api/public/cron/scrape-bezrealitky'
@@ -213,9 +234,11 @@ export interface FileRouteTypes {
     | '/cenik'
     | '/obchodni-podminky'
     | '/ochrana-osobnich-udaju'
+    | '/health'
     | '/saved'
     | '/watchdogs'
     | '/api/public/cron/daily-digest'
+    | '/api/public/cron/health-check'
     | '/api/public/cron/scrape-annonce'
     | '/api/public/cron/scrape-bazos'
     | '/api/public/cron/scrape-bezrealitky'
@@ -233,9 +256,11 @@ export interface FileRouteTypes {
     | '/cenik'
     | '/obchodni-podminky'
     | '/ochrana-osobnich-udaju'
+    | '/_authenticated/health'
     | '/_authenticated/saved'
     | '/_authenticated/watchdogs'
     | '/api/public/cron/daily-digest'
+    | '/api/public/cron/health-check'
     | '/api/public/cron/scrape-annonce'
     | '/api/public/cron/scrape-bazos'
     | '/api/public/cron/scrape-bezrealitky'
@@ -255,6 +280,7 @@ export interface RootRouteChildren {
   ObchodniPodminkyRoute: typeof ObchodniPodminkyRoute
   OchranaOsobnichUdajuRoute: typeof OchranaOsobnichUdajuRoute
   ApiPublicCronDailyDigestRoute: typeof ApiPublicCronDailyDigestRoute
+  ApiPublicCronHealthCheckRoute: typeof ApiPublicCronHealthCheckRoute
   ApiPublicCronScrapeAnnonceRoute: typeof ApiPublicCronScrapeAnnonceRoute
   ApiPublicCronScrapeBazosRoute: typeof ApiPublicCronScrapeBazosRoute
   ApiPublicCronScrapeBezrealitkyRoute: typeof ApiPublicCronScrapeBezrealitkyRoute
@@ -324,6 +350,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSavedRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/health': {
+      id: '/_authenticated/health'
+      path: '/health'
+      fullPath: '/health'
+      preLoaderRoute: typeof AuthenticatedHealthRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/api/public/stripe/webhook': {
       id: '/api/public/stripe/webhook'
       path: '/api/public/stripe/webhook'
@@ -387,6 +420,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicCronScrapeAnnonceRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/cron/health-check': {
+      id: '/api/public/cron/health-check'
+      path: '/api/public/cron/health-check'
+      fullPath: '/api/public/cron/health-check'
+      preLoaderRoute: typeof ApiPublicCronHealthCheckRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/cron/daily-digest': {
       id: '/api/public/cron/daily-digest'
       path: '/api/public/cron/daily-digest'
@@ -398,11 +438,13 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedHealthRoute: typeof AuthenticatedHealthRoute
   AuthenticatedSavedRoute: typeof AuthenticatedSavedRoute
   AuthenticatedWatchdogsRoute: typeof AuthenticatedWatchdogsRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedHealthRoute: AuthenticatedHealthRoute,
   AuthenticatedSavedRoute: AuthenticatedSavedRoute,
   AuthenticatedWatchdogsRoute: AuthenticatedWatchdogsRoute,
 }
@@ -418,6 +460,7 @@ const rootRouteChildren: RootRouteChildren = {
   ObchodniPodminkyRoute: ObchodniPodminkyRoute,
   OchranaOsobnichUdajuRoute: OchranaOsobnichUdajuRoute,
   ApiPublicCronDailyDigestRoute: ApiPublicCronDailyDigestRoute,
+  ApiPublicCronHealthCheckRoute: ApiPublicCronHealthCheckRoute,
   ApiPublicCronScrapeAnnonceRoute: ApiPublicCronScrapeAnnonceRoute,
   ApiPublicCronScrapeBazosRoute: ApiPublicCronScrapeBazosRoute,
   ApiPublicCronScrapeBezrealitkyRoute: ApiPublicCronScrapeBezrealitkyRoute,
