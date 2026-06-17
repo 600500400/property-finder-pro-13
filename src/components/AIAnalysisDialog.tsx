@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import type { Listing } from "@/lib/scanner/types";
 import { analyzeListing, type AIAnalysisResult } from "@/lib/ai/analyze.functions";
@@ -11,16 +11,17 @@ export function AIAnalysisButton({ listing }: { listing: Listing }) {
   const { data: plan } = usePlan();
   const isPremium = !!plan?.is_premium;
 
+  const navigate = useNavigate();
   if (!isPremium) {
     return (
-      <Link
-        to="/cenik"
-        onClick={(e) => e.stopPropagation()}
+      <button
+        type="button"
+        onClick={(e) => { e.preventDefault(); e.stopPropagation(); navigate({ to: "/cenik" }); }}
         title="AI analýza je dostupná v Premium"
         className="flex items-center gap-1 rounded-md border border-amber-500/40 bg-amber-500/10 px-2 py-1 text-[10px] font-semibold text-amber-300 hover:bg-amber-500/20"
       >
         <Crown className="h-3 w-3" /> AI analýza (Premium)
-      </Link>
+      </button>
     );
   }
 
