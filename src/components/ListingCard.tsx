@@ -1,6 +1,34 @@
-import type { Listing } from "@/lib/scanner/types";
-import { MapPin, ExternalLink, TrendingUp, TrendingDown, Coins, Clock } from "lucide-react";
+import type { Listing, Flag } from "@/lib/scanner/types";
+import { MapPin, ExternalLink, TrendingUp, TrendingDown, Coins, Clock, AlertTriangle } from "lucide-react";
 import { AIAnalysisButton } from "./AIAnalysisDialog";
+
+function hasPriceTrap(flags?: Flag[]): boolean {
+  return !!flags?.some(f => f.category === "price_trap");
+}
+
+function FlagChips({ flags, max = 3 }: { flags?: Flag[]; max?: number }) {
+  if (!flags || flags.length === 0) return null;
+  const shown = flags.slice(0, max);
+  const rest = flags.length - shown.length;
+  return (
+    <div className="flex flex-wrap gap-1">
+      {shown.map(f => (
+        <span
+          key={f.code}
+          title={f.snippet || f.label}
+          className="inline-flex items-center gap-1 rounded-md border border-amber-500/40 bg-amber-500/10 px-1.5 py-0.5 text-[9px] font-semibold text-amber-200"
+        >
+          <AlertTriangle className="h-2.5 w-2.5" /> {f.label}
+        </span>
+      ))}
+      {rest > 0 && (
+        <span className="rounded-md border border-amber-500/30 bg-amber-500/5 px-1.5 py-0.5 text-[9px] font-semibold text-amber-200/80">
+          +{rest}
+        </span>
+      )}
+    </div>
+  );
+}
 
 export type Density = "card" | "compact" | "list";
 
