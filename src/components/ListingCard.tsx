@@ -387,14 +387,17 @@ function ListingCompact({ listing }: { listing: Listing }) {
           <span className="font-mono text-[10px] text-muted-foreground">{listing.area}</span>
         )}
       </div>
-      {inv && (
-        <div className={`flex items-center justify-between rounded-sm border px-1.5 py-1 text-[10px] ${verdictBg(inv.stars)}`}>
-          <span className={`font-mono font-semibold ${yieldClass(inv.stars)}`}>{inv.net_yield}% čistý</span>
-          <span className={`font-mono tracking-wider ${yieldClass(inv.stars)}`}>
-            {"★".repeat(inv.stars)}
-          </span>
-        </div>
-      )}
+      {inv && (() => {
+        const t = tierOf(inv.stars);
+        return (
+          <div className={`flex items-center justify-between rounded-sm px-1.5 py-1 text-[10px] ${TIER_VERDICT[t]}`}>
+            <span className={`font-mono font-semibold ${TIER_YIELD[t]}`}>{inv.net_yield}% čistý</span>
+            <span className={`font-mono tracking-wider ${TIER_STARS[t]}`}>
+              {"★".repeat(inv.stars)}
+            </span>
+          </div>
+        );
+      })()}
     </a>
   );
 }
