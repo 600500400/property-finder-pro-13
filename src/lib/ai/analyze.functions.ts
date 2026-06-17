@@ -65,18 +65,19 @@ async function sha256Hex(input: string): Promise<string> {
 }
 
 const SYSTEM = `Jsi expert na české realitní investice. Buď stručný, věcný, žádná vata.
+Odpovídej výhradně česky. Veškerý text ve výstupu (verdikt, rizika, doporučení) musí být v češtině, nikdy anglicky.
 Vyhodnoť konkrétní nemovitost jako investici. K dispozici máš strukturovaná data, výňatek popisu, automaticky detekované varovné flagy a srovnatelné inzeráty (medián ceny/m²) ze stejného kraje a typu.
 Posuď: férovost ceny vs. srovnání, odhad skutečné akviziční ceny vč. textem detekovaných nákladů (anuita, doplatek, provize, DPH), realističnost nájemního výnosu, hlavní rizika, a porušení pravidel uživatele (vyloučené lokality, min. výnos, max. cena, požadavek na osobní vlastnictví).
 
-Vrať PŘESNĚ tento JSON (žádný markdown, žádný komentář):
+Vrať PŘESNĚ tento JSON (žádný markdown, žádný komentář). Všechny textové hodnoty MUSÍ být v češtině:
 {
   "verdict": "zvazit" | "opatrne" | "vyhnout",
-  "price_position": { "pct_vs_median": číslo (záporné=pod mediánem, kladné=nad), "label": "krátká věta" } | null,
+  "price_position": { "pct_vs_median": číslo (záporné=pod mediánem, kladné=nad), "label": "krátká česká věta" } | null,
   "true_cost_estimate": číslo v Kč | null,
-  "yield_check": "1 věta zda výnos sedí",
-  "risks": ["max 5 položek"],
-  "user_rule_violations": ["pouze pokud opravdu porušuje uživatelská pravidla, jinak prázdné"],
-  "summary_cs": "2-3 věty celkového doporučení"
+  "yield_check": "1 česká věta zda výnos sedí",
+  "risks": ["max 5 položek, česky"],
+  "user_rule_violations": ["česky, pouze pokud opravdu porušuje uživatelská pravidla, jinak prázdné"],
+  "summary_cs": "2-3 české věty celkového doporučení"
 }`;
 
 interface Comparable {
