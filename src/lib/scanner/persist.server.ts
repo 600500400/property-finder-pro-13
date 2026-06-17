@@ -3,6 +3,7 @@ import type { DealType, Listing, PropertyType, ScanFilters, SourceKey } from "./
 import { resolveOwnership } from "./ownership";
 import { deriveExternalId } from "./external-id";
 import { regionFromLocality, sanitizeAreaM2 } from "./kraj-mapping";
+import { detectFlags } from "./flags";
 
 import { fetchSreality } from "./sources/sreality.server";
 import { fetchBezrealitky } from "./sources/bezrealitky.server";
@@ -100,6 +101,14 @@ export async function runSourceScrape(
       const area_m2 = sanitizeAreaM2(l.area_m2 ?? null);
       const kraj = regionFromLocality(l.locality);
       const price = l.price || null;
+      const flags = detectFlags({
+        title: l.name,
+        description: l.description_snippet,
+        raw_data: l,
+        price,
+        area_m2,
+        kraj,
+      });
       const row = {
         source: sourceKey,
         external_id,
@@ -117,6 +126,7 @@ export async function runSourceScrape(
         image_url: l.img || null,
         description_snippet: l.description_snippet || null,
         raw_data: JSON.parse(JSON.stringify(l)),
+        flags: flags as unknown as never,
         last_seen_at: now,
         is_active: true,
       };

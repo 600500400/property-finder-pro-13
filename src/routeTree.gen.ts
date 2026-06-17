@@ -17,6 +17,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedWatchdogsRouteImport } from './routes/_authenticated/watchdogs'
 import { Route as AuthenticatedSavedRouteImport } from './routes/_authenticated/saved'
+import { Route as AuthenticatedNastaveniInvestoraRouteImport } from './routes/_authenticated/nastaveni-investora'
 import { Route as AuthenticatedHealthRouteImport } from './routes/_authenticated/health'
 import { Route as ApiPublicStripeWebhookRouteImport } from './routes/api/public/stripe/webhook'
 import { Route as ApiPublicHooksRunSchedulesRouteImport } from './routes/api/public/hooks/run-schedules'
@@ -69,6 +70,12 @@ const AuthenticatedSavedRoute = AuthenticatedSavedRouteImport.update({
   path: '/saved',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedNastaveniInvestoraRoute =
+  AuthenticatedNastaveniInvestoraRouteImport.update({
+    id: '/nastaveni-investora',
+    path: '/nastaveni-investora',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedHealthRoute = AuthenticatedHealthRouteImport.update({
   id: '/health',
   path: '/health',
@@ -147,6 +154,7 @@ export interface FileRoutesByFullPath {
   '/obchodni-podminky': typeof ObchodniPodminkyRoute
   '/ochrana-osobnich-udaju': typeof OchranaOsobnichUdajuRoute
   '/health': typeof AuthenticatedHealthRoute
+  '/nastaveni-investora': typeof AuthenticatedNastaveniInvestoraRoute
   '/saved': typeof AuthenticatedSavedRoute
   '/watchdogs': typeof AuthenticatedWatchdogsRoute
   '/api/public/cron/daily-digest': typeof ApiPublicCronDailyDigestRoute
@@ -168,6 +176,7 @@ export interface FileRoutesByTo {
   '/obchodni-podminky': typeof ObchodniPodminkyRoute
   '/ochrana-osobnich-udaju': typeof OchranaOsobnichUdajuRoute
   '/health': typeof AuthenticatedHealthRoute
+  '/nastaveni-investora': typeof AuthenticatedNastaveniInvestoraRoute
   '/saved': typeof AuthenticatedSavedRoute
   '/watchdogs': typeof AuthenticatedWatchdogsRoute
   '/api/public/cron/daily-digest': typeof ApiPublicCronDailyDigestRoute
@@ -191,6 +200,7 @@ export interface FileRoutesById {
   '/obchodni-podminky': typeof ObchodniPodminkyRoute
   '/ochrana-osobnich-udaju': typeof OchranaOsobnichUdajuRoute
   '/_authenticated/health': typeof AuthenticatedHealthRoute
+  '/_authenticated/nastaveni-investora': typeof AuthenticatedNastaveniInvestoraRoute
   '/_authenticated/saved': typeof AuthenticatedSavedRoute
   '/_authenticated/watchdogs': typeof AuthenticatedWatchdogsRoute
   '/api/public/cron/daily-digest': typeof ApiPublicCronDailyDigestRoute
@@ -214,6 +224,7 @@ export interface FileRouteTypes {
     | '/obchodni-podminky'
     | '/ochrana-osobnich-udaju'
     | '/health'
+    | '/nastaveni-investora'
     | '/saved'
     | '/watchdogs'
     | '/api/public/cron/daily-digest'
@@ -235,6 +246,7 @@ export interface FileRouteTypes {
     | '/obchodni-podminky'
     | '/ochrana-osobnich-udaju'
     | '/health'
+    | '/nastaveni-investora'
     | '/saved'
     | '/watchdogs'
     | '/api/public/cron/daily-digest'
@@ -257,6 +269,7 @@ export interface FileRouteTypes {
     | '/obchodni-podminky'
     | '/ochrana-osobnich-udaju'
     | '/_authenticated/health'
+    | '/_authenticated/nastaveni-investora'
     | '/_authenticated/saved'
     | '/_authenticated/watchdogs'
     | '/api/public/cron/daily-digest'
@@ -350,6 +363,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSavedRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/nastaveni-investora': {
+      id: '/_authenticated/nastaveni-investora'
+      path: '/nastaveni-investora'
+      fullPath: '/nastaveni-investora'
+      preLoaderRoute: typeof AuthenticatedNastaveniInvestoraRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/health': {
       id: '/_authenticated/health'
       path: '/health'
@@ -439,12 +459,14 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedHealthRoute: typeof AuthenticatedHealthRoute
+  AuthenticatedNastaveniInvestoraRoute: typeof AuthenticatedNastaveniInvestoraRoute
   AuthenticatedSavedRoute: typeof AuthenticatedSavedRoute
   AuthenticatedWatchdogsRoute: typeof AuthenticatedWatchdogsRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedHealthRoute: AuthenticatedHealthRoute,
+  AuthenticatedNastaveniInvestoraRoute: AuthenticatedNastaveniInvestoraRoute,
   AuthenticatedSavedRoute: AuthenticatedSavedRoute,
   AuthenticatedWatchdogsRoute: AuthenticatedWatchdogsRoute,
 }

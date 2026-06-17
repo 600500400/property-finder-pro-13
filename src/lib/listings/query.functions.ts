@@ -52,7 +52,7 @@ export const queryListings = createServerFn({ method: "POST" })
     // ----- main query -----
     let q = supabaseAdmin
       .from("listings")
-      .select("source, external_id, title, price, deal_type, property_type, kraj, city, area_m2, price_per_m2, ownership, ownership_confidence, url, image_url, description_snippet, first_seen_at, last_seen_at, raw_data")
+      .select("source, external_id, title, price, deal_type, property_type, kraj, city, area_m2, price_per_m2, ownership, ownership_confidence, url, image_url, description_snippet, first_seen_at, last_seen_at, raw_data, flags")
       .eq("is_active", true)
       .eq("deal_type", filters.deal_type)
       .eq("property_type", filters.property_type);
@@ -135,6 +135,7 @@ export const queryListings = createServerFn({ method: "POST" })
         ownership: (r.ownership ?? undefined) as Listing["ownership"],
         ownership_confidence: (r.ownership_confidence ?? undefined) as Listing["ownership_confidence"],
         description_snippet: r.description_snippet ?? undefined,
+        flags: (r.flags as Listing["flags"]) ?? [],
         invest: inv,
       };
     });
