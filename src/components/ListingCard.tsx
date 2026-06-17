@@ -1,5 +1,5 @@
 import type { Listing, Flag } from "@/lib/scanner/types";
-import { MapPin, ExternalLink, TrendingUp, TrendingDown, Coins, Clock, AlertTriangle } from "lucide-react";
+import { MapPin, ExternalLink, AlertTriangle } from "lucide-react";
 import { AIAnalysisButton } from "./AIAnalysisDialog";
 
 function hasPriceTrap(flags?: Flag[]): boolean {
@@ -32,31 +32,51 @@ function FlagChips({ flags, max = 3 }: { flags?: Flag[]; max?: number }) {
 
 export type Density = "card" | "compact" | "list";
 
-function yieldClass(stars: number | undefined): string {
-  switch (stars) {
-    case 5: return "text-[var(--color-success)]";
-    case 4: return "text-emerald-300";
-    case 3: return "text-[var(--color-warning)]";
-    case 2: return "text-orange-400";
-    case 1: return "text-[var(--color-danger)]";
-    default: return "text-muted-foreground";
-  }
+/** Tier z hvězdiček → barevný režim verdict-bloku (prototype tier-great/good/mid/poor) */
+type Tier = "great" | "good" | "mid" | "poor";
+function tierOf(stars: number | undefined): Tier {
+  if (!stars) return "poor";
+  if (stars >= 5) return "great";
+  if (stars === 4) return "good";
+  if (stars === 3) return "mid";
+  return "poor";
 }
 
-function verdictBg(stars: number | undefined): string {
-  switch (stars) {
-    case 5: return "bg-emerald-500/10 border-emerald-500/30";
-    case 4: return "bg-emerald-500/10 border-emerald-400/20";
-    case 3: return "bg-amber-500/10 border-amber-500/30";
-    case 2: return "bg-orange-500/10 border-orange-500/30";
-    case 1: return "bg-red-500/10 border-red-500/30";
-    default: return "bg-muted/30 border-border";
+const TIER_VERDICT: Record<Tier, string> = {
+  great: "border-t border-emerald-400/30 bg-gradient-to-b from-emerald-500/15 to-emerald-500/[0.04]",
+  good: "border-t border-emerald-400/20 bg-gradient-to-b from-emerald-500/10 to-emerald-500/[0.03]",
+  mid: "border-t border-amber-400/25 bg-gradient-to-b from-amber-500/10 to-amber-500/[0.03]",
+  poor: "border-t border-red-400/25 bg-gradient-to-b from-red-500/10 to-red-500/[0.03]",
+};
+
+const TIER_YIELD: Record<Tier, string> = {
+  great: "text-emerald-300",
+  good: "text-emerald-300",
+  mid: "text-amber-300",
+  poor: "text-red-300",
+};
+
+const TIER_STARS: Record<Tier, string> = {
+  great: "text-emerald-300",
+  good: "text-emerald-300",
+  mid: "text-amber-300",
+  poor: "text-red-300",
+};
+
+/** Source-dot barva (z prototypu cards.jsx) */
+function sourceDotColor(source: string): string {
+  switch (source) {
+    case "Sreality": return "var(--color-primary)";
+    case "Bezrealitky": return "#7aa2ff";
+    case "Bazoš": return "#e0a64b";
+    case "iDnes Reality": return "#d06bd0";
+    default: return "var(--color-muted-foreground)";
   }
 }
 
 function badgeClass(badge: string): string {
   if (badge === "Placené") return "bg-muted text-muted-foreground border border-border";
-  if (badge === "HOT 🔥") return "bg-red-500 text-white";
+  if (badge === "HOT 🔥" || badge === "HOT") return "bg-red-500 text-white";
   if (badge === "Nové") return "bg-emerald-500 text-white";
   if (badge === "NOVÝ" || badge === "NEW") return "bg-primary text-primary-foreground";
   if (badge === "Tento týden") return "bg-sky-500/80 text-white";
@@ -94,7 +114,7 @@ const OWNERSHIP_LABEL: Record<string, { short: string; full: string; cls: string
     cls: "bg-amber-500/15 text-amber-300 border border-amber-500/40",
   },
   jine: {
-    short: "JINÉ",
+    short: "—",
     full: "Jiné / neurčeno (státní, obecní, nezjištěno)",
     cls: "bg-muted text-muted-foreground border border-border",
   },
@@ -106,13 +126,23 @@ function fmtMil(n: number): string {
   return n.toLocaleString("cs-CZ");
 }
 
-export function ListingCard({ listing, density = "card" }: { listing: Listing; density?: Density }) {
-  if (density === "list") return <ListingRow listing={listing} />;
-  if (density === "compact") return <ListingCompact listing={listing} />;
-  return <ListingFull listing={listing} />;
+function Stars({ n, cls }: { n: number; cls: string }) {
+  const safe = Math.max(0, Math.min(5, n || 0));
+  return (
+    <span className={`font-mono text-xs tracking-[0.2em] ${cls}`} aria-label={`${safe} z 5`}>
+      <span>{"★".repeat(safe)}</span>
+      <span className="opacity-25">{"★".repeat(5 - safe)}</span>
+    </span>
+  );
 }
 
-function ListingFull({ listing }: { listing: Listing }) {
+export function ListingCard({ listing, density = "card", rank }: { listing: Listing; density?: Density; rank?: number }) {
+  if (density === "list") return <ListingRow listing={listing} />;
+  if (density === "compact") return <ListingCompact listing={listing} />;
+  return <ListingFull listing={listing} rank={rank} />;
+}
+
+function ListingFull({ listing, rank }: { listing: Listing; rank?: number }) {
   const inv = listing.invest;
   const fresh = freshnessBadge(listing.published_at);
   const dateText = fmtDate(listing.published_at);
@@ -125,16 +155,30 @@ function ListingFull({ listing }: { listing: Listing }) {
     ...(listing.badges || []).filter(b => b !== "NOVÝ" || !fresh),
   ];
   const pricePerM2 = listing.price && listing.area_m2 ? Math.round(listing.price / listing.area_m2) : null;
+  const tier = tierOf(inv?.stars);
+  const trap = hasPriceTrap(listing.flags);
+
   return (
     <a
       href={listing.url}
       target="_blank"
       rel="noopener noreferrer"
-      className="group flex flex-col overflow-hidden rounded-xl border border-border bg-card transition-all hover:-translate-y-0.5 hover:border-primary/50 hover:shadow-lg hover:shadow-primary/5"
+      className="group relative flex flex-col overflow-hidden rounded-xl border border-border bg-card transition-all hover:-translate-y-0.5 hover:border-primary/50 hover:shadow-lg hover:shadow-primary/10"
     >
+      {rank && rank <= 3 && (
+        <span className="absolute right-0 top-0 z-10 rounded-bl-lg bg-primary px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-primary-foreground">
+          #{rank} nejvyšší výnos
+        </span>
+      )}
+
       <div className="flex flex-1 flex-col gap-2 p-3">
+        {/* Source + badges řada */}
         <div className="flex items-center justify-between gap-2">
-          <span className="rounded-md bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-primary">
+          <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-muted-foreground">
+            <span
+              className="h-2 w-2 rounded-full"
+              style={{ background: sourceDotColor(listing.source) }}
+            />
             {listing.source}
           </span>
           <div className="flex flex-wrap justify-end gap-1">
@@ -157,26 +201,27 @@ function ListingFull({ listing }: { listing: Listing }) {
 
         <h3 className="line-clamp-2 text-sm font-semibold leading-snug text-foreground">{listing.name}</h3>
 
-        <FlagChips flags={listing.flags} />
-
-        <div>
-          <span
-            title={own.full}
-            className={`inline-flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-bold tracking-wide ${own.cls}`}
-          >
-            {own.short} <span className="font-normal opacity-80">· {own.full.split(" ").slice(0, 2).join(" ")}</span>
-          </span>
-        </div>
-
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          {listing.locality && (
+        {/* Lokalita + čas */}
+        <div className="flex items-center justify-between gap-2 text-[11px] text-muted-foreground">
+          {listing.locality ? (
             <span className="flex min-w-0 items-center gap-1">
               <MapPin className="h-3 w-3 shrink-0" />
               <span className="truncate">{listing.locality}</span>
             </span>
+          ) : <span />}
+          {dateText && (
+            <span
+              title={isFallbackDate ? "Datum nebylo k dispozici — zobrazen čas skenu" : "Datum zveřejnění"}
+              className={`shrink-0 ${isFallbackDate ? "italic opacity-60" : ""}`}
+            >
+              {isFallbackDate ? `~ ${dateText}` : dateText}
+            </span>
           )}
         </div>
 
+        <FlagChips flags={listing.flags} />
+
+        {/* Cena + plocha + OV/DV chip */}
         <div className="flex items-end justify-between gap-2 pt-1">
           <div className="flex flex-col">
             <span className="font-mono text-lg font-bold text-primary leading-tight">{listing.price_text}</span>
@@ -186,18 +231,18 @@ function ListingFull({ listing }: { listing: Listing }) {
               </span>
             )}
           </div>
-          <div className="flex flex-col items-end gap-0.5">
+          <div className="flex items-center gap-1.5">
             {listing.area && (
-              <span className="font-mono text-xs font-semibold text-foreground">{listing.area}</span>
-            )}
-            {dateText && (
-              <span
-                title={isFallbackDate ? "Datum nebylo k dispozici — zobrazen čas skenu" : "Datum zveřejnění"}
-                className={`text-[10px] ${isFallbackDate ? "italic text-muted-foreground/60" : "text-muted-foreground"}`}
-              >
-                {isFallbackDate ? `~ ${dateText}` : dateText}
+              <span className="rounded-md border border-border bg-[var(--color-surface-2)] px-2 py-1 font-mono text-[11px] font-semibold text-foreground">
+                {listing.area}
               </span>
             )}
+            <span
+              title={own.full}
+              className={`inline-flex items-center justify-center rounded-md px-2 py-1 text-[11px] font-bold tracking-wide ${own.cls}`}
+            >
+              {own.short}
+            </span>
           </div>
         </div>
 
@@ -207,7 +252,7 @@ function ListingFull({ listing }: { listing: Listing }) {
             title={anuity.source_phrase || undefined}
           >
             <div className="font-semibold uppercase tracking-wider text-red-300">
-              Pozor: anuita / nesplacený úvěr
+              ⚠ Anuita / nesplacený úvěr
             </div>
             {anuity.amount && listing.price ? (
               <div className="mt-0.5 font-mono">
@@ -222,81 +267,80 @@ function ListingFull({ listing }: { listing: Listing }) {
         )}
       </div>
 
+      {/* VERDICT BLOCK — hero (velký výnos + hvězdy) + 3 metriky */}
       {inv && (
-        <div className={`grid grid-cols-2 gap-2 border-t border-border p-3 ${verdictBg(inv.stars)}`}>
-          <div className="flex flex-col">
-            <span className="flex items-center gap-1 text-[10px] uppercase tracking-wide text-muted-foreground">
-              <TrendingUp className="h-3 w-3" /> Hrubý výnos
-            </span>
-            {hasPriceTrap(listing.flags) ? (
-              <span title="V textu detekován skrytý náklad — výnos neověřen" className="font-mono text-sm font-semibold text-amber-300">ověřit</span>
-            ) : (
-              <span className={`font-mono text-sm font-semibold ${yieldClass(inv.stars)}`}>{inv.gross_yield}%</span>
-            )}
-          </div>
-          <div className="flex flex-col">
-            <span className="flex items-center gap-1 text-[10px] uppercase tracking-wide text-muted-foreground">
-              <TrendingDown className="h-3 w-3" /> Čistý výnos
-            </span>
-            {hasPriceTrap(listing.flags) ? (
-              <span title="V textu detekován skrytý náklad — výnos neověřen" className="font-mono text-sm font-semibold text-amber-300">ověřit</span>
-            ) : (
-              <span className={`font-mono text-sm font-semibold ${yieldClass(inv.stars)}`}>{inv.net_yield}%</span>
-            )}
-          </div>
-          <div className="flex flex-col">
-            <span className="flex items-center gap-1 text-[10px] uppercase tracking-wide text-muted-foreground">
-              <Coins className="h-3 w-3" /> Nájemné/měs.
-            </span>
-            <span className="font-mono text-sm font-semibold text-foreground">
-              {inv.monthly_rent.toLocaleString("cs-CZ")} Kč
-            </span>
-          </div>
-          <div className="flex flex-col">
-            <span className="flex items-center gap-1 text-[10px] uppercase tracking-wide text-muted-foreground">
-              <Clock className="h-3 w-3" /> Návratnost
-            </span>
-            <span className="font-mono text-sm font-semibold text-foreground">{inv.payback_years} let</span>
-          </div>
-          <div className="col-span-2 border-t border-border/60 pt-2">
-            <div className="flex items-center justify-between">
-              <span className="font-mono text-xs tracking-widest text-primary">
-                {"★".repeat(inv.stars)}{"☆".repeat(5 - inv.stars)}
+        <div className={`flex flex-col gap-3 p-3 ${TIER_VERDICT[tier]}`}>
+          <div className="flex items-end justify-between gap-2">
+            <div className="flex flex-col leading-none">
+              {trap ? (
+                <span title="Skrytý náklad — výnos neověřen" className="font-mono text-3xl font-bold text-amber-300">
+                  ověřit
+                </span>
+              ) : (
+                <span className={`font-mono text-3xl font-bold ${TIER_YIELD[tier]}`}>
+                  {inv.net_yield.toString().replace(".", ",")}
+                  <span className="ml-0.5 text-base font-semibold opacity-80">%</span>
+                </span>
+              )}
+              <span className="mt-1 text-[10px] uppercase tracking-wider text-muted-foreground">
+                čistý výnos p.a.
               </span>
-              <span className={`text-xs font-semibold ${yieldClass(inv.stars)}`}>{inv.verdict}</span>
             </div>
-            {inv.rent_basis_label && (
-              <div
-                className="mt-1 text-[10px] text-muted-foreground"
-                title={
-                  inv.rent_source === "okres_live" ? "Živá tržní data ze Sreality (medián per okres)" :
-                  inv.rent_source === "okres_static" ? "Statický odhad okresu (Deloitte / ČSÚ)" :
-                  inv.rent_source === "district" ? "Konkrétní městská část" :
-                  inv.rent_source === "region" ? "Krajský průměr" :
-                  "Národní průměr — orientační"
-                }
-              >
-                Odhad nájmu: {inv.rent_basis_label}
-                {inv.rent_source === "okres_live" ? " ✓" :
-                 inv.rent_source === "district" ? " ✓" :
-                 inv.rent_source === "okres_static" ? " ~" :
-                 inv.rent_source === "region" ? " (kraj)" : " (ČR)"}
-              </div>
-            )}
-            {anuity?.effective_price && (
-              <div className="mt-1 text-[10px] font-semibold text-red-300">
-                ⚠ Výnos přepočten z efektivní ceny vč. anuity
-              </div>
-            )}
-            <div className="mt-2 flex justify-end">
-              <AIAnalysisButton listing={listing} />
+            <div className="flex flex-col items-end gap-1">
+              <Stars n={inv.stars} cls={TIER_STARS[tier]} />
+              <span className={`text-[11px] font-semibold ${TIER_YIELD[tier]}`}>{inv.verdict}</span>
             </div>
+          </div>
+
+          <div className="grid grid-cols-3 gap-2 border-t border-border/40 pt-2">
+            <Metric label="Hrubý výnos" value={trap ? "—" : `${inv.gross_yield.toString().replace(".", ",")} %`} />
+            <Metric label="Nájem/měs." value={`${inv.monthly_rent.toLocaleString("cs-CZ")} Kč`} />
+            <Metric label="Návratnost" value={`${inv.payback_years} let`} />
+          </div>
+
+          {inv.rent_basis_label && (
+            <div
+              className="text-[10px] text-muted-foreground"
+              title={
+                inv.rent_source === "okres_live" ? "Živá tržní data ze Sreality (medián per okres)" :
+                inv.rent_source === "okres_static" ? "Statický odhad okresu (Deloitte / ČSÚ)" :
+                inv.rent_source === "district" ? "Konkrétní městská část" :
+                inv.rent_source === "region" ? "Krajský průměr" :
+                "Národní průměr — orientační"
+              }
+            >
+              Odhad nájmu: {inv.rent_basis_label}
+              {inv.rent_source === "okres_live" ? " ✓" :
+                inv.rent_source === "district" ? " ✓" :
+                inv.rent_source === "okres_static" ? " ~" :
+                inv.rent_source === "region" ? " (kraj)" : " (ČR)"}
+            </div>
+          )}
+          {anuity?.effective_price && (
+            <div className="text-[10px] font-semibold text-red-300">
+              ⚠ Výnos přepočten z efektivní ceny vč. anuity
+            </div>
+          )}
+
+          <div className="flex justify-end">
+            <AIAnalysisButton listing={listing} />
           </div>
         </div>
       )}
     </a>
   );
 }
+
+function Metric({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex flex-col gap-0.5">
+      <span className="text-[9px] uppercase tracking-wider text-muted-foreground">{label}</span>
+      <span className="font-mono text-xs font-semibold text-foreground">{value}</span>
+    </div>
+  );
+}
+
+
 
 function ListingCompact({ listing }: { listing: Listing }) {
   const inv = listing.invest;
@@ -343,14 +387,17 @@ function ListingCompact({ listing }: { listing: Listing }) {
           <span className="font-mono text-[10px] text-muted-foreground">{listing.area}</span>
         )}
       </div>
-      {inv && (
-        <div className={`flex items-center justify-between rounded-sm border px-1.5 py-1 text-[10px] ${verdictBg(inv.stars)}`}>
-          <span className={`font-mono font-semibold ${yieldClass(inv.stars)}`}>{inv.net_yield}% čistý</span>
-          <span className={`font-mono tracking-wider ${yieldClass(inv.stars)}`}>
-            {"★".repeat(inv.stars)}
-          </span>
-        </div>
-      )}
+      {inv && (() => {
+        const t = tierOf(inv.stars);
+        return (
+          <div className={`flex items-center justify-between rounded-sm px-1.5 py-1 text-[10px] ${TIER_VERDICT[t]}`}>
+            <span className={`font-mono font-semibold ${TIER_YIELD[t]}`}>{inv.net_yield}% čistý</span>
+            <span className={`font-mono tracking-wider ${TIER_STARS[t]}`}>
+              {"★".repeat(inv.stars)}
+            </span>
+          </div>
+        );
+      })()}
     </a>
   );
 }
@@ -404,7 +451,7 @@ function ListingRow({ listing }: { listing: Listing }) {
       <div className="flex shrink-0 flex-col items-end gap-0.5">
         <span className="font-mono text-sm font-bold text-primary">{listing.price_text}</span>
         {inv && (
-          <span className={`font-mono text-[10px] font-semibold ${yieldClass(inv.stars)}`}>
+          <span className={`font-mono text-[10px] font-semibold ${TIER_YIELD[tierOf(inv.stars)]}`}>
             {inv.net_yield}% · {"★".repeat(inv.stars)}
           </span>
         )}
