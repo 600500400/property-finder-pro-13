@@ -70,6 +70,14 @@ export interface Investment {
   rent_source?: RentBasisSource;
 }
 
+export type FlagCategory = "price_trap" | "foreign" | "type_nuance" | "discrepancy";
+export interface Flag {
+  code: string;
+  category: FlagCategory;
+  label: string;
+  snippet?: string;
+}
+
 export interface Listing {
   source: string;
   source_key: SourceKey;
@@ -89,6 +97,7 @@ export interface Listing {
   anuity?: AnuityInfo;
   invest: Investment | null;
   badges?: string[];
+  flags?: Flag[];
 }
 
 export interface Diagnostic {
