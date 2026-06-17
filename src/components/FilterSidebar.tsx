@@ -20,13 +20,12 @@ const REGIONS: Array<[ScanFilters["region"], string]> = [
   ["vysocina", "Vysočina"], ["zlinsky", "Zlínský"],
 ];
 
+// Note: hyperinzerce, realitymix and annonce are paused (cron unscheduled).
+// Hidden from UI but scraper code/routes/DB rows remain intact for later re-enable.
 const SOURCES: Array<{ key: SourceKey; label: string; badge: string; type: "api" | "html" | "browser" }> = [
   { key: "sreality", label: "Sreality", badge: "API", type: "api" },
   { key: "bazos", label: "Bazoš", badge: "HTML", type: "html" },
   { key: "bezrealitky", label: "Bezrealitky", badge: "GraphQL", type: "api" },
-  { key: "hyperinzerce", label: "Hyperinzerce", badge: "BROWSER", type: "browser" },
-  { key: "realitymix", label: "RealityMix", badge: "BROWSER", type: "browser" },
-  { key: "annonce", label: "Annonce", badge: "BROWSER", type: "browser" },
   { key: "idnes", label: "iDnes Reality", badge: "BROWSER", type: "browser" },
 ];
 const ALL_KEYS = SOURCES.map(s => s.key);
