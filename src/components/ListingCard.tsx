@@ -1,5 +1,5 @@
 import type { Listing, Flag } from "@/lib/scanner/types";
-import { MapPin, ExternalLink, TrendingUp, TrendingDown, Coins, Clock, AlertTriangle } from "lucide-react";
+import { MapPin, ExternalLink, AlertTriangle } from "lucide-react";
 import { AIAnalysisButton } from "./AIAnalysisDialog";
 
 function hasPriceTrap(flags?: Flag[]): boolean {
@@ -32,31 +32,51 @@ function FlagChips({ flags, max = 3 }: { flags?: Flag[]; max?: number }) {
 
 export type Density = "card" | "compact" | "list";
 
-function yieldClass(stars: number | undefined): string {
-  switch (stars) {
-    case 5: return "text-[var(--color-success)]";
-    case 4: return "text-emerald-300";
-    case 3: return "text-[var(--color-warning)]";
-    case 2: return "text-orange-400";
-    case 1: return "text-[var(--color-danger)]";
-    default: return "text-muted-foreground";
-  }
+/** Tier z hvězdiček → barevný režim verdict-bloku (prototype tier-great/good/mid/poor) */
+type Tier = "great" | "good" | "mid" | "poor";
+function tierOf(stars: number | undefined): Tier {
+  if (!stars) return "poor";
+  if (stars >= 5) return "great";
+  if (stars === 4) return "good";
+  if (stars === 3) return "mid";
+  return "poor";
 }
 
-function verdictBg(stars: number | undefined): string {
-  switch (stars) {
-    case 5: return "bg-emerald-500/10 border-emerald-500/30";
-    case 4: return "bg-emerald-500/10 border-emerald-400/20";
-    case 3: return "bg-amber-500/10 border-amber-500/30";
-    case 2: return "bg-orange-500/10 border-orange-500/30";
-    case 1: return "bg-red-500/10 border-red-500/30";
-    default: return "bg-muted/30 border-border";
+const TIER_VERDICT: Record<Tier, string> = {
+  great: "border-t border-emerald-400/30 bg-gradient-to-b from-emerald-500/15 to-emerald-500/[0.04]",
+  good: "border-t border-emerald-400/20 bg-gradient-to-b from-emerald-500/10 to-emerald-500/[0.03]",
+  mid: "border-t border-amber-400/25 bg-gradient-to-b from-amber-500/10 to-amber-500/[0.03]",
+  poor: "border-t border-red-400/25 bg-gradient-to-b from-red-500/10 to-red-500/[0.03]",
+};
+
+const TIER_YIELD: Record<Tier, string> = {
+  great: "text-emerald-300",
+  good: "text-emerald-300",
+  mid: "text-amber-300",
+  poor: "text-red-300",
+};
+
+const TIER_STARS: Record<Tier, string> = {
+  great: "text-emerald-300",
+  good: "text-emerald-300",
+  mid: "text-amber-300",
+  poor: "text-red-300",
+};
+
+/** Source-dot barva (z prototypu cards.jsx) */
+function sourceDotColor(source: string): string {
+  switch (source) {
+    case "Sreality": return "var(--color-primary)";
+    case "Bezrealitky": return "#7aa2ff";
+    case "Bazoš": return "#e0a64b";
+    case "iDnes Reality": return "#d06bd0";
+    default: return "var(--color-muted-foreground)";
   }
 }
 
 function badgeClass(badge: string): string {
   if (badge === "Placené") return "bg-muted text-muted-foreground border border-border";
-  if (badge === "HOT 🔥") return "bg-red-500 text-white";
+  if (badge === "HOT 🔥" || badge === "HOT") return "bg-red-500 text-white";
   if (badge === "Nové") return "bg-emerald-500 text-white";
   if (badge === "NOVÝ" || badge === "NEW") return "bg-primary text-primary-foreground";
   if (badge === "Tento týden") return "bg-sky-500/80 text-white";
@@ -94,7 +114,7 @@ const OWNERSHIP_LABEL: Record<string, { short: string; full: string; cls: string
     cls: "bg-amber-500/15 text-amber-300 border border-amber-500/40",
   },
   jine: {
-    short: "JINÉ",
+    short: "—",
     full: "Jiné / neurčeno (státní, obecní, nezjištěno)",
     cls: "bg-muted text-muted-foreground border border-border",
   },
@@ -106,10 +126,20 @@ function fmtMil(n: number): string {
   return n.toLocaleString("cs-CZ");
 }
 
-export function ListingCard({ listing, density = "card" }: { listing: Listing; density?: Density }) {
+function Stars({ n, cls }: { n: number; cls: string }) {
+  const safe = Math.max(0, Math.min(5, n || 0));
+  return (
+    <span className={`font-mono text-xs tracking-[0.2em] ${cls}`} aria-label={`${safe} z 5`}>
+      <span>{"★".repeat(safe)}</span>
+      <span className="opacity-25">{"★".repeat(5 - safe)}</span>
+    </span>
+  );
+}
+
+export function ListingCard({ listing, density = "card", rank }: { listing: Listing; density?: Density; rank?: number }) {
   if (density === "list") return <ListingRow listing={listing} />;
   if (density === "compact") return <ListingCompact listing={listing} />;
-  return <ListingFull listing={listing} />;
+  return <ListingFull listing={listing} rank={rank} />;
 }
 
 function ListingFull({ listing }: { listing: Listing }) {
