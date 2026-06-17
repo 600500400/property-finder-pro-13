@@ -5,6 +5,8 @@ import { resolveOwnership } from "./ownership";
 import { applySanity } from "./sanity";
 import { getBenchmark } from "./rent-benchmark.server";
 import { sortListings } from "./sort";
+import { detectFlags } from "./flags";
+import { regionFromLocality } from "./kraj-mapping";
 
 import { fetchSreality } from "./sources/sreality.server";
 import { fetchBezrealitky } from "./sources/bezrealitky.server";
@@ -124,11 +126,21 @@ export async function executeScan(filters: ScanFilters): Promise<ScanResult> {
   all = all
     .map(r => {
       const res = resolveOwnership(r, filters);
+      const kraj = regionFromLocality(r.locality);
+      const flags = detectFlags({
+        title: r.name,
+        description: r.description_snippet,
+        raw_data: r,
+        price: r.price ?? null,
+        area_m2: r.area_m2 ?? null,
+        kraj,
+      });
       return {
         ...r,
         ownership: res.ownership,
         ownership_confidence: res.ownership_confidence,
         anuity: res.anuity,
+        flags,
         invest: calcYield(res.priceForYield, filters.region, filters.property_type, r.area_m2, r.name, r.locality, res.ownership, bench),
       };
     })
