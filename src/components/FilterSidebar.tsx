@@ -22,11 +22,11 @@ const REGIONS: Array<[ScanFilters["region"], string]> = [
 
 // Note: hyperinzerce, realitymix and annonce are paused (cron unscheduled).
 // Hidden from UI but scraper code/routes/DB rows remain intact for later re-enable.
-const SOURCES: Array<{ key: SourceKey; label: string; badge: string; type: "api" | "html" | "browser" }> = [
-  { key: "sreality", label: "Sreality", badge: "API", type: "api" },
-  { key: "bazos", label: "Bazoš", badge: "HTML", type: "html" },
-  { key: "bezrealitky", label: "Bezrealitky", badge: "GraphQL", type: "api" },
-  { key: "idnes", label: "iDnes Reality", badge: "BROWSER", type: "browser" },
+const SOURCES: Array<{ key: SourceKey; label: string; badge: string; type: "api" | "html" | "browser"; dot: string }> = [
+  { key: "sreality", label: "Sreality", badge: "API", type: "api", dot: "var(--color-primary)" },
+  { key: "bazos", label: "Bazoš", badge: "HTML", type: "html", dot: "#e0a64b" },
+  { key: "bezrealitky", label: "Bezrealitky", badge: "GraphQL", type: "api", dot: "#7aa2ff" },
+  { key: "idnes", label: "iDnes Reality", badge: "BROWSER", type: "browser", dot: "#d06bd0" },
 ];
 const ALL_KEYS = SOURCES.map(s => s.key);
 const FAST_KEYS = SOURCES.filter(s => s.type !== "browser").map(s => s.key);
