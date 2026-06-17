@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
-import { LogIn, LogOut, Bookmark, User as UserIcon, Dog, CreditCard, Crown } from "lucide-react";
+import { LogIn, LogOut, Bookmark, User as UserIcon, Dog, CreditCard, Crown, SlidersHorizontal } from "lucide-react";
 import type { User } from "@supabase/supabase-js";
 import { usePlan } from "@/hooks/usePlan";
 import { createPortalSession } from "@/lib/billing/checkout.functions";
@@ -62,6 +62,13 @@ export function UserMenu() {
         className="flex items-center gap-1.5 rounded-lg border border-border bg-[var(--color-surface-2)] px-2.5 py-1 text-xs font-semibold text-foreground hover:border-primary/50"
       >
         <Bookmark className="h-3.5 w-3.5 text-primary" /> Uložené
+      </Link>
+      <Link
+        to="/nastaveni-investora"
+        title="Nastavení investora"
+        className="rounded-lg border border-border bg-[var(--color-surface-2)] p-1.5 text-muted-foreground hover:text-foreground"
+      >
+        <SlidersHorizontal className="h-3.5 w-3.5" />
       </Link>
       {plan?.is_premium && (
         <button

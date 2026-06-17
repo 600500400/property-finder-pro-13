@@ -157,6 +157,8 @@ function ListingFull({ listing }: { listing: Listing }) {
 
         <h3 className="line-clamp-2 text-sm font-semibold leading-snug text-foreground">{listing.name}</h3>
 
+        <FlagChips flags={listing.flags} />
+
         <div>
           <span
             title={own.full}
@@ -226,13 +228,21 @@ function ListingFull({ listing }: { listing: Listing }) {
             <span className="flex items-center gap-1 text-[10px] uppercase tracking-wide text-muted-foreground">
               <TrendingUp className="h-3 w-3" /> Hrubý výnos
             </span>
-            <span className={`font-mono text-sm font-semibold ${yieldClass(inv.stars)}`}>{inv.gross_yield}%</span>
+            {hasPriceTrap(listing.flags) ? (
+              <span title="V textu detekován skrytý náklad — výnos neověřen" className="font-mono text-sm font-semibold text-amber-300">ověřit</span>
+            ) : (
+              <span className={`font-mono text-sm font-semibold ${yieldClass(inv.stars)}`}>{inv.gross_yield}%</span>
+            )}
           </div>
           <div className="flex flex-col">
             <span className="flex items-center gap-1 text-[10px] uppercase tracking-wide text-muted-foreground">
               <TrendingDown className="h-3 w-3" /> Čistý výnos
             </span>
-            <span className={`font-mono text-sm font-semibold ${yieldClass(inv.stars)}`}>{inv.net_yield}%</span>
+            {hasPriceTrap(listing.flags) ? (
+              <span title="V textu detekován skrytý náklad — výnos neověřen" className="font-mono text-sm font-semibold text-amber-300">ověřit</span>
+            ) : (
+              <span className={`font-mono text-sm font-semibold ${yieldClass(inv.stars)}`}>{inv.net_yield}%</span>
+            )}
           </div>
           <div className="flex flex-col">
             <span className="flex items-center gap-1 text-[10px] uppercase tracking-wide text-muted-foreground">
