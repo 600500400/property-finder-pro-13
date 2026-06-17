@@ -135,7 +135,7 @@ export const queryListings = createServerFn({ method: "POST" })
         ownership: (r.ownership ?? undefined) as Listing["ownership"],
         ownership_confidence: (r.ownership_confidence ?? undefined) as Listing["ownership_confidence"],
         description_snippet: r.description_snippet ?? undefined,
-        flags: (r.flags as Listing["flags"]) ?? [],
+        flags: (r.flags as unknown as Listing["flags"]) ?? [],
         invest: inv,
       };
     });
