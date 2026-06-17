@@ -1,122 +1,131 @@
-# Etapa 4 — Stripe Subscriptions & Freemium Gating
+# Investiční screening — plán
 
-User-provided BYOK Stripe in TEST mode. Sandbox `sk_test_…` will be requested after plan approval and stored as `STRIPE_SECRET_KEY` (+ `STRIPE_WEBHOOK_SECRET` after webhook is created in Stripe dashboard).
+Dvouvrstvé hodnocení inzerátů. Layer 1 = levné regex flagy pro všechny. Layer 2 = AI verdikt (Gemini 2.5 Flash přes Lovable AI Gateway) pro premium, on-demand, cachované a s měsíčním limitem.
 
-## Plans
-
-| Capability | FREE | PREMIUM |
-|---|---|---|
-| Listings freshness | exclude < 24 h | real-time |
-| Results per query | max 20 | unlimited |
-| Saved searches | max 1, daily only | unlimited, instant + daily |
-| CSV export | ❌ | ✅ |
-
-PREMIUM: **349 Kč/měsíc** nebo **3 490 Kč/rok** (CZK).
+Poznámka: říkáš „Claude" v Layer 2, ale v cost-controls upřesňuješ Gemini 2.5 Flash přes Lovable AI Gateway (= aktuální stav, fakturace z Lovable kreditů). Držím se **Gemini 2.5 Flash** — žádný `ANTHROPIC_API_KEY` se nezavádí. Pokud chceš opravdu Claude, řekni a přepojím (potřeboval by se přidat klíč a billing mimo Lovable kredity).
 
 ---
 
-## 1. Database (migration)
+## Layer 1 — regex/keyword flagy (zdarma, pro všechny)
 
-```sql
-create table public.subscriptions (
-  id uuid primary key default gen_random_uuid(),
-  user_id uuid not null unique references auth.users(id) on delete cascade,
-  stripe_customer_id text unique,
-  stripe_subscription_id text unique,
-  status text,                       -- active|trialing|past_due|canceled|incomplete|…
-  plan text,                         -- 'monthly'|'yearly'|null
-  current_period_end timestamptz,
-  updated_at timestamptz not null default now(),
-  created_at timestamptz not null default now()
-);
-grant select on public.subscriptions to authenticated;
-grant all on public.subscriptions to service_role;
-alter table public.subscriptions enable row level security;
-create policy "own_subscription_read" on public.subscriptions
-  for select to authenticated using (auth.uid() = user_id);
--- writes only via service_role (webhook)
-create index on public.subscriptions(stripe_customer_id);
+### Detektor `src/lib/scanner/flags.ts`
+Čistá funkce `detectFlags(listing, filters) → Flag[]`. Spouští se v `persist.server.ts` při každém upsertu z titulku + description_snippet + raw_data textových polí. Žádné HTTP, žádné AI.
+
+Kategorie a klíčová slova (case-insensitive, diakritika tolerantní):
+- **price_trap**: `anuita`, `doplat`, `+ provize`, `provize realitní kancelář`, `bez DPH`, `dražb`, `aukc`, `podíl ` / `spoluvlastnick`
+- **foreign**: `španěl`, `chorvat`, `itáli`, `bulhar`, `řeck`, `zahranič`, `slovens` (jen pokud `kraj IS NULL`/lokalita nesedí na CZ)
+- **type_nuance**: `družstevn`, `před rekonstrukcí`, `k rekonstrukci`, `obsazeno nájemníkem`, `nájemník v bytě`
+- **discrepancy**: extrahuju z textu čísla u „m²" a u „Kč/mil.", porovnám se `price` a `area_m2`; pokud rozdíl >15 %, flag `discrepancy`
+
+Tvar uložený do DB:
+```json
+{ "flags": [
+  { "code": "anuita", "category": "price_trap", "label": "Anuita v textu", "snippet": "…doplatek anuity 380 000 Kč…" },
+  { "code": "foreign_es", "category": "foreign", "label": "Možná zahraniční nemovitost", "snippet": "…apartmán ve Španělsku…" }
+]}
 ```
 
-## 2. Stripe wiring
+### Schéma
+Migrace přidá:
+- `listings.flags jsonb not null default '[]'`
+- GIN index `listings(flags jsonb_path_ops)` pro budoucí filtrování
 
-`src/lib/billing/stripe.server.ts` — lazy Stripe client (`new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: '2024-…' })`).
-
-`src/lib/billing/products.server.ts` — `ensureProducts()` idempotent: looks up product by metadata key `app=realityscanner-premium`; if missing, creates Product + 2 recurring Prices (CZK 349 monthly, CZK 3 490 yearly) with lookup keys `premium_monthly` / `premium_yearly`. Returns price IDs. Called lazily on first checkout / on `/api/public/cron/ensure-products` (manual one-shot).
-
-`src/lib/billing/plan.server.ts` — **`getUserPlan(userId)`** → `'free' | 'premium'`. Premium when `status in ('active','trialing')` AND `current_period_end > now()`. Used by every gate.
-
-## 3. Server-side gates (NOT UI-only)
-
-- **`queryListings`** (`src/lib/listings/query.functions.ts`): after auth resolution, if plan='free' → force `freshness` to exclude listings with `first_seen_at > now() - 24h` AND slice results to 20. Public/anon visitors = treated as free.
-- **`upsertSavedSearch`**: if free → reject when `frequency='instant'` OR when count of existing active searches ≥ 1 (on insert). Returns typed error `{ code:'upgrade_required' }`.
-- **CSV export**: move from client-side to new server fn `exportListingsCsv` requiring auth + premium; returns CSV string. Client downloads via blob. Free users → 403.
-- **`processInstantAlerts`** (`notify.server.ts`): filter saved_searches to only those whose owner has premium plan; non-premium instant rows silently demoted (treated as daily by digest job).
-- **Daily digest** already covers everyone — no change needed beyond including demoted instant searches (already daily-equivalent).
-
-## 4. Checkout & Portal server functions
-
-`src/lib/billing/billing.functions.ts` (all `requireSupabaseAuth`):
-- `createCheckoutSession({ interval: 'monthly'|'yearly' })` → ensures Stripe customer (create if missing, store on subscriptions row stub), creates Checkout Session `mode:'subscription'`, line_items=[price], `client_reference_id=user_id`, `metadata:{user_id}`, `subscription_data.metadata:{user_id}`, success `/cenik?success=1`, cancel `/cenik?canceled=1`. Returns `{ url }`.
-- `createPortalSession()` → Stripe Billing Portal session, returns `{ url }`.
-- `getMyPlan()` → `{ plan, status, current_period_end, stripe_customer_id }` for UI.
-
-## 5. Webhook
-
-`src/routes/api/public/billing/stripe-webhook.ts` (raw body + signature verify via `STRIPE_WEBHOOK_SECRET`):
-
-Events handled:
-- `checkout.session.completed` → read `metadata.user_id`, expand subscription, upsert subscriptions row.
-- `customer.subscription.created|updated|deleted` → upsert by `stripe_subscription_id`; resolve user via existing row's user_id OR `subscription.metadata.user_id`. Map `items.data[0].price.lookup_key` → plan ('monthly'/'yearly').
-- `invoice.paid` → ensure status='active' and refresh current_period_end.
-- `invoice.payment_failed` → status='past_due'.
-
-NEVER trust email matching. If user_id missing → log + 200 (avoid retries storm).
-
-## 6. UI (Czech, dark)
-
-- **`/cenik`** (public route): two cards Zdarma / Premium (benefit list, ✓/✗), interval toggle Měsíčně/Ročně (with "ušetříte 2 mes."), CTA "Aktivovat Premium" → calls `createCheckoutSession` → `window.location = url`. Logged-out CTA → redirect `/auth?next=/cenik`. Handle `?success=1` / `?canceled=1` toast.
-- **Header plan badge**: `<PlanBadge />` in `UserMenu` row (gold "Premium" pill / muted "Free").
-- **Upgrade banner** above results when free user has freshness="24h" or hits 20-cap: "Nejlepší investice mizí během hodin — Premium vidí nové inzeráty okamžitě." with link to /cenik.
-- **UserMenu**: "Správa předplatného" item (premium only) → calls `createPortalSession` → redirect.
-- **SaveSearchDialog**: if free → disable "Okamžitě" radio with tooltip; on submit-and-would-exceed-limit → open `<UpgradeDialog>` instead of saving.
-- **CSV button**: free → click opens `<UpgradeDialog>`.
-- **`<UpgradeDialog>`** shared component with CTA to /cenik.
-- `/watchdogs` shows lock icon next to instant rows for free users (after demotion).
-
-## 7. Secrets request
-
-After plan approval: `secrets--add_secret(['STRIPE_SECRET_KEY','STRIPE_WEBHOOK_SECRET'])`. User pastes test-mode `sk_test_…`. After first deploy I'll give the webhook URL `https://property-finder-pro-13.lovable.app/api/public/billing/stripe-webhook` to register in Stripe dashboard → returns `whsec_…`.
-
-## 8. Files
-
-**New**
-- migration `subscriptions.sql`
-- `src/lib/billing/stripe.server.ts`
-- `src/lib/billing/products.server.ts`
-- `src/lib/billing/plan.server.ts`
-- `src/lib/billing/billing.functions.ts`
-- `src/routes/api/public/billing/stripe-webhook.ts`
-- `src/routes/cenik.tsx`
-- `src/components/PlanBadge.tsx`
-- `src/components/UpgradeDialog.tsx`
-- `src/components/UpgradeBanner.tsx`
-- `src/lib/listings/export.functions.ts` (server CSV)
-- `tests/plan-gates.test.ts`
-
-**Edited**
-- `src/lib/listings/query.functions.ts` (free gate)
-- `src/lib/alerts/saved-searches.functions.ts` (count + frequency gate)
-- `src/lib/alerts/notify.server.ts` (premium-only instant)
-- `src/components/SaveSearchDialog.tsx` (instant disabled + upgrade modal)
-- `src/components/FilterSidebar.tsx` (CSV gate hook)
-- `src/components/UserMenu.tsx` (badge + portal link)
-- `src/routes/index.tsx` (upgrade banner, server-driven CSV)
-
-## 9. Acceptance / test checklist (provided after build)
-
-Will include: create test acct → upgrade with 4242 4242 4242 4242 → verify webhook fires → DB row appears → header badge flips → instant alerts work → cancel via portal → falls back to free after period end → free user blocked at queryListings/save/csv.
+### UI
+- `ListingCard` zobrazí žluté chipy `⚠️ {label}` pod názvem (max 3, zbytek "+N").
+- Když je přítomen `price_trap` flag, výnosové číslo (`net_yield`) se nezobrazí jako zelená hvězdička, ale jako `ověřit` s tooltipem „V textu detekován skrytý náklad (anuita/doplatek/provize) — výnos je orientační."
+- TS typ `Flag` přidám do `src/lib/scanner/types.ts`.
 
 ---
 
-After approval I'll request the two secrets, then implement.
+## Layer 2 — AI investiční verdikt (premium, on-demand)
+
+### Server function `analyzeListing` (přepis existujícího v `src/lib/ai/analyze.functions.ts`)
+Middleware `requireSupabaseAuth`. Postup:
+
+1. **Gate premium**: `is_premium(userId)` přes RPC; jinak vrať strukturovaný error `{ error: "premium_required" }`.
+2. **Měsíční limit** (default 50/měs): spočítej řádky v nové tabulce `ai_analysis_usage` za aktuální měsíc; nad limit → `{ error: "monthly_limit_reached", used, limit }`.
+3. **Cache** v `ai_analyses` keyed `sha256(listing.id + raw_data_hash)`; TTL stejné (30 dní). Cache hit **nečerpá** měsíční limit.
+4. **Comparables**: 1 dotaz `listings` filtrovaný stejný `kraj` + `property_type` + `deal_type` + plocha ±20 %, max 8 řádků, jen `price, area_m2, city, url`. Spočítám medián `price/m²` a percentil dané nabídky.
+5. **User rules**: načti `user_investor_rules` (vyloučené lokality, min_net_yield, max_price, povinná osobní vlastnictví ano/ne).
+6. **Prompt** (tight — listing fields + flags + 8 comparables + user rules + median KPI), `response_format: json_object`. Žádný plný description, jen už uložený snippet.
+7. Schema výstupu:
+   ```ts
+   {
+     verdict: "zvazit" | "opatrne" | "vyhnout",
+     price_position: { pct_vs_median: number, label: string }, // "-12 % pod srovnatelnou"
+     true_cost_estimate?: number, // pokud anuita/doplatek detekován
+     yield_check: string,
+     risks: string[],
+     user_rule_violations: string[],
+     summary_cs: string
+   }
+   ```
+8. Po úspěšném volání zapiš řádek do `ai_analysis_usage` a upsert do `ai_analyses`.
+
+### Schéma (jedna migrace)
+```sql
+create table public.user_investor_rules (
+  user_id uuid primary key references auth.users(id) on delete cascade,
+  excluded_localities text[] not null default '{}',
+  min_net_yield numeric,
+  max_price numeric,
+  require_osobni boolean not null default false,
+  updated_at timestamptz not null default now()
+);
+-- + GRANTs (authenticated CRUD vlastních, service_role all), RLS user_id = auth.uid()
+
+create table public.ai_analysis_usage (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  listing_id uuid references public.listings(id) on delete set null,
+  created_at timestamptz not null default now()
+);
+create index on public.ai_analysis_usage (user_id, created_at desc);
+-- + GRANTs (authenticated SELECT vlastních, service_role all), RLS
+```
+
+### Settings route `/_authenticated/nastaveni-investora`
+- Formulář: textarea vyloučených lokalit (jedna na řádek), min net yield %, max cena, switch „pouze osobní vlastnictví".
+- Server fn `getMyInvestorRules` / `saveMyInvestorRules`.
+- Odkaz na settings se přidá do `UserMenu`.
+
+### UI — `AIAnalysisDialog`
+- Když server vrátí `premium_required` → CTA „Odemknout v Premium" (link na `/cenik`).
+- Když vrátí `monthly_limit_reached` → text „Měsíční limit AI analýz vyčerpán ({used}/{limit}). Reset 1. dne v měsíci."
+- Jinak nový layout verdiktu: barevný badge podle `verdict` (zelená/oranžová/červená), `price_position`, `risks`, `user_rule_violations` (pokud nějaké), `summary_cs`.
+- Tlačítko „AI analýza" na kartě skryté pro free uživatele (zobrazím místo něj `<UpgradeBanner inline />`).
+
+### Cost controls — souhrn
+- ✅ Layer 2 jen pro premium, jen na klik
+- ✅ Cache per listing (`raw_data hash`) — opakovaný klik kýmkoli = bez nákladu
+- ✅ Měsíční limit 50/uživatel (konstanta `AI_MONTHLY_LIMIT`)
+- ✅ Komprimovaný prompt (snippet + 8 comparables, ne celá DB)
+
+---
+
+## Technické detaily
+
+**Soubory nové:**
+- `src/lib/scanner/flags.ts` (detektor + typy)
+- `src/lib/listings/investor-rules.functions.ts`
+- `src/routes/_authenticated/nastaveni-investora.tsx`
+- `supabase/migrations/<timestamp>_investor_screening.sql`
+
+**Soubory upravené:**
+- `src/lib/scanner/persist.server.ts` — zavolat `detectFlags` před upsertem, uložit do `row.flags`
+- `src/lib/scanner/types.ts` — typ `Flag`, doplnit `flags?: Flag[]` na `Listing`
+- `src/lib/scanner/scan-internal.server.ts` (nebo kde se mapuje DB→Listing) — propsat `flags` z DB do response
+- `src/components/ListingCard.tsx` — chipy + výnos „ověřit"
+- `src/components/AIAnalysisDialog.tsx` — nový layout + error stavy
+- `src/lib/ai/analyze.functions.ts` — nová logika (premium gate, limit, comparables, user rules, nový prompt + schema)
+- `src/components/UserMenu.tsx` — odkaz na settings
+- `src/integrations/supabase/types.ts` — regenerace typů (auto po migraci)
+
+**Nedotýkám se**: cron jobů, billing/Stripe flow, scraperů samotných (jen `persist.server.ts` rozšíření o `flags`).
+
+**Out of scope** (pokud bys to chtěl, řekni):
+- Backfill `flags` na existujících řádcích (nové scrapy je dopočítají; můžu přidat jednorázový script).
+- Filtrování seznamu podle flagů v sidebaru.
+- Vystavení Claude místo Gemini.
+
+Pokračovat?

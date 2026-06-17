@@ -38,6 +38,35 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_analysis_usage: {
+        Row: {
+          created_at: string
+          id: string
+          listing_id: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          listing_id?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          listing_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_analysis_usage_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       email_log: {
         Row: {
           created_at: string
@@ -76,6 +105,7 @@ export type Database = {
           description_snippet: string | null
           external_id: string
           first_seen_at: string
+          flags: Json
           id: string
           image_url: string | null
           is_active: boolean
@@ -98,6 +128,7 @@ export type Database = {
           description_snippet?: string | null
           external_id: string
           first_seen_at?: string
+          flags?: Json
           id?: string
           image_url?: string | null
           is_active?: boolean
@@ -120,6 +151,7 @@ export type Database = {
           description_snippet?: string | null
           external_id?: string
           first_seen_at?: string
+          flags?: Json
           id?: string
           image_url?: string | null
           is_active?: boolean
@@ -388,6 +420,36 @@ export type Database = {
           status?: string
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_investor_rules: {
+        Row: {
+          created_at: string
+          excluded_localities: string[]
+          max_price: number | null
+          min_net_yield: number | null
+          require_osobni: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          excluded_localities?: string[]
+          max_price?: number | null
+          min_net_yield?: number | null
+          require_osobni?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          excluded_localities?: string[]
+          max_price?: number | null
+          min_net_yield?: number | null
+          require_osobni?: boolean
           updated_at?: string
           user_id?: string
         }
