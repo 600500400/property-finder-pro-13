@@ -451,7 +451,7 @@ function ListingRow({ listing }: { listing: Listing }) {
       <div className="flex shrink-0 flex-col items-end gap-0.5">
         <span className="font-mono text-sm font-bold text-primary">{listing.price_text}</span>
         {inv && (
-          <span className={`font-mono text-[10px] font-semibold ${yieldClass(inv.stars)}`}>
+          <span className={`font-mono text-[10px] font-semibold ${TIER_YIELD[tierOf(inv.stars)]}`}>
             {inv.net_yield}% · {"★".repeat(inv.stars)}
           </span>
         )}
