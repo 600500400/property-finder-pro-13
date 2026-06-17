@@ -202,7 +202,10 @@ export function FilterSidebar({ filters, setFilters, view, setView, onExport, ca
                     : "border-border bg-[var(--color-surface-2)] hover:border-primary/40"
                 }`}
               >
-                <span className={`h-2.5 w-2.5 rounded-full ${checked ? "bg-primary" : "border-2 border-border"}`} />
+                <span
+                  className={`h-2.5 w-2.5 rounded-full transition ${checked ? "" : "opacity-40"}`}
+                  style={{ background: checked ? s.dot : "transparent", border: checked ? "none" : `1.5px solid ${s.dot}` }}
+                />
                 <span className="flex-1 text-foreground">{s.label}</span>
                 <span className={`rounded px-1.5 py-0.5 text-[9px] font-bold tracking-wider ${badgeClass(s.type)}`}>
                   {s.badge}
