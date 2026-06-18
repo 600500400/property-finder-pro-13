@@ -48,10 +48,7 @@ interface Props {
 
 export function FilterSidebar({ filters, setFilters, view, setView, onExport, canExport }: Props) {
   const [isAuthed, setIsAuthed] = useState(false);
-  const [cloudMsg, setCloudMsg] = useState<string | null>(null);
   const [watchdogOpen, setWatchdogOpen] = useState(false);
-  const saveCloud = useServerFn(upsertSavedFilter);
-
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setIsAuthed(!!data.user));
