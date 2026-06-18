@@ -123,31 +123,12 @@ export function FilterSidebar({ filters, setFilters, view, setView, onExport, ca
 
   return (
     <aside className="flex h-full flex-col gap-5 overflow-y-auto border-r border-border bg-[var(--color-surface)] p-5 pb-32 md:pb-5">
-      <Section label="Typ obchodu">
-        <Select value={filters.deal_type} onChange={(v) => update("deal_type", v as ScanFilters["deal_type"])}
-          options={[["prodej", "Prodej"], ["pronajem", "Pronájem"]]} />
-      </Section>
-
-      <Section label="Typ nemovitosti">
-        <Select value={filters.property_type} onChange={(v) => update("property_type", v as ScanFilters["property_type"])}
-          options={[["byty", "Byty"], ["domy", "Domy"], ["pozemky", "Pozemky"], ["komercni", "Komerční"], ["ostatni", "Ostatní (garáže)"]]} />
-        {filters.property_type === "ostatni" && (
-          <>
-            <Label>Podkategorie</Label>
-            <Select value={filters.sub_type} onChange={(v) => update("sub_type", v as ScanFilters["sub_type"])}
-              options={[["garaz", "Garáž"], ["garazove_stani", "Garážové stání"], ["", "Vše"]]} />
-            <p className="text-[10px] leading-relaxed text-muted-foreground">
-              Některé portály nerozlišují – výsledky filtrujeme dodatečně podle názvu.
-            </p>
-          </>
-        )}
-      </Section>
-
       <Section label="Lokalita">
         <Label>Kraj</Label>
         <Select value={filters.region} onChange={(v) => update("region", v as ScanFilters["region"])}
           options={REGIONS} />
       </Section>
+
 
       <Section label="Cena (Kč)">
         <div className="grid grid-cols-2 gap-2">
@@ -230,10 +211,9 @@ export function FilterSidebar({ filters, setFilters, view, setView, onExport, ca
       </Section>
 
 
-      <Section label="Řazení">
-        <Select value={filters.sort_by} onChange={(v) => update("sort_by", v as ScanFilters["sort_by"])}
-          options={[["date_desc", "Nejnovější ↓"], ["source", "Dle zdroje"], ["price_asc", "Cena ↑"], ["price_desc", "Cena ↓"], ["yield", "Výnos ↓"]]} />
-      </Section>
+
+
+
 
       <Section label="Hlídací pes">
         <button
