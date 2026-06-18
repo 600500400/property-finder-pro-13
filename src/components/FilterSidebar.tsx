@@ -1,9 +1,7 @@
 import type { ScanFilters, SourceKey } from "@/lib/scanner/types";
-import { Download, Cloud, Dog } from "lucide-react";
+import { Download, Dog } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { useServerFn } from "@tanstack/react-start";
-import { upsertSavedFilter } from "@/lib/saved/saved.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { SaveSearchDialog } from "@/components/SaveSearchDialog";
 
