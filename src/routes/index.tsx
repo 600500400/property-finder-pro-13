@@ -13,6 +13,8 @@ import { UserMenu } from "@/components/UserMenu";
 import { UpgradeBanner } from "@/components/UpgradeBanner";
 import { UpgradeModal } from "@/components/UpgradeModal";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Footer } from "@/components/Footer";
 import { Radar, SlidersHorizontal, LayoutGrid, Rows3, List, Download, Crown } from "lucide-react";
 
 export const Route = createFileRoute("/")({
@@ -251,8 +253,13 @@ function Index() {
               {listings.map((l, i) => <ListingCard key={l.url + i} listing={l} density={view.density} />)}
             </div>
           )}
+
+          <div className="mt-8 md:hidden">
+            <Footer />
+          </div>
         </main>
       </div>
+
       <UpgradeModal open={!!upgradeReason} onClose={() => setUpgradeReason(null)} reason={upgradeReason ?? undefined} />
     </div>
   );
