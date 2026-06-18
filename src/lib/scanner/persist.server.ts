@@ -44,6 +44,25 @@ export async function runSourceScrape(
   propertyType: PropertyType,
 ): Promise<RunResult> {
   const startedAt = Date.now();
+
+  // Flats-only restriction: skip any non-byty scrape requests.
+  // The cron schedule has been pruned to byty only, this guard prevents
+  // accidental ingestion if any other entry-point calls runSourceScrape.
+  if (propertyType !== "byty") {
+    return {
+      source: sourceKey,
+      deal_type: dealType,
+      property_type: propertyType,
+      status: "success",
+      items_found: 0,
+      items_new: 0,
+      items_updated: 0,
+      items_deactivated: 0,
+      duration_ms: Date.now() - startedAt,
+      run_id: "",
+      error: "skipped: only property_type='byty' is scraped",
+    };
+  }
   const limit = FAST_SOURCES.has(sourceKey) ? 100 : 50;
 
   const { data: runRow, error: insertErr } = await supabaseAdmin
