@@ -1,5 +1,5 @@
 import type { ScanFilters, SourceKey } from "@/lib/scanner/types";
-import { Download, Save, Trash2, Bookmark, Cloud, Dog } from "lucide-react";
+import { Download, Cloud, Dog } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
@@ -22,20 +22,13 @@ const REGIONS: Array<[ScanFilters["region"], string]> = [
 
 // Note: hyperinzerce, realitymix and annonce are paused (cron unscheduled).
 // Hidden from UI but scraper code/routes/DB rows remain intact for later re-enable.
-const SOURCES: Array<{ key: SourceKey; label: string; badge: string; type: "api" | "html" | "browser"; dot: string }> = [
-  { key: "sreality", label: "Sreality", badge: "API", type: "api", dot: "var(--color-primary)" },
-  { key: "bazos", label: "Bazoš", badge: "HTML", type: "html", dot: "#e0a64b" },
-  { key: "bezrealitky", label: "Bezrealitky", badge: "GraphQL", type: "api", dot: "#7aa2ff" },
-  { key: "idnes", label: "iDnes Reality", badge: "BROWSER", type: "browser", dot: "#d06bd0" },
+const SOURCES: Array<{ key: SourceKey; label: string; dot: string }> = [
+  { key: "sreality", label: "Sreality", dot: "var(--color-primary)" },
+  { key: "bazos", label: "Bazoš", dot: "#e0a64b" },
+  { key: "bezrealitky", label: "Bezrealitky", dot: "#7aa2ff" },
+  { key: "idnes", label: "iDnes Reality", dot: "#d06bd0" },
 ];
 const ALL_KEYS = SOURCES.map(s => s.key);
-const FAST_KEYS = SOURCES.filter(s => s.type !== "browser").map(s => s.key);
-
-function badgeClass(type: "api" | "html" | "browser") {
-  if (type === "api") return "bg-primary/15 text-primary";
-  if (type === "html") return "bg-muted text-muted-foreground";
-  return "bg-orange-500/15 text-orange-400";
-}
 
 interface ViewOptions {
   dedupe: boolean;
@@ -54,30 +47,14 @@ interface Props {
   canExport: boolean;
 }
 
-const PRESET_KEY = "realityscanner.presets";
-
-type Preset = { name: string; filters: ScanFilters };
-
-function loadPresets(): Preset[] {
-  if (typeof window === "undefined") return [];
-  try {
-    const raw = localStorage.getItem(PRESET_KEY);
-    return raw ? JSON.parse(raw) : [];
-  } catch { return []; }
-}
-function savePresets(list: Preset[]) {
-  try { localStorage.setItem(PRESET_KEY, JSON.stringify(list)); } catch { /* ignore */ }
-}
 
 export function FilterSidebar({ filters, setFilters, view, setView, onExport, canExport }: Props) {
-  const [presets, setPresets] = useState<Preset[]>([]);
   const [isAuthed, setIsAuthed] = useState(false);
   const [cloudMsg, setCloudMsg] = useState<string | null>(null);
   const [watchdogOpen, setWatchdogOpen] = useState(false);
   const saveCloud = useServerFn(upsertSavedFilter);
 
 
-  useEffect(() => { setPresets(loadPresets()); }, []);
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setIsAuthed(!!data.user));
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, s) => setIsAuthed(!!s?.user));
@@ -92,13 +69,6 @@ export function FilterSidebar({ filters, setFilters, view, setView, onExport, ca
     update("sources", has ? filters.sources.filter(x => x !== s) : [...filters.sources, s]);
   };
 
-  const handleSavePreset = () => {
-    const name = window.prompt("Název presetu:")?.trim();
-    if (!name) return;
-    const next = [...presets.filter(p => p.name !== name), { name, filters }];
-    savePresets(next);
-    setPresets(next);
-  };
   const handleSaveCloud = async () => {
     const name = window.prompt("Název filtru (uloží se do tvého účtu):")?.trim();
     if (!name) return;
@@ -110,15 +80,6 @@ export function FilterSidebar({ filters, setFilters, view, setView, onExport, ca
     } catch (e) {
       setCloudMsg(e instanceof Error ? e.message : String(e));
     }
-  };
-  const handleLoadPreset = (name: string) => {
-    const p = presets.find(x => x.name === name);
-    if (p) setFilters(p.filters);
-  };
-  const handleDeletePreset = (name: string) => {
-    const next = presets.filter(p => p.name !== name);
-    savePresets(next);
-    setPresets(next);
   };
 
   return (
@@ -160,10 +121,6 @@ export function FilterSidebar({ filters, setFilters, view, setView, onExport, ca
             className="rounded-md border border-border bg-[var(--color-surface-2)] px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground hover:text-foreground">
             Vše
           </button>
-          <button type="button" onClick={() => update("sources", FAST_KEYS)}
-            className="rounded-md border border-border bg-[var(--color-surface-2)] px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground hover:text-foreground">
-            Jen rychlé
-          </button>
           <button type="button" onClick={() => update("sources", [])}
             className="rounded-md border border-border bg-[var(--color-surface-2)] px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground hover:text-foreground">
             Žádný
@@ -188,16 +145,10 @@ export function FilterSidebar({ filters, setFilters, view, setView, onExport, ca
                   style={{ background: checked ? s.dot : "transparent", border: checked ? "none" : `1.5px solid ${s.dot}` }}
                 />
                 <span className="flex-1 text-foreground">{s.label}</span>
-                <span className={`rounded px-1.5 py-0.5 text-[9px] font-bold tracking-wider ${badgeClass(s.type)}`}>
-                  {s.badge}
-                </span>
               </button>
             );
           })}
         </div>
-        <p className="mt-2 text-[11px] leading-relaxed text-muted-foreground">
-          🟠 BROWSER zdroje běží přes Firecrawl (cloud headless prohlížeč) — sken je pomalejší (~10–30 s) a spotřebovává Firecrawl kredity.
-        </p>
       </Section>
 
 
@@ -228,39 +179,6 @@ export function FilterSidebar({ filters, setFilters, view, setView, onExport, ca
         <p className="text-[10px] leading-relaxed text-muted-foreground">
           Dostaneš e-mail, jakmile přibyde nový inzerát odpovídající tomuto filtru.
         </p>
-      </Section>
-
-      <Section label="Presety filtrů">
-
-        <div className="flex gap-1.5">
-          <button type="button" onClick={handleSavePreset}
-            className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-border bg-[var(--color-surface-2)] px-2 py-1.5 text-xs text-foreground hover:border-primary/50">
-            <Save className="h-3 w-3" /> Lokálně
-          </button>
-          {isAuthed && (
-            <button type="button" onClick={handleSaveCloud}
-              className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-primary/50 bg-primary/5 px-2 py-1.5 text-xs font-semibold text-primary hover:bg-primary/10">
-              <Cloud className="h-3 w-3" /> Do účtu
-            </button>
-          )}
-        </div>
-        {cloudMsg && <p className="text-[10px] text-muted-foreground">{cloudMsg}</p>}
-        {presets.length > 0 && (
-          <div className="flex flex-col gap-1">
-            {presets.map((p) => (
-              <div key={p.name} className="flex items-center gap-1">
-                <button type="button" onClick={() => handleLoadPreset(p.name)}
-                  className="flex flex-1 items-center gap-1.5 rounded-md border border-border bg-[var(--color-surface-2)] px-2 py-1.5 text-left text-xs text-foreground hover:border-primary/50">
-                  <Bookmark className="h-3 w-3 text-primary" /> {p.name}
-                </button>
-                <button type="button" onClick={() => handleDeletePreset(p.name)}
-                  className="rounded-md border border-border bg-[var(--color-surface-2)] p-1.5 text-muted-foreground hover:text-[var(--color-danger)]">
-                  <Trash2 className="h-3 w-3" />
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
       </Section>
 
       {/* Desktop action button — export only (live scan removed, data is now DB-backed) */}
