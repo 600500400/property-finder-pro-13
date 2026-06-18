@@ -193,15 +193,32 @@ function Index() {
                 </>
               )}
             </div>
-            <div className="hidden md:block">
-              <FreshnessToggle value={filters.freshness} onChange={(v) => setFilters({ ...filters, freshness: v })} />
-            </div>
-            <div className="flex items-center gap-0.5 rounded-lg border border-border bg-[var(--color-surface-2)] p-0.5">
-              <DensityBtn current={view.density} value="card" onClick={(v) => setView({ ...view, density: v })} icon={<LayoutGrid className="h-3.5 w-3.5" />} title="Karty" />
-              <DensityBtn current={view.density} value="compact" onClick={(v) => setView({ ...view, density: v })} icon={<Rows3 className="h-3.5 w-3.5" />} title="Kompakt" />
-              <DensityBtn current={view.density} value="list" onClick={(v) => setView({ ...view, density: v })} icon={<List className="h-3.5 w-3.5" />} title="Seznam" />
+            <div className="flex flex-wrap items-center gap-2">
+              <label className="flex items-center gap-1.5 rounded-lg border border-border bg-[var(--color-surface-2)] px-2.5 py-1.5">
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Řadit</span>
+                <select
+                  value={filters.sort_by}
+                  onChange={(e) => setFilters({ ...filters, sort_by: e.target.value as ScanFilters["sort_by"] })}
+                  className="bg-transparent text-sm font-semibold text-foreground outline-none"
+                >
+                  <option value="date_desc">Nejnovější</option>
+                  <option value="price_asc">Cena – nejlevnější</option>
+                  <option value="price_desc">Cena – nejdražší</option>
+                  <option value="yield">Výnos – nejvyšší</option>
+                  <option value="source">Dle zdroje</option>
+                </select>
+              </label>
+              <div className="hidden md:block">
+                <FreshnessToggle value={filters.freshness} onChange={(v) => setFilters({ ...filters, freshness: v })} />
+              </div>
+              <div className="flex items-center gap-0.5 rounded-lg border border-border bg-[var(--color-surface-2)] p-0.5">
+                <DensityBtn current={view.density} value="card" onClick={(v) => setView({ ...view, density: v })} icon={<LayoutGrid className="h-3.5 w-3.5" />} title="Karty" />
+                <DensityBtn current={view.density} value="compact" onClick={(v) => setView({ ...view, density: v })} icon={<Rows3 className="h-3.5 w-3.5" />} title="Kompakt" />
+                <DensityBtn current={view.density} value="list" onClick={(v) => setView({ ...view, density: v })} icon={<List className="h-3.5 w-3.5" />} title="Seznam" />
+              </div>
             </div>
           </div>
+
 
           {!isLoading && data && !isPremium && <UpgradeBanner />}
           {freeCapped && (
