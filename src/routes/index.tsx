@@ -13,7 +13,6 @@ import { UserMenu } from "@/components/UserMenu";
 import { UpgradeBanner } from "@/components/UpgradeBanner";
 import { UpgradeModal } from "@/components/UpgradeModal";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Footer } from "@/components/Footer";
 import { Radar, SlidersHorizontal, LayoutGrid, Rows3, List, Download, Crown } from "lucide-react";
 
