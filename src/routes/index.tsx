@@ -40,7 +40,7 @@ const DEFAULT_FILTERS: ScanFilters & { freshness: Freshness } = {
 };
 
 interface ViewOptions { dedupe: boolean; density: Density; [k: string]: unknown }
-const DEFAULT_VIEW: ViewOptions = { dedupe: false, density: "card" };
+const DEFAULT_VIEW: ViewOptions = { dedupe: true, density: "card" };
 const LAST_FILTERS_KEY = "realityscanner.lastFilters";
 const LAST_VIEW_KEY = "realityscanner.lastView";
 
@@ -128,8 +128,13 @@ function Index() {
     <div className="flex h-[100dvh] min-h-0 flex-col bg-background text-foreground">
       <header className="sticky top-0 z-30 flex items-center gap-3 border-b border-border bg-[var(--color-surface)] px-5 py-3">
         <Radar className="h-5 w-5 text-primary" />
-        <div className="text-base font-bold tracking-tight">
-          Reality<span className="text-primary">Scanner</span>
+        <div className="flex flex-col leading-none">
+          <div className="text-base font-bold tracking-tight">
+            Reality<span className="text-primary">Scanner</span>
+          </div>
+          <span className="mt-0.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+            Investiční byty na prodej napříč českými portály
+          </span>
         </div>
         {data && (
           <span className="hidden font-mono text-[11px] text-muted-foreground sm:inline">
