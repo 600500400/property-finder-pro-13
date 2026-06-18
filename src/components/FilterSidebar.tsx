@@ -64,18 +64,6 @@ export function FilterSidebar({ filters, setFilters, view, setView, onExport, ca
     update("sources", has ? filters.sources.filter(x => x !== s) : [...filters.sources, s]);
   };
 
-  const handleSaveCloud = async () => {
-    const name = window.prompt("Název filtru (uloží se do tvého účtu):")?.trim();
-    if (!name) return;
-    setCloudMsg("Ukládám…");
-    try {
-      await saveCloud({ data: { name, filters: filters as unknown as Record<string, unknown> } });
-      setCloudMsg("Uloženo do účtu ✓");
-      setTimeout(() => setCloudMsg(null), 2500);
-    } catch (e) {
-      setCloudMsg(e instanceof Error ? e.message : String(e));
-    }
-  };
 
   return (
     <aside className="flex h-full flex-col gap-5 overflow-y-auto border-r border-border bg-[var(--color-surface)] p-5 pb-32 md:pb-5">
