@@ -5,7 +5,7 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { supabase } from "@/integrations/supabase/client";
-import { Footer } from "@/components/Footer";
+
 
 function NotFoundComponent() {
   return (
@@ -120,12 +120,7 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthSync />
-      <div className="flex min-h-[100dvh] flex-col">
-        <div className="flex-1">
-          <Outlet />
-        </div>
-        <Footer />
-      </div>
+      <Outlet />
     </QueryClientProvider>
   );
 }
