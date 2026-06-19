@@ -118,6 +118,8 @@ export interface ScanMeta {
   filtered_foreign?: number;
   filtered_reasons?: Record<string, number>;
   is_premium?: boolean;
+  tier?: "anonymous" | "free" | "premium";
+  result_cap?: number;
   free_capped?: boolean;
 }
 
