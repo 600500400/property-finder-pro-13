@@ -1,6 +1,7 @@
 import type { Listing, Flag } from "@/lib/scanner/types";
 import { MapPin, ExternalLink, AlertTriangle } from "lucide-react";
 import { AIAnalysisButton } from "./AIAnalysisDialog";
+import { SaveBookmarkButton } from "./SaveBookmarkButton";
 
 function hasPriceTrap(flags?: Flag[]): boolean {
   return !!flags?.some(f => f.category === "price_trap");
