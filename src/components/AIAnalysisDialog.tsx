@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
+import { useQueryClient } from "@tanstack/react-query";
 import type { Listing } from "@/lib/scanner/types";
 import { analyzeListing, type AIAnalysisResult } from "@/lib/ai/analyze.functions";
 import { usePlan } from "@/hooks/usePlan";
@@ -9,15 +10,33 @@ import { Loader2, Sparkles, X, AlertTriangle, Crown, ShieldAlert, CheckCircle2, 
 export function AIAnalysisButton({ listing }: { listing: Listing }) {
   const [open, setOpen] = useState(false);
   const { data: plan } = usePlan();
-  const isPremium = !!plan?.is_premium;
+  const tier = plan?.tier ?? "anonymous";
+  const isPremium = tier === "premium";
+  const sampleUsed = !!plan?.free_ai_sample_used;
 
   const navigate = useNavigate();
-  if (!isPremium) {
+
+  // Anonymous: needs to register first
+  if (tier === "anonymous") {
+    return (
+      <button
+        type="button"
+        onClick={(e) => { e.preventDefault(); e.stopPropagation(); navigate({ to: "/auth" }); }}
+        title="Pro AI analýzu se zaregistruj — dostaneš jednu zdarma na vyzkoušení"
+        className="flex items-center gap-1 rounded-md border border-primary/40 bg-primary/10 px-2 py-1 text-[10px] font-semibold text-primary hover:bg-primary/20"
+      >
+        <Sparkles className="h-3 w-3" /> AI analýza (zdarma po registraci)
+      </button>
+    );
+  }
+
+  // Free user who already spent the sample: push Premium
+  if (!isPremium && sampleUsed) {
     return (
       <button
         type="button"
         onClick={(e) => { e.preventDefault(); e.stopPropagation(); navigate({ to: "/cenik" }); }}
-        title="AI analýza je dostupná v Premium"
+        title="Volnou AI analýzu jsi už vyčerpal — Premium = 50/měsíc"
         className="flex items-center gap-1 rounded-md border border-amber-500/40 bg-amber-500/10 px-2 py-1 text-[10px] font-semibold text-amber-300 hover:bg-amber-500/20"
       >
         <Crown className="h-3 w-3" /> AI analýza (Premium)
@@ -25,6 +44,7 @@ export function AIAnalysisButton({ listing }: { listing: Listing }) {
     );
   }
 
+  // Free user with sample available, OR premium → open dialog
   return (
     <>
       <button
@@ -32,7 +52,8 @@ export function AIAnalysisButton({ listing }: { listing: Listing }) {
         onClick={(e) => { e.preventDefault(); e.stopPropagation(); setOpen(true); }}
         className="flex items-center gap-1 rounded-md bg-primary/15 px-2 py-1 text-[10px] font-semibold text-primary hover:bg-primary/25"
       >
-        <Sparkles className="h-3 w-3" /> AI analýza
+        <Sparkles className="h-3 w-3" />
+        {isPremium ? "AI analýza" : "AI analýza (ukázka zdarma)"}
       </button>
       {open && <Dialog listing={listing} onClose={() => setOpen(false)} />}
     </>
@@ -41,6 +62,7 @@ export function AIAnalysisButton({ listing }: { listing: Listing }) {
 
 function Dialog({ listing, onClose }: { listing: Listing; onClose: () => void }) {
   const analyze = useServerFn(analyzeListing);
+  const qc = useQueryClient();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<AIAnalysisResult | null>(null);
@@ -63,10 +85,15 @@ function Dialog({ listing, onClose }: { listing: Listing; onClose: () => void })
             rent_basis_label: listing.invest?.rent_basis_label,
             net_yield: listing.invest?.net_yield,
             gross_yield: listing.invest?.gross_yield,
-            // kraj/property_type/deal_type are inferred server-side from comparable query when present
           },
         });
-        if (!cancelled) setData(res);
+        if (!cancelled) {
+          setData(res);
+          // Refresh plan so the "free sample used" flag flips immediately for free users
+          if (res.ok || (res as { error?: string }).error === "free_sample_used") {
+            qc.invalidateQueries({ queryKey: ["my-plan"] });
+          }
+        }
       } catch (e) {
         if (!cancelled) setError(e instanceof Error ? e.message : String(e));
       } finally {
@@ -74,7 +101,7 @@ function Dialog({ listing, onClose }: { listing: Listing; onClose: () => void })
       }
     })();
     return () => { cancelled = true; };
-  }, [analyze, listing]);
+  }, [analyze, listing, qc]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={onClose}>
@@ -110,6 +137,17 @@ function Dialog({ listing, onClose }: { listing: Listing; onClose: () => void })
             <p className="text-sm font-semibold">AI investiční analýza je Premium funkce.</p>
             <Link to="/cenik" className="rounded-md bg-amber-500 px-4 py-2 text-xs font-bold text-black hover:bg-amber-400">
               Odemknout v Premium
+            </Link>
+          </div>
+        )}
+
+        {data && data.ok === false && data.error === "free_sample_used" && (
+          <div className="flex flex-col items-center gap-3 rounded-lg border border-amber-500/40 bg-amber-500/5 p-5 text-center">
+            <Crown className="h-8 w-8 text-amber-400" />
+            <p className="text-sm font-semibold">Volnou ukázkovou AI analýzu jsi už vyčerpal.</p>
+            <p className="text-xs text-muted-foreground">{data.message}</p>
+            <Link to="/cenik" className="rounded-md bg-amber-500 px-4 py-2 text-xs font-bold text-black hover:bg-amber-400">
+              Odemknout Premium · 50 analýz/měs.
             </Link>
           </div>
         )}

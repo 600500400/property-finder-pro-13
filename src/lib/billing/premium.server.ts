@@ -1,9 +1,14 @@
 /**
- * Single source of truth for premium status.
- * All gates (queryListings, saved_searches, instant alerts, CSV) MUST go through here.
- * No status logic is duplicated elsewhere — see public.is_premium() RPC for the rule.
+ * Single source of truth for plan tier.
+ * All gates (queryListings, saved_searches, saved_listings, AI, CSV) MUST go through here.
+ * Three tiers:
+ *   - "anonymous" : not logged in
+ *   - "free"      : logged in, no active subscription
+ *   - "premium"   : active subscription (is_premium RPC === true)
  */
 import { getRequest } from "@tanstack/react-start/server";
+
+export type Tier = "anonymous" | "free" | "premium";
 
 /** Admin check by user id. Uses the SECURITY DEFINER `is_premium` RPC. */
 export async function isUserPremium(userId: string | null | undefined): Promise<boolean> {
@@ -43,4 +48,12 @@ export async function viewerUserId(): Promise<string | null> {
 export async function viewerIsPremium(): Promise<boolean> {
   const uid = await viewerUserId();
   return isUserPremium(uid);
+}
+
+/** Resolve the current request's tier. */
+export async function viewerTier(): Promise<{ tier: Tier; userId: string | null }> {
+  const userId = await viewerUserId();
+  if (!userId) return { tier: "anonymous", userId: null };
+  const premium = await isUserPremium(userId);
+  return { tier: premium ? "premium" : "free", userId };
 }

@@ -1,6 +1,7 @@
 import type { Listing, Flag } from "@/lib/scanner/types";
 import { MapPin, ExternalLink, AlertTriangle } from "lucide-react";
 import { AIAnalysisButton } from "./AIAnalysisDialog";
+import { SaveBookmarkButton } from "./SaveBookmarkButton";
 
 function hasPriceTrap(flags?: Flag[]): boolean {
   return !!flags?.some(f => f.category === "price_trap");
@@ -322,7 +323,8 @@ function ListingFull({ listing, rank }: { listing: Listing; rank?: number }) {
             </div>
           )}
 
-          <div className="flex justify-end">
+          <div className="flex items-center justify-end gap-1.5">
+            <SaveBookmarkButton listing={listing} />
             <AIAnalysisButton listing={listing} />
           </div>
         </div>
