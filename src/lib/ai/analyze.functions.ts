@@ -314,6 +314,8 @@ Vrať JSON dle schématu.`;
     return {
       ok: true,
       ...result,
-      usage: { used: used + 1, limit: AI_MONTHLY_LIMIT },
+      usage: isPremium
+        ? { used: used + 1, limit: AI_MONTHLY_LIMIT }
+        : { used: 1, limit: 1 },
     };
   });
