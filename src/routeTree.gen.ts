@@ -19,6 +19,7 @@ import { Route as AuthenticatedWatchdogsRouteImport } from './routes/_authentica
 import { Route as AuthenticatedSavedRouteImport } from './routes/_authenticated/saved'
 import { Route as AuthenticatedNastaveniInvestoraRouteImport } from './routes/_authenticated/nastaveni-investora'
 import { Route as AuthenticatedHealthRouteImport } from './routes/_authenticated/health'
+import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as ApiPublicStripeWebhookRouteImport } from './routes/api/public/stripe/webhook'
 import { Route as ApiPublicHooksRunSchedulesRouteImport } from './routes/api/public/hooks/run-schedules'
 import { Route as ApiPublicCronScrapeSrealityRouteImport } from './routes/api/public/cron/scrape-sreality'
@@ -79,6 +80,11 @@ const AuthenticatedNastaveniInvestoraRoute =
 const AuthenticatedHealthRoute = AuthenticatedHealthRouteImport.update({
   id: '/health',
   path: '/health',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const ApiPublicStripeWebhookRoute = ApiPublicStripeWebhookRouteImport.update({
@@ -153,6 +159,7 @@ export interface FileRoutesByFullPath {
   '/cenik': typeof CenikRoute
   '/obchodni-podminky': typeof ObchodniPodminkyRoute
   '/ochrana-osobnich-udaju': typeof OchranaOsobnichUdajuRoute
+  '/admin': typeof AuthenticatedAdminRoute
   '/health': typeof AuthenticatedHealthRoute
   '/nastaveni-investora': typeof AuthenticatedNastaveniInvestoraRoute
   '/saved': typeof AuthenticatedSavedRoute
@@ -175,6 +182,7 @@ export interface FileRoutesByTo {
   '/cenik': typeof CenikRoute
   '/obchodni-podminky': typeof ObchodniPodminkyRoute
   '/ochrana-osobnich-udaju': typeof OchranaOsobnichUdajuRoute
+  '/admin': typeof AuthenticatedAdminRoute
   '/health': typeof AuthenticatedHealthRoute
   '/nastaveni-investora': typeof AuthenticatedNastaveniInvestoraRoute
   '/saved': typeof AuthenticatedSavedRoute
@@ -199,6 +207,7 @@ export interface FileRoutesById {
   '/cenik': typeof CenikRoute
   '/obchodni-podminky': typeof ObchodniPodminkyRoute
   '/ochrana-osobnich-udaju': typeof OchranaOsobnichUdajuRoute
+  '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/health': typeof AuthenticatedHealthRoute
   '/_authenticated/nastaveni-investora': typeof AuthenticatedNastaveniInvestoraRoute
   '/_authenticated/saved': typeof AuthenticatedSavedRoute
@@ -223,6 +232,7 @@ export interface FileRouteTypes {
     | '/cenik'
     | '/obchodni-podminky'
     | '/ochrana-osobnich-udaju'
+    | '/admin'
     | '/health'
     | '/nastaveni-investora'
     | '/saved'
@@ -245,6 +255,7 @@ export interface FileRouteTypes {
     | '/cenik'
     | '/obchodni-podminky'
     | '/ochrana-osobnich-udaju'
+    | '/admin'
     | '/health'
     | '/nastaveni-investora'
     | '/saved'
@@ -268,6 +279,7 @@ export interface FileRouteTypes {
     | '/cenik'
     | '/obchodni-podminky'
     | '/ochrana-osobnich-udaju'
+    | '/_authenticated/admin'
     | '/_authenticated/health'
     | '/_authenticated/nastaveni-investora'
     | '/_authenticated/saved'
@@ -377,6 +389,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedHealthRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/admin': {
+      id: '/_authenticated/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AuthenticatedAdminRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/api/public/stripe/webhook': {
       id: '/api/public/stripe/webhook'
       path: '/api/public/stripe/webhook'
@@ -458,6 +477,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
   AuthenticatedHealthRoute: typeof AuthenticatedHealthRoute
   AuthenticatedNastaveniInvestoraRoute: typeof AuthenticatedNastaveniInvestoraRoute
   AuthenticatedSavedRoute: typeof AuthenticatedSavedRoute
@@ -465,6 +485,7 @@ interface AuthenticatedRouteRouteChildren {
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedAdminRoute: AuthenticatedAdminRoute,
   AuthenticatedHealthRoute: AuthenticatedHealthRoute,
   AuthenticatedNastaveniInvestoraRoute: AuthenticatedNastaveniInvestoraRoute,
   AuthenticatedSavedRoute: AuthenticatedSavedRoute,
