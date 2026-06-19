@@ -40,14 +40,12 @@ export const queryListings = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { getBenchmark } = await import("@/lib/scanner/rent-benchmark.server");
     const { indexRentComps, computeHybridYield } = await import("./yield.server");
-    const { viewerIsPremium } = await import("@/lib/billing/premium.server");
+    const { viewerTier } = await import("@/lib/billing/premium.server");
 
-    const isPremium = await viewerIsPremium();
-    const FREE_RESULT_CAP = 20;
-
-
-
-    
+    const { tier } = await viewerTier();
+    const isPremium = tier === "premium";
+    // 3-way result cap: anon 20 / free 50 / premium 500
+    const RESULT_CAP = tier === "anonymous" ? 20 : tier === "free" ? 50 : 500;
 
     // ----- main query -----
     let q = supabaseAdmin
@@ -67,17 +65,16 @@ export const queryListings = createServerFn({ method: "POST" })
       q = q.gte("first_seen_at", new Date(Date.now() - 7 * 24 * 3600_000).toISOString());
     }
 
-    // FREE plan: exclude listings first seen in the last 24h (real-time gated)
+    // Non-premium (anon + free): exclude listings first seen in the last 24h (realtime is Premium-only)
     if (!isPremium) {
       q = q.lt("first_seen_at", new Date(Date.now() - 24 * 3600_000).toISOString());
     }
 
-    // Server-side ordering (date/price only — yield is post-computed)
     if (filters.sort_by === "price_asc") q = q.order("price", { ascending: true, nullsFirst: false });
     else if (filters.sort_by === "price_desc") q = q.order("price", { ascending: false, nullsFirst: false });
     else q = q.order("first_seen_at", { ascending: false });
 
-    q = q.limit(isPremium ? 500 : FREE_RESULT_CAP);
+    q = q.limit(RESULT_CAP);
 
 
     const { data: rows, error } = await q;
