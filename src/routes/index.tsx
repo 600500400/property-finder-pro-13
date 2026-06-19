@@ -231,7 +231,11 @@ function Index() {
           {!isLoading && data && !isPremium && <UpgradeBanner />}
           {freeCapped && (
             <div className="mb-3 rounded-md border border-amber-500/30 bg-amber-500/5 p-2 text-center text-xs text-amber-200/90">
-              Free plán zobrazuje max. <strong>20 výsledků</strong> · <button className="underline" onClick={() => setUpgradeReason("Odemkni neomezené výsledky.")}>upgradovat</button>
+              {tier === "anonymous" ? (
+                <>Bez přihlášení vidíš max. <strong>{resultCap} výsledků</strong> · <Link to="/auth" className="underline">registrovat zdarma pro 50</Link></>
+              ) : (
+                <>Free plán zobrazuje max. <strong>{resultCap} výsledků</strong> · <button className="underline" onClick={() => setUpgradeReason("Odemkni neomezené výsledky.")}>upgradovat na Premium</button></>
+              )}
             </div>
           )}
 
