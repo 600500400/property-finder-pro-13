@@ -61,6 +61,7 @@ export function AIAnalysisButton({ listing }: { listing: Listing }) {
 
 function Dialog({ listing, onClose }: { listing: Listing; onClose: () => void }) {
   const analyze = useServerFn(analyzeListing);
+  const qc = useQueryClient();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<AIAnalysisResult | null>(null);
@@ -83,10 +84,15 @@ function Dialog({ listing, onClose }: { listing: Listing; onClose: () => void })
             rent_basis_label: listing.invest?.rent_basis_label,
             net_yield: listing.invest?.net_yield,
             gross_yield: listing.invest?.gross_yield,
-            // kraj/property_type/deal_type are inferred server-side from comparable query when present
           },
         });
-        if (!cancelled) setData(res);
+        if (!cancelled) {
+          setData(res);
+          // Refresh plan so the "free sample used" flag flips immediately for free users
+          if (res.ok || (res as { error?: string }).error === "free_sample_used") {
+            qc.invalidateQueries({ queryKey: ["my-plan"] });
+          }
+        }
       } catch (e) {
         if (!cancelled) setError(e instanceof Error ? e.message : String(e));
       } finally {
@@ -94,7 +100,7 @@ function Dialog({ listing, onClose }: { listing: Listing; onClose: () => void })
       }
     })();
     return () => { cancelled = true; };
-  }, [analyze, listing]);
+  }, [analyze, listing, qc]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={onClose}>
