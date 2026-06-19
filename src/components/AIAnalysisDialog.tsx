@@ -141,6 +141,17 @@ function Dialog({ listing, onClose }: { listing: Listing; onClose: () => void })
           </div>
         )}
 
+        {data && data.ok === false && data.error === "free_sample_used" && (
+          <div className="flex flex-col items-center gap-3 rounded-lg border border-amber-500/40 bg-amber-500/5 p-5 text-center">
+            <Crown className="h-8 w-8 text-amber-400" />
+            <p className="text-sm font-semibold">Volnou ukázkovou AI analýzu jsi už vyčerpal.</p>
+            <p className="text-xs text-muted-foreground">{data.message}</p>
+            <Link to="/cenik" className="rounded-md bg-amber-500 px-4 py-2 text-xs font-bold text-black hover:bg-amber-400">
+              Odemknout Premium · 50 analýz/měs.
+            </Link>
+          </div>
+        )}
+
         {data && data.ok === false && data.error === "monthly_limit_reached" && (
           <div className="rounded-lg border border-amber-500/40 bg-amber-500/5 p-4 text-xs text-amber-200">
             <p className="font-semibold">Měsíční limit AI analýz vyčerpán</p>
