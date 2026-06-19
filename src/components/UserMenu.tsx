@@ -58,7 +58,7 @@ export function UserMenu() {
         <Dog className="h-3.5 w-3.5 text-primary" /> Hlídací psi
       </Link>
       <Link
-        to="/saved"
+        to="/ulozene"
         className="flex items-center gap-1.5 rounded-lg border border-border bg-[var(--color-surface-2)] px-2.5 py-1 text-xs font-semibold text-foreground hover:border-primary/50"
       >
         <Bookmark className="h-3.5 w-3.5 text-primary" /> Uložené
