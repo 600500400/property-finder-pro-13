@@ -214,6 +214,45 @@ export type Database = {
         }
         Relationships: []
       }
+      saved_listings: {
+        Row: {
+          area_m2: number | null
+          created_at: string
+          id: string
+          image_url: string | null
+          listing_url: string
+          locality: string | null
+          name: string | null
+          price: number | null
+          source: string | null
+          user_id: string
+        }
+        Insert: {
+          area_m2?: number | null
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          listing_url: string
+          locality?: string | null
+          name?: string | null
+          price?: number | null
+          source?: string | null
+          user_id: string
+        }
+        Update: {
+          area_m2?: number | null
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          listing_url?: string
+          locality?: string | null
+          name?: string | null
+          price?: number | null
+          source?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       saved_searches: {
         Row: {
           created_at: string
