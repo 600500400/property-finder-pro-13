@@ -50,7 +50,7 @@ export interface AIAnalysisOk {
 
 export interface AIAnalysisErr {
   ok: false;
-  error: "premium_required" | "monthly_limit_reached" | "ai_failed";
+  error: "premium_required" | "free_sample_used" | "monthly_limit_reached" | "ai_failed";
   message: string;
   used?: number;
   limit?: number;
