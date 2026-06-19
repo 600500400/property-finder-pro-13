@@ -106,6 +106,8 @@ function Index() {
   }, [data?.results, view.dedupe, filters.sort_by]);
 
   const isPremium = data?.meta?.is_premium ?? false;
+  const tier = data?.meta?.tier ?? "anonymous";
+  const resultCap = data?.meta?.result_cap ?? 20;
   const freeCapped = data?.meta?.free_capped ?? false;
 
   const handleExport = () => {

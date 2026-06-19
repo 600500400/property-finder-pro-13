@@ -16,6 +16,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedWatchdogsRouteImport } from './routes/_authenticated/watchdogs'
+import { Route as AuthenticatedUlozeneRouteImport } from './routes/_authenticated/ulozene'
 import { Route as AuthenticatedSavedRouteImport } from './routes/_authenticated/saved'
 import { Route as AuthenticatedNastaveniInvestoraRouteImport } from './routes/_authenticated/nastaveni-investora'
 import { Route as AuthenticatedHealthRouteImport } from './routes/_authenticated/health'
@@ -64,6 +65,11 @@ const IndexRoute = IndexRouteImport.update({
 const AuthenticatedWatchdogsRoute = AuthenticatedWatchdogsRouteImport.update({
   id: '/watchdogs',
   path: '/watchdogs',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedUlozeneRoute = AuthenticatedUlozeneRouteImport.update({
+  id: '/ulozene',
+  path: '/ulozene',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedSavedRoute = AuthenticatedSavedRouteImport.update({
@@ -163,6 +169,7 @@ export interface FileRoutesByFullPath {
   '/health': typeof AuthenticatedHealthRoute
   '/nastaveni-investora': typeof AuthenticatedNastaveniInvestoraRoute
   '/saved': typeof AuthenticatedSavedRoute
+  '/ulozene': typeof AuthenticatedUlozeneRoute
   '/watchdogs': typeof AuthenticatedWatchdogsRoute
   '/api/public/cron/daily-digest': typeof ApiPublicCronDailyDigestRoute
   '/api/public/cron/health-check': typeof ApiPublicCronHealthCheckRoute
@@ -186,6 +193,7 @@ export interface FileRoutesByTo {
   '/health': typeof AuthenticatedHealthRoute
   '/nastaveni-investora': typeof AuthenticatedNastaveniInvestoraRoute
   '/saved': typeof AuthenticatedSavedRoute
+  '/ulozene': typeof AuthenticatedUlozeneRoute
   '/watchdogs': typeof AuthenticatedWatchdogsRoute
   '/api/public/cron/daily-digest': typeof ApiPublicCronDailyDigestRoute
   '/api/public/cron/health-check': typeof ApiPublicCronHealthCheckRoute
@@ -211,6 +219,7 @@ export interface FileRoutesById {
   '/_authenticated/health': typeof AuthenticatedHealthRoute
   '/_authenticated/nastaveni-investora': typeof AuthenticatedNastaveniInvestoraRoute
   '/_authenticated/saved': typeof AuthenticatedSavedRoute
+  '/_authenticated/ulozene': typeof AuthenticatedUlozeneRoute
   '/_authenticated/watchdogs': typeof AuthenticatedWatchdogsRoute
   '/api/public/cron/daily-digest': typeof ApiPublicCronDailyDigestRoute
   '/api/public/cron/health-check': typeof ApiPublicCronHealthCheckRoute
@@ -236,6 +245,7 @@ export interface FileRouteTypes {
     | '/health'
     | '/nastaveni-investora'
     | '/saved'
+    | '/ulozene'
     | '/watchdogs'
     | '/api/public/cron/daily-digest'
     | '/api/public/cron/health-check'
@@ -259,6 +269,7 @@ export interface FileRouteTypes {
     | '/health'
     | '/nastaveni-investora'
     | '/saved'
+    | '/ulozene'
     | '/watchdogs'
     | '/api/public/cron/daily-digest'
     | '/api/public/cron/health-check'
@@ -283,6 +294,7 @@ export interface FileRouteTypes {
     | '/_authenticated/health'
     | '/_authenticated/nastaveni-investora'
     | '/_authenticated/saved'
+    | '/_authenticated/ulozene'
     | '/_authenticated/watchdogs'
     | '/api/public/cron/daily-digest'
     | '/api/public/cron/health-check'
@@ -366,6 +378,13 @@ declare module '@tanstack/react-router' {
       path: '/watchdogs'
       fullPath: '/watchdogs'
       preLoaderRoute: typeof AuthenticatedWatchdogsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/ulozene': {
+      id: '/_authenticated/ulozene'
+      path: '/ulozene'
+      fullPath: '/ulozene'
+      preLoaderRoute: typeof AuthenticatedUlozeneRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/saved': {
@@ -481,6 +500,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedHealthRoute: typeof AuthenticatedHealthRoute
   AuthenticatedNastaveniInvestoraRoute: typeof AuthenticatedNastaveniInvestoraRoute
   AuthenticatedSavedRoute: typeof AuthenticatedSavedRoute
+  AuthenticatedUlozeneRoute: typeof AuthenticatedUlozeneRoute
   AuthenticatedWatchdogsRoute: typeof AuthenticatedWatchdogsRoute
 }
 
@@ -489,6 +509,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedHealthRoute: AuthenticatedHealthRoute,
   AuthenticatedNastaveniInvestoraRoute: AuthenticatedNastaveniInvestoraRoute,
   AuthenticatedSavedRoute: AuthenticatedSavedRoute,
+  AuthenticatedUlozeneRoute: AuthenticatedUlozeneRoute,
   AuthenticatedWatchdogsRoute: AuthenticatedWatchdogsRoute,
 }
 
