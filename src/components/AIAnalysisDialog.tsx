@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
+import { useQueryClient } from "@tanstack/react-query";
 import type { Listing } from "@/lib/scanner/types";
 import { analyzeListing, type AIAnalysisResult } from "@/lib/ai/analyze.functions";
 import { usePlan } from "@/hooks/usePlan";
