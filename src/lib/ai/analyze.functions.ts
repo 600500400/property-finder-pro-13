@@ -101,10 +101,23 @@ export const analyzeListing = createServerFn({ method: "POST" })
     const userId = context.userId;
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    // 1) Premium gate
+    // 1) Tier gate: free users get ONE sample AI analysis ever; premium = monthly limit
     const { data: premium } = await supabaseAdmin.rpc("is_premium", { _user_id: userId });
-    if (premium !== true) {
-      return { ok: false, error: "premium_required", message: "AI investiční analýza je dostupná jen v Premium." };
+    const isPremium = premium === true;
+
+    // Count lifetime usage (used both for the free sample gate and the monthly counter below).
+    const { count: lifetimeCount } = await supabaseAdmin
+      .from("ai_analysis_usage")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", userId);
+    const lifetimeUsed = lifetimeCount ?? 0;
+
+    if (!isPremium && lifetimeUsed >= 1) {
+      return {
+        ok: false,
+        error: "free_sample_used",
+        message: "Vyčerpal jsi svou jednu ukázkovou AI analýzu. Premium = 50 analýz měsíčně.",
+      };
     }
 
     // 2) Cache lookup (per listing + raw fingerprint)
@@ -129,22 +142,25 @@ export const analyzeListing = createServerFn({ method: "POST" })
       }
     }
 
-    // 3) Monthly limit
-    const monthStart = new Date();
-    monthStart.setUTCDate(1);
-    monthStart.setUTCHours(0, 0, 0, 0);
-    const { count } = await supabaseAdmin
-      .from("ai_analysis_usage")
-      .select("id", { count: "exact", head: true })
-      .eq("user_id", userId)
-      .gte("created_at", monthStart.toISOString());
-    const used = count ?? 0;
-    if (used >= AI_MONTHLY_LIMIT) {
-      return {
-        ok: false, error: "monthly_limit_reached",
-        message: `Měsíční limit AI analýz vyčerpán (${used}/${AI_MONTHLY_LIMIT}). Reset 1. dne v měsíci.`,
-        used, limit: AI_MONTHLY_LIMIT,
-      };
+    // 3) Premium monthly limit (free users skip — they only get the single sample above)
+    let used = 0;
+    if (isPremium) {
+      const monthStart = new Date();
+      monthStart.setUTCDate(1);
+      monthStart.setUTCHours(0, 0, 0, 0);
+      const { count } = await supabaseAdmin
+        .from("ai_analysis_usage")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", userId)
+        .gte("created_at", monthStart.toISOString());
+      used = count ?? 0;
+      if (used >= AI_MONTHLY_LIMIT) {
+        return {
+          ok: false, error: "monthly_limit_reached",
+          message: `Měsíční limit AI analýz vyčerpán (${used}/${AI_MONTHLY_LIMIT}). Reset 1. dne v měsíci.`,
+          used, limit: AI_MONTHLY_LIMIT,
+        };
+      }
     }
 
     // 4) Comparables (same kraj + property_type + deal_type + area ±20%)
