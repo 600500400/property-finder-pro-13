@@ -9,15 +9,33 @@ import { Loader2, Sparkles, X, AlertTriangle, Crown, ShieldAlert, CheckCircle2, 
 export function AIAnalysisButton({ listing }: { listing: Listing }) {
   const [open, setOpen] = useState(false);
   const { data: plan } = usePlan();
-  const isPremium = !!plan?.is_premium;
+  const tier = plan?.tier ?? "anonymous";
+  const isPremium = tier === "premium";
+  const sampleUsed = !!plan?.free_ai_sample_used;
 
   const navigate = useNavigate();
-  if (!isPremium) {
+
+  // Anonymous: needs to register first
+  if (tier === "anonymous") {
+    return (
+      <button
+        type="button"
+        onClick={(e) => { e.preventDefault(); e.stopPropagation(); navigate({ to: "/auth" }); }}
+        title="Pro AI analýzu se zaregistruj — dostaneš jednu zdarma na vyzkoušení"
+        className="flex items-center gap-1 rounded-md border border-primary/40 bg-primary/10 px-2 py-1 text-[10px] font-semibold text-primary hover:bg-primary/20"
+      >
+        <Sparkles className="h-3 w-3" /> AI analýza (zdarma po registraci)
+      </button>
+    );
+  }
+
+  // Free user who already spent the sample: push Premium
+  if (!isPremium && sampleUsed) {
     return (
       <button
         type="button"
         onClick={(e) => { e.preventDefault(); e.stopPropagation(); navigate({ to: "/cenik" }); }}
-        title="AI analýza je dostupná v Premium"
+        title="Volnou AI analýzu jsi už vyčerpal — Premium = 50/měsíc"
         className="flex items-center gap-1 rounded-md border border-amber-500/40 bg-amber-500/10 px-2 py-1 text-[10px] font-semibold text-amber-300 hover:bg-amber-500/20"
       >
         <Crown className="h-3 w-3" /> AI analýza (Premium)
@@ -25,6 +43,7 @@ export function AIAnalysisButton({ listing }: { listing: Listing }) {
     );
   }
 
+  // Free user with sample available, OR premium → open dialog
   return (
     <>
       <button
@@ -32,7 +51,8 @@ export function AIAnalysisButton({ listing }: { listing: Listing }) {
         onClick={(e) => { e.preventDefault(); e.stopPropagation(); setOpen(true); }}
         className="flex items-center gap-1 rounded-md bg-primary/15 px-2 py-1 text-[10px] font-semibold text-primary hover:bg-primary/25"
       >
-        <Sparkles className="h-3 w-3" /> AI analýza
+        <Sparkles className="h-3 w-3" />
+        {isPremium ? "AI analýza" : "AI analýza (ukázka zdarma)"}
       </button>
       {open && <Dialog listing={listing} onClose={() => setOpen(false)} />}
     </>
