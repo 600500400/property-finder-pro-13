@@ -150,10 +150,11 @@ function Pricing() {
             </div>
             <div className="text-xs text-muted-foreground">nebo 3 490 Kč / rok (ušetříš 17 %)</div>
             <ul className="mt-5 space-y-2 text-sm">
+              <Bullet>4 hlavní české portály (Sreality, Bazoš, Bezrealitky, iDnes)</Bullet>
               <Bullet>Inzeráty <strong>v reálném čase</strong> — bez 24h zpoždění</Bullet>
-              <Bullet>Neomezený počet výsledků</Bullet>
-              <Bullet>Neomezeně hlídacích psů</Bullet>
-              <Bullet>Okamžitá upozornění e-mailem</Bullet>
+              <Bullet>Až 500 výsledků na dotaz</Bullet>
+              <Bullet>Neomezeně hlídacích psů (okamžitá upozornění e-mailem)</Bullet>
+              <Bullet>AI analýza investice — 50× měsíčně</Bullet>
               <Bullet>CSV export</Bullet>
               <Bullet>Prioritní podpora</Bullet>
             </ul>
