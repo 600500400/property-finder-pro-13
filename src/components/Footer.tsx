@@ -7,6 +7,7 @@ export function Footer() {
         <div>© {new Date().getFullYear()} RealityScanner</div>
         <nav className="flex flex-wrap items-center gap-4">
           <Link to="/cenik" className="hover:text-foreground">Ceník</Link>
+          <Link to="/metodika" className="hover:text-foreground">Metodika výpočtu</Link>
           <Link to="/obchodni-podminky" className="hover:text-foreground">Obchodní podmínky</Link>
           <Link to="/ochrana-osobnich-udaju" className="hover:text-foreground">Ochrana osobních údajů</Link>
         </nav>
