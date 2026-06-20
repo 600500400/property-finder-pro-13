@@ -103,15 +103,37 @@ function Pricing() {
             <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Zdarma</div>
             <div className="mt-1 text-3xl font-bold">0 Kč<span className="text-sm font-normal text-muted-foreground"> / měs</span></div>
             <ul className="mt-5 space-y-2 text-sm">
-              <Bullet>Vyhledávání ve všech 7 portálech</Bullet>
-              <Bullet>Max. 20 výsledků na dotaz</Bullet>
+              <Bullet>4 hlavní české portály (Sreality, Bazoš, Bezrealitky, iDnes)</Bullet>
               <Bullet muted>Inzeráty starší 24 hodin</Bullet>
-              <Bullet>1 hlídací pes (denní souhrn 06:00)</Bullet>
-              <Bullet muted>Bez CSV exportu</Bullet>
-              <Bullet muted>Bez okamžitých upozornění</Bullet>
             </ul>
+
+            <div className="mt-5 rounded-lg border border-border bg-[var(--color-surface-2)] p-3">
+              <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Bez přihlášení</div>
+              <ul className="mt-2 space-y-1.5 text-sm">
+                <Bullet>Max. 20 výsledků na dotaz</Bullet>
+                <Bullet muted>Bez ukládání inzerátů</Bullet>
+                <Bullet muted>Bez hlídacího psa</Bullet>
+                <Bullet muted>Bez AI analýzy</Bullet>
+              </ul>
+            </div>
+
+            <div className="mt-3 rounded-lg border border-primary/40 bg-primary/5 p-3">
+              <div className="text-[11px] font-semibold uppercase tracking-wider text-primary">Po bezplatné registraci</div>
+              <ul className="mt-2 space-y-1.5 text-sm">
+                <Bullet>Až 50 výsledků na dotaz</Bullet>
+                <Bullet>Ukládání oblíbených inzerátů (neomezeně)</Bullet>
+                <Bullet>1 hlídací pes (denní souhrn 06:00)</Bullet>
+                <Bullet>1× zdarma ukázková AI analýza</Bullet>
+              </ul>
+            </div>
+
             <div className="mt-6">
-              {!plan?.is_premium && (
+              {!plan?.is_premium && !authed && (
+                <Link to="/auth" className="inline-flex w-full justify-center rounded-md border border-primary bg-primary/10 px-4 py-2 text-sm font-semibold text-foreground hover:bg-primary/20">
+                  Registrovat se zdarma
+                </Link>
+              )}
+              {!plan?.is_premium && authed && (
                 <span className="inline-flex w-full justify-center rounded-md border border-border bg-[var(--color-surface-2)] px-4 py-2 text-sm font-semibold text-muted-foreground">Aktuální plán</span>
               )}
             </div>
@@ -128,10 +150,11 @@ function Pricing() {
             </div>
             <div className="text-xs text-muted-foreground">nebo 3 490 Kč / rok (ušetříš 17 %)</div>
             <ul className="mt-5 space-y-2 text-sm">
+              <Bullet>4 hlavní české portály (Sreality, Bazoš, Bezrealitky, iDnes)</Bullet>
               <Bullet>Inzeráty <strong>v reálném čase</strong> — bez 24h zpoždění</Bullet>
-              <Bullet>Neomezený počet výsledků</Bullet>
-              <Bullet>Neomezeně hlídacích psů</Bullet>
-              <Bullet>Okamžitá upozornění e-mailem</Bullet>
+              <Bullet>Až 500 výsledků na dotaz</Bullet>
+              <Bullet>Neomezeně hlídacích psů (okamžitá upozornění e-mailem)</Bullet>
+              <Bullet>AI analýza investice — 50× měsíčně</Bullet>
               <Bullet>CSV export</Bullet>
               <Bullet>Prioritní podpora</Bullet>
             </ul>
