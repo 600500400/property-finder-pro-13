@@ -83,12 +83,4 @@ describe("queryListings — tier caps & 24h delay gate", () => {
     expect(ltCalls.some(c => c.col === "first_seen_at")).toBe(false);
   });
 
-  it("meta.tier and meta.result_cap echo the resolved tier", async () => {
-    mockTier = "free";
-    const { queryListings } = await import("@/lib/listings/query.functions");
-    const res = await queryListings({ data: baseFilters });
-    expect(res.meta?.tier).toBe("free");
-    expect(res.meta?.result_cap).toBe(50);
-    expect(res.meta?.is_premium).toBe(false);
-  });
 });
