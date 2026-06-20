@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as OchranaOsobnichUdajuRouteImport } from './routes/ochrana-osobnich-udaju'
 import { Route as ObchodniPodminkyRouteImport } from './routes/obchodni-podminky'
+import { Route as MetodikaRouteImport } from './routes/metodika'
 import { Route as CenikRouteImport } from './routes/cenik'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
@@ -41,6 +42,11 @@ const OchranaOsobnichUdajuRoute = OchranaOsobnichUdajuRouteImport.update({
 const ObchodniPodminkyRoute = ObchodniPodminkyRouteImport.update({
   id: '/obchodni-podminky',
   path: '/obchodni-podminky',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MetodikaRoute = MetodikaRouteImport.update({
+  id: '/metodika',
+  path: '/metodika',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CenikRoute = CenikRouteImport.update({
@@ -163,6 +169,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/cenik': typeof CenikRoute
+  '/metodika': typeof MetodikaRoute
   '/obchodni-podminky': typeof ObchodniPodminkyRoute
   '/ochrana-osobnich-udaju': typeof OchranaOsobnichUdajuRoute
   '/admin': typeof AuthenticatedAdminRoute
@@ -187,6 +194,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/cenik': typeof CenikRoute
+  '/metodika': typeof MetodikaRoute
   '/obchodni-podminky': typeof ObchodniPodminkyRoute
   '/ochrana-osobnich-udaju': typeof OchranaOsobnichUdajuRoute
   '/admin': typeof AuthenticatedAdminRoute
@@ -213,6 +221,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/cenik': typeof CenikRoute
+  '/metodika': typeof MetodikaRoute
   '/obchodni-podminky': typeof ObchodniPodminkyRoute
   '/ochrana-osobnich-udaju': typeof OchranaOsobnichUdajuRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
@@ -239,6 +248,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/cenik'
+    | '/metodika'
     | '/obchodni-podminky'
     | '/ochrana-osobnich-udaju'
     | '/admin'
@@ -263,6 +273,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/cenik'
+    | '/metodika'
     | '/obchodni-podminky'
     | '/ochrana-osobnich-udaju'
     | '/admin'
@@ -288,6 +299,7 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/auth'
     | '/cenik'
+    | '/metodika'
     | '/obchodni-podminky'
     | '/ochrana-osobnich-udaju'
     | '/_authenticated/admin'
@@ -314,6 +326,7 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
   CenikRoute: typeof CenikRoute
+  MetodikaRoute: typeof MetodikaRoute
   ObchodniPodminkyRoute: typeof ObchodniPodminkyRoute
   OchranaOsobnichUdajuRoute: typeof OchranaOsobnichUdajuRoute
   ApiPublicCronDailyDigestRoute: typeof ApiPublicCronDailyDigestRoute
@@ -343,6 +356,13 @@ declare module '@tanstack/react-router' {
       path: '/obchodni-podminky'
       fullPath: '/obchodni-podminky'
       preLoaderRoute: typeof ObchodniPodminkyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/metodika': {
+      id: '/metodika'
+      path: '/metodika'
+      fullPath: '/metodika'
+      preLoaderRoute: typeof MetodikaRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/cenik': {
@@ -521,6 +541,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   CenikRoute: CenikRoute,
+  MetodikaRoute: MetodikaRoute,
   ObchodniPodminkyRoute: ObchodniPodminkyRoute,
   OchranaOsobnichUdajuRoute: OchranaOsobnichUdajuRoute,
   ApiPublicCronDailyDigestRoute: ApiPublicCronDailyDigestRoute,
