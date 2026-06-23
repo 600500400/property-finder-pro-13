@@ -40,6 +40,8 @@ export async function computeScraperHealth(): Promise<SourceHealth[]> {
   const bySource = new Map<string, typeof runs>();
   for (const s of KNOWN_SOURCES) bySource.set(s, [] as never);
   for (const r of runs ?? []) {
+    // Skip rows from paused/unknown sources — they must not produce alerts.
+    if (!bySource.has(r.source)) continue;
     const arr = bySource.get(r.source) ?? [];
     arr.push(r as never);
     bySource.set(r.source, arr as never);
