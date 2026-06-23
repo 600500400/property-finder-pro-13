@@ -18,15 +18,20 @@ const REGIONS: Array<[ScanFilters["region"], string]> = [
   ["vysocina", "Vysočina"], ["zlinsky", "Zlínský"],
 ];
 
-// Note: hyperinzerce, realitymix and annonce are paused (cron unscheduled).
-// Hidden from UI but scraper code/routes/DB rows remain intact for later re-enable.
-const SOURCES: Array<{ key: SourceKey; label: string; dot: string }> = [
-  { key: "sreality", label: "Sreality", dot: "var(--color-primary)" },
-  { key: "bazos", label: "Bazoš", dot: "#e0a64b" },
-  { key: "bezrealitky", label: "Bezrealitky", dot: "#7aa2ff" },
-  { key: "idnes", label: "iDnes Reality", dot: "#d06bd0" },
-];
-const ALL_KEYS = SOURCES.map(s => s.key);
+// Source of truth for active sources lives in @/lib/scanner/active-sources.
+// Paused sources (hyperinzerce, realitymix, annonce) are excluded there and
+// therefore hidden here and skipped by health monitoring automatically.
+import { ACTIVE_SOURCES } from "@/lib/scanner/active-sources";
+
+const SOURCE_META: Record<string, { label: string; dot: string }> = {
+  sreality: { label: "Sreality", dot: "var(--color-primary)" },
+  bazos: { label: "Bazoš", dot: "#e0a64b" },
+  bezrealitky: { label: "Bezrealitky", dot: "#7aa2ff" },
+  idnes: { label: "iDnes Reality", dot: "#d06bd0" },
+};
+const SOURCES: Array<{ key: SourceKey; label: string; dot: string }> =
+  ACTIVE_SOURCES.map((k) => ({ key: k as SourceKey, ...SOURCE_META[k] }));
+const ALL_KEYS = SOURCES.map((s) => s.key);
 
 interface ViewOptions {
   dedupe: boolean;
