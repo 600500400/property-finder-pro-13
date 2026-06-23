@@ -1,4 +1,5 @@
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { ACTIVE_SOURCES } from "@/lib/scanner/active-sources";
 
 export interface SourceHealth {
   source: string;
@@ -14,15 +15,10 @@ export interface SourceHealth {
   reasons: string[];
 }
 
-const KNOWN_SOURCES = [
-  "sreality",
-  "bezrealitky",
-  "bazos",
-  "hyperinzerce",
-  "realitymix",
-  "annonce",
-  "idnes",
-];
+// Monitor only currently active sources. Paused sources are excluded from
+// the filter UI (single source of truth: src/lib/scanner/active-sources.ts)
+// and therefore must produce zero health alerts.
+const KNOWN_SOURCES: readonly string[] = ACTIVE_SOURCES;
 
 function median(nums: number[]): number | null {
   if (nums.length === 0) return null;
@@ -44,6 +40,8 @@ export async function computeScraperHealth(): Promise<SourceHealth[]> {
   const bySource = new Map<string, typeof runs>();
   for (const s of KNOWN_SOURCES) bySource.set(s, [] as never);
   for (const r of runs ?? []) {
+    // Skip rows from paused/unknown sources — they must not produce alerts.
+    if (!bySource.has(r.source)) continue;
     const arr = bySource.get(r.source) ?? [];
     arr.push(r as never);
     bySource.set(r.source, arr as never);
