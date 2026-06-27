@@ -59,7 +59,9 @@ export async function computeScraperHealth(): Promise<SourceHealth[]> {
       error_message: string | null;
     }>;
 
-    const last = rows[0] ?? null;
+    // Ignore in-progress runs — a source mid-scrape must never trigger an alert.
+    const completed = rows.filter((r) => r.status !== "running");
+    const last = completed[0] ?? null;
     const successful = rows.filter((r) => r.status === "success");
     const recentSuccess = successful.slice(0, 10).map((r) => r.items_found);
     const baseline = median(recentSuccess);
