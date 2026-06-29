@@ -68,51 +68,35 @@ export async function computeScraperHealth(): Promise<SourceHealth[]> {
     const successful24h = successful.filter(
       (r) => now - new Date(r.started_at).getTime() < 24 * 3600 * 1000,
     ).length;
-    const lastSuccess = successful[0] ?? null;
-    const lastSuccessAgeMs = lastSuccess
-      ? now - new Date(lastSuccess.started_at).getTime()
-      : null;
-    const hasRecentSuccess =
-      lastSuccessAgeMs !== null && lastSuccessAgeMs < 6 * 3600 * 1000;
-
     const reasons: string[] = [];
     let indicator: "green" | "amber" | "red" = "green";
     let dropPct: number | null = null;
 
-    // New rule: only alert (red) when there is NO successful run in the last
-    // 6 hours. A single transient failure with recent successes = no alert.
+    // Health is based on the OUTCOME of the latest completed run, not elapsed
+    // time. Sources scrape at different cadences (some every 8–12 h), so any
+    // fixed time window misfires. Rule:
+    //   - no completed runs in 7 d                       → red
+    //   - latest completed = error                       → red
+    //   - latest completed = success, items < 50% base   → red
+    //   - latest completed = success, items 50–70% base  → amber (advisory)
+    //   - latest completed = success, items ≥ 70% base   → green
     if (!last) {
-      reasons.push("Žádné běhy v posledních 7 dnech");
+      reasons.push("Žádný dokončený běh v posledních 7 dnech");
       indicator = "red";
-    } else if (!hasRecentSuccess) {
-      const ageH = lastSuccessAgeMs !== null ? Math.round(lastSuccessAgeMs / 3600_000) : null;
-      reasons.push(
-        ageH !== null
-          ? `Žádný úspěšný běh za posledních 6 h (poslední před ${ageH} h)`
-          : "Žádný úspěšný běh za posledních 7 dní",
-      );
+    } else if (last.status === "error") {
+      reasons.push(`Poslední dokončený běh selhal: ${last.error_message ?? "neznámá chyba"}`);
       indicator = "red";
-      if (last.status === "error" && last.error_message) {
-        reasons.push(`Poslední chyba: ${last.error_message}`);
-      }
-    } else {
-      // Sustained-success path — surface advisory info only, never red.
-      if (last.status === "error") {
-        reasons.push(
-          `Poslední běh selhal (${last.error_message ?? "neznámá chyba"}), ale je nedávný úspěch — bez alertu`,
-        );
-        if (indicator === "green") indicator = "amber";
-      }
-      if (baseline !== null && baseline > 0 && lastSuccess) {
-        dropPct = ((baseline - lastSuccess.items_found) / baseline) * 100;
-        if (dropPct > 60) {
+    } else if (last.status === "success") {
+      if (baseline !== null && baseline > 0) {
+        dropPct = ((baseline - last.items_found) / baseline) * 100;
+        if (dropPct >= 50) {
           reasons.push(
-            `Pokles o ${dropPct.toFixed(0)}% vs baseline (${lastSuccess.items_found} vs ${baseline})`,
+            `Pokles o ${dropPct.toFixed(0)}% vs baseline (${last.items_found} vs ${baseline})`,
           );
-          if (indicator === "green") indicator = "amber";
+          indicator = "red";
         } else if (dropPct > 30) {
           reasons.push(`Pokles o ${dropPct.toFixed(0)}% vs baseline`);
-          if (indicator === "green") indicator = "amber";
+          indicator = "amber";
         }
       }
     }
