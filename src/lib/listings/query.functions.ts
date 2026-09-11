@@ -16,6 +16,7 @@ const SOURCE_LABEL: Record<SourceKey, string> = {
 const FilterSchema = z.object({
   deal_type: z.enum(["prodej", "pronajem"]),
   property_type: z.enum(["ostatni", "byty", "domy", "pozemky", "komercni"]),
+  property_types: z.array(z.enum(["ostatni", "byty", "domy", "pozemky", "komercni"])).optional(),
   sub_type: z.enum(["garaz", "garazove_stani", ""]).default(""),
   region: z.enum([
     "", "praha", "stredocesky", "jihocesky", "jihomoravsky", "karlovarsky",
@@ -42,6 +43,9 @@ export const queryListings = createServerFn({ method: "POST" })
     const { indexRentComps, computeHybridYield } = await import("./yield.server");
     const { viewerTier } = await import("@/lib/billing/premium.server");
 
+    // byt / dům / both — falls back to the single property_type for older clients
+    const propertyTypes = filters.property_types?.length ? filters.property_types : [filters.property_type];
+
     const { tier } = await viewerTier();
     const isPremium = tier === "premium";
     // 3-way result cap: anon 20 / free 50 / premium 500
@@ -50,10 +54,10 @@ export const queryListings = createServerFn({ method: "POST" })
     // ----- main query -----
     let q = supabaseAdmin
       .from("listings")
-      .select("source, external_id, title, price, deal_type, property_type, kraj, city, area_m2, price_per_m2, ownership, ownership_confidence, url, image_url, description_snippet, first_seen_at, last_seen_at, raw_data, flags")
+      .select("source, external_id, title, price, deal_type, property_type, kraj, city, area_m2, land_area_m2, price_per_m2, ownership, ownership_confidence, url, image_url, description_snippet, first_seen_at, last_seen_at, raw_data, flags")
       .eq("is_active", true)
       .eq("deal_type", filters.deal_type)
-      .eq("property_type", filters.property_type);
+      .in("property_type", propertyTypes);
 
     if (filters.region) q = q.eq("kraj", filters.region);
     if (filters.sources.length > 0) q = q.in("source", filters.sources);
@@ -88,7 +92,7 @@ export const queryListings = createServerFn({ method: "POST" })
         .select("kraj, property_type, area_m2, price")
         .eq("is_active", true)
         .eq("deal_type", "pronajem")
-        .eq("property_type", filters.property_type)
+        .in("property_type", propertyTypes)
         .not("area_m2", "is", null)
         .not("price", "is", null);
       rentIndex = indexRentComps((rents ?? []) as RentComp[]);
@@ -106,7 +110,7 @@ export const queryListings = createServerFn({ method: "POST" })
         ? computeHybridYield({
             price,
             region: (r.kraj ?? "") as ScanFilters["region"],
-            propertyType: filters.property_type,
+            propertyType: (r.property_type ?? filters.property_type) as ScanFilters["property_type"],
             areaM2,
             name: r.title ?? "",
             locality: r.city ?? "",
@@ -127,6 +131,7 @@ export const queryListings = createServerFn({ method: "POST" })
         img: r.image_url ?? "",
         area: areaM2 ? `${areaM2} m²` : "",
         area_m2: areaM2 ?? undefined,
+        land_area_m2: r.land_area_m2 ?? undefined,
         published_at: r.first_seen_at,
         published_at_source: "html",
         ownership: (r.ownership ?? undefined) as Listing["ownership"],

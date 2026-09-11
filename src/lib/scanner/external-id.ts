@@ -15,6 +15,11 @@ export function deriveExternalId(source: string, url: string): string {
       const m = segments[i].match(/(\d{4,})/);
       if (m) return m[1];
     }
+    // Some listing URLs carry the id only as a query param (e.g. Sreality
+    // "…/hledani/prodej/dum?id=2462675788"); without this every such URL
+    // would hash to the same value and collapse into one row.
+    const qid = u.searchParams.get("id");
+    if (qid && /^\d{4,}$/.test(qid)) return qid;
     const normalized = `${u.hostname.toLowerCase()}${u.pathname.replace(/\/+$/, "")}`;
     return createHash("sha1").update(normalized).digest("hex").slice(0, 16);
   } catch {

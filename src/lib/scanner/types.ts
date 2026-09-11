@@ -46,6 +46,8 @@ export type RentBasisSource = "district" | "okres_live" | "okres_static" | "regi
 export interface ScanFilters {
   deal_type: DealType;
   property_type: PropertyType;
+  /** Optional multi-select of property types (UI: byt / dům / obojí). */
+  property_types?: PropertyType[];
   sub_type: SubType;
   region: Region;
   price_min?: number;
@@ -89,6 +91,8 @@ export interface Listing {
   img: string;
   area: string;
   area_m2?: number;
+  /** Land / plot area in m² (houses & land, only when the source exposes it). */
+  land_area_m2?: number;
   published_at?: string; // ISO date
   published_at_source?: PublishedDateSource;
   ownership?: Ownership;

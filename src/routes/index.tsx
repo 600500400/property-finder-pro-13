@@ -31,6 +31,7 @@ type Freshness = "" | "24h" | "7d";
 const DEFAULT_FILTERS: ScanFilters & { freshness: Freshness } = {
   deal_type: "prodej",
   property_type: "byty",
+  property_types: ["byty", "domy"],
   sub_type: "",
   region: "",
   sources: [],
@@ -135,7 +136,7 @@ function Index() {
             Reality<span className="text-primary">Scanner</span>
           </div>
           <span className="mt-0.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-            Investiční byty na prodej napříč českými portály
+            Investiční byty a domy na prodej napříč českými portály
           </span>
         </div>
         {data && (
