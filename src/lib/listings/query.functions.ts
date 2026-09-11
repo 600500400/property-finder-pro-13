@@ -164,6 +164,9 @@ export const queryListings = createServerFn({ method: "POST" })
         description_snippet: r.description_snippet ?? undefined,
         flags: (r.flags as unknown as Listing["flags"]) ?? [],
         invest: inv,
+        property_type: propertyType,
+        price_compare: priceCompare,
+
       };
     });
 
