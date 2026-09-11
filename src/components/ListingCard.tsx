@@ -497,7 +497,20 @@ function ListingCompact({ listing }: { listing: Listing }) {
           <span className="font-mono text-[10px] text-muted-foreground">{listing.area}</span>
         )}
       </div>
-      {inv && (() => {
+      {listing.property_type === "domy" ? (
+        <div className={`flex items-center justify-between rounded-sm px-1.5 py-1 text-[10px] ${PC_BLOCK[listing.price_compare?.band ?? "none"]}`}>
+          {listing.price_compare ? (
+            <>
+              <span className={`font-mono font-semibold ${PC_TEXT[listing.price_compare.band]}`}>
+                {pcDiff(listing.price_compare.diff_pct)} vs. průměr
+              </span>
+              <span className="text-muted-foreground">n={listing.price_compare.samples}</span>
+            </>
+          ) : (
+            <span className="text-muted-foreground">nedostatek dat pro srovnání</span>
+          )}
+        </div>
+      ) : inv ? (() => {
         const t = tierOf(inv.stars);
         return (
           <div className={`flex items-center justify-between rounded-sm px-1.5 py-1 text-[10px] ${TIER_VERDICT[t]}`}>
@@ -507,7 +520,8 @@ function ListingCompact({ listing }: { listing: Listing }) {
             </span>
           </div>
         );
-      })()}
+      })() : null}
+
     </a>
   );
 }
@@ -560,11 +574,18 @@ function ListingRow({ listing }: { listing: Listing }) {
       </div>
       <div className="flex shrink-0 flex-col items-end gap-0.5">
         <span className="font-mono text-sm font-bold text-primary">{listing.price_text}</span>
-        {inv && (
+        {listing.property_type === "domy" ? (
+          listing.price_compare && (
+            <span className={`font-mono text-[10px] font-semibold ${PC_TEXT[listing.price_compare.band]}`}>
+              {pcDiff(listing.price_compare.diff_pct)} vs. průměr
+            </span>
+          )
+        ) : inv ? (
           <span className={`font-mono text-[10px] font-semibold ${TIER_YIELD[tierOf(inv.stars)]}`}>
             {inv.net_yield}% · {"★".repeat(inv.stars)}
           </span>
-        )}
+        ) : null}
+
       </div>
     </a>
   );
