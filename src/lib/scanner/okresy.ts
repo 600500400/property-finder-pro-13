@@ -219,15 +219,28 @@ export function okresFromLocality(locality: string | undefined): string | null {
   if (!locality) return null;
   const norm = deaccent(locality.toLowerCase());
 
-  // Praha
-  if (/\bpraha\b/.test(norm)) return "praha";
-
-  // Explicitní "okres X"
-  const m = norm.match(/okres\s+([a-z\s-]+?)(?:[,;]|$)/);
+  // Explicitní "okres X" (např. "okres Brno-venkov")
+  const m = norm.match(/okres\s+([a-z0-9\s-]+?)(?:[,;]|$)/);
   if (m) {
     const slug = slugifyCity(m[1].trim());
     if (OKRES_BY_SLUG[slug]) return slug;
   }
+
+  // Složené názvy okresů (Brno-venkov, Praha-východ, Plzeň-jih…) — musí předcházet
+  // dělení na tokeny i pražskému zkratu, jinak by "Brno-venkov" spadlo pod "brno".
+  for (const seg of norm.split(/[,;/()]/g)) {
+    const slug = slugifyCity(seg.trim());
+    if (!slug) continue;
+    if (OKRES_BY_SLUG[slug]) return slug;
+  }
+  const wholeSlug = slugifyCity(norm);
+  for (const slug of Object.keys(OKRES_BY_SLUG)) {
+    if (slug.includes("-") && wholeSlug.includes(slug)) return slug;
+  }
+
+  // Praha
+  if (/\bpraha\b/.test(norm)) return "praha";
+
 
   // City lookup — vyzkoušíme všechny segmenty oddělené čárkou / pomlčkou / mezerou
   const tokens = norm
