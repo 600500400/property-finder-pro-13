@@ -192,6 +192,44 @@ function Metodika() {
           </ul>
         </Section>
 
+        <Section title="7. Cena za m² vs. průměr srovnatelných">
+          <p>
+            U každého inzerátu porovnáváme jeho nabídkovou cenu za m² s <strong>mediánem
+            srovnatelných aktivních inzerátů</strong> v naší databázi. Srovnatelný znamená:
+            stejný typ nemovitosti (byty se porovnávají jen s byty, domy jen s domy — nikdy
+            se nemíchají), stejná lokalita a podlahová plocha v rozpětí <strong>± 25 %</strong>.
+          </p>
+          <p className="mt-2">
+            Lokalitu zužujeme postupně: nejdřív <strong>okres</strong> inzerátu, pak{" "}
+            <strong>kraj</strong>, nakonec <strong>celá ČR</strong>. V každém kroku
+            potřebujeme alespoň <strong>5 srovnatelných</strong> nabídek; pokud jich není
+            dost ani celorepublikově, zobrazíme „nedostatek dat pro srovnání" místo čísla.
+            U každé hodnoty uvádíme počet vzorků (např. „medián z 18 srovnatelných").
+          </p>
+          <p className="mt-2">
+            Pásma: pod <strong>−10 %</strong> = levnější než průměr, v rozmezí{" "}
+            <strong>± 10 %</strong> = v průměru, nad <strong>+10 %</strong> = dražší než
+            průměr.
+          </p>
+        </Section>
+
+        <Section title="8. Proč u domů nepočítáme nájemní výnos">
+          <p>
+            Pro rodinné domy neexistují spolehlivá srovnatelná data o nájmech — trh s
+            pronájmy domů je řádově menší a velmi nesourodý. Aplikovat na dům sazby
+            odvozené z nájmů bytů by dávalo nesmyslné „nájmy" a zavádějící výnosy. Proto u
+            domů <strong>nezobrazujeme</strong> odhad nájmu, výnos ani hvězdičkové
+            hodnocení investice; hlavní metrikou je <strong>cena za m² vs. průměr</strong>.
+          </p>
+          <p className="mt-2">
+            <strong>Pozor:</strong> u domů je cena za m² podlahové plochy silně ovlivněna
+            velikostí pozemku — velká parcela zvedá celkovou cenu, i když je dům samotný
+            malý. Metrika je proto pouze hrubý screeningový signál, ne ocenění. Plochu
+            pozemku zobrazujeme u karty tam, kde ji zdroj uvádí.
+          </p>
+        </Section>
+
+
         <div className="mt-10 rounded-lg border border-amber-500/40 bg-amber-500/5 p-4 text-xs text-amber-200/90">
           <strong>Upozornění:</strong> Všechny výpočty na RealityScanneru jsou orientační
           odhady určené k rychlému předvýběru (screeningu) inzerátů. Nejedná se o
