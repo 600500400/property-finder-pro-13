@@ -98,6 +98,18 @@ export const queryListings = createServerFn({ method: "POST" })
       rentIndex = indexRentComps((rents ?? []) as RentComp[]);
     }
 
+    // ----- asking Kč/m² comparables (same deal type, never mixing byty × domy) -----
+    const { data: compRows } = await supabaseAdmin
+      .from("listings")
+      .select("property_type, kraj, city, area_m2, price")
+      .eq("is_active", true)
+      .eq("deal_type", filters.deal_type)
+      .in("property_type", propertyTypes)
+      .not("area_m2", "is", null)
+      .not("price", "is", null)
+      .limit(20000);
+    const priceIndex = indexPriceComps((compRows ?? []) as PriceCompRow[]);
+
     const bench = await getBenchmark();
 
     // ----- map → UI Listing[] -----
@@ -105,12 +117,14 @@ export const queryListings = createServerFn({ method: "POST" })
       const sourceKey = r.source as SourceKey;
       const price = r.price ?? 0;
       const areaM2 = r.area_m2 ?? null;
+      const propertyType = (r.property_type ?? filters.property_type) as ScanFilters["property_type"];
       const priceText = price ? `${price.toLocaleString("cs-CZ").replace(/,/g, " ")} Kč` : "Dohodou";
-      const inv = filters.deal_type === "prodej"
+      // Rental yield is only meaningful for flats — houses have no reliable rent comps.
+      const inv = filters.deal_type === "prodej" && propertyType !== "domy"
         ? computeHybridYield({
             price,
             region: (r.kraj ?? "") as ScanFilters["region"],
-            propertyType: (r.property_type ?? filters.property_type) as ScanFilters["property_type"],
+            propertyType,
             areaM2,
             name: r.title ?? "",
             locality: r.city ?? "",
@@ -120,6 +134,15 @@ export const queryListings = createServerFn({ method: "POST" })
             rentIndex,
           })
         : null;
+      const priceCompare = computePriceCompare({
+        propertyType,
+        kraj: r.kraj,
+        city: r.city,
+        areaM2,
+        price: r.price,
+        index: priceIndex,
+      }) ?? undefined;
+
       return {
         source: SOURCE_LABEL[sourceKey] ?? sourceKey,
         source_key: sourceKey,
