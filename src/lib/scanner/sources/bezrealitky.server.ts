@@ -19,8 +19,12 @@ const IMG_VARIANTS = [
   "",
 ];
 
-function buildQueries(imgFragment: string, dateField: string) {
+// Land / plot area — only exposed for houses & land; probed with a fallback.
+const LAND_VARIANTS = ["surfaceLand", ""];
+
+function buildQueries(imgFragment: string, dateField: string, landField: string) {
   const fields = CORE_FIELDS
+    + (landField ? " " + landField : "")
     + (dateField ? " " + dateField : "")
     + (imgFragment ? " " + imgFragment : "");
   const body = "{ list{ " + fields + " } totalCount }";
@@ -96,16 +100,21 @@ export async function fetchBezrealitky(f: ScanFilters): Promise<Listing[]> {
   let payload: any = null;
   let firstErr: any = null;
   let usedDate = "";
-  outer: for (const dateField of DATE_VARIANTS) {
+  let usedLand = "";
+  outer: for (const landField of LAND_VARIANTS) {
+    for (const dateField of DATE_VARIANTS) {
       for (const frag of IMG_VARIANTS) {
-        const { region, plain } = buildQueries(frag, dateField);
+        const { region, plain } = buildQueries(frag, dateField, landField);
         let p = await run(region, regionVars);
+        // Only drop the land field when the server complains about that exact field.
+        if (p.errors && landField && isFieldError(p.errors) && JSON.stringify(p.errors).includes(landField)) { firstErr ||= p.errors; continue outer; }
         if (p.errors && frag && isFieldError(p.errors)) { firstErr ||= p.errors; continue; }
         if (p.errors && dateField && isFieldError(p.errors)) { firstErr ||= p.errors; break; }
         if (p.errors) p = await run(plain, baseVars);
-        if (!p.errors) { payload = p; usedDate = dateField; break outer; }
+        if (!p.errors) { payload = p; usedDate = dateField; usedLand = landField; break outer; }
         firstErr ||= p.errors;
       }
+    }
   }
   if (!payload) throw new Error(`GraphQL: ${JSON.stringify((firstErr || [])[0] || {}).slice(0, 160)}`);
 
@@ -143,6 +152,7 @@ export async function fetchBezrealitky(f: ScanFilters): Promise<Listing[]> {
       img: imgOf(it),
       area: surface ? `${surface} m²` : "",
       area_m2: typeof surface === "number" ? surface : undefined,
+      land_area_m2: usedLand && typeof it[usedLand] === "number" && it[usedLand] > 0 ? it[usedLand] : undefined,
       published_at,
       published_at_source: published_at ? "api" : undefined,
       ownership,

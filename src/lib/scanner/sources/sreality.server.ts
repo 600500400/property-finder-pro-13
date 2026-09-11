@@ -119,6 +119,14 @@ function detailUrl(e: any, typeS: string, mainCb: number, name: string): string 
   return `https://www.sreality.cz/detail/${typeS}/${mainS}/${loc}/${hashId}`;
 }
 
+/** Sreality titles spell out the plot: "Prodej rodinného domu 116 m², pozemek 612 m²". */
+function landFromName(name: string): number | undefined {
+  const m = name.match(/pozemek\s+([\d\s\u00a0]+)\s*m²/i);
+  if (!m) return undefined;
+  const n = parseInt(m[1].replace(/[^\d]/g, ""), 10);
+  return isNaN(n) || n <= 0 ? undefined : n;
+}
+
 function priceOf(e: any): number {
   for (const key of ["price_czk", "price", "price_summary"]) {
     const v = e[key];
@@ -154,7 +162,25 @@ function ownershipFromValue(raw: any): Ownership | undefined {
   return undefined;
 }
 
-async function detailInfo(hashId: string | number | undefined, headers: HeadersInit): Promise<{ ownership?: Ownership; description?: string }> {
+/** Plocha pozemku / parcely from the detail payload (houses & land only). */
+function landAreaOf(result: any): number | undefined {
+  const direct = result?.land_area ?? result?.plot_area ?? result?.garden_area;
+  if (typeof direct === "number" && direct > 0) return direct;
+  const items = result?.items;
+  if (Array.isArray(items)) {
+    for (const it of items) {
+      const nm = String(it?.name || "").toLowerCase();
+      if (nm.includes("plocha pozemku") || nm.includes("plocha parcely") || nm.includes("pozemek")) {
+        const raw = it?.value;
+        const n = typeof raw === "number" ? raw : parseInt(String(raw).replace(/[^\d]/g, ""), 10);
+        if (!isNaN(n) && n > 0) return n;
+      }
+    }
+  }
+  return undefined;
+}
+
+async function detailInfo(hashId: string | number | undefined, headers: HeadersInit): Promise<{ ownership?: Ownership; description?: string; land_area_m2?: number }> {
   if (!hashId) return {};
   try {
     const r = await fetch(`https://www.sreality.cz/api/v1/estates/${hashId}`, { headers, signal: AbortSignal.timeout(12000) });
@@ -162,7 +188,11 @@ async function detailInfo(hashId: string | number | undefined, headers: HeadersI
     const data: any = await r.json();
     const result = data.result || data;
     const description = cleanText(result.advert_description || result.description || "");
-    return { ownership: ownershipFromValue(result.ownership) ?? parseOwnership(description), description };
+    return {
+      ownership: ownershipFromValue(result.ownership) ?? parseOwnership(description),
+      description,
+      land_area_m2: landAreaOf(result),
+    };
   } catch {
     return {};
   }
@@ -257,6 +287,7 @@ export async function fetchSreality(f: ScanFilters): Promise<Listing[]> {
       img,
       area: areaM ? areaM[0] : (area_m2 ? `${area_m2} m²` : ""),
       area_m2,
+      land_area_m2: details[idx]?.land_area_m2 ?? landFromName(name),
       published_at: pubIso,
       published_at_source: pubIso ? "api" : undefined,
       ownership: details[idx]?.ownership ?? ownershipOf(e, name),

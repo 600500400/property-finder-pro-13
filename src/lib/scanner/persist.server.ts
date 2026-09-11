@@ -45,10 +45,9 @@ export async function runSourceScrape(
 ): Promise<RunResult> {
   const startedAt = Date.now();
 
-  // Flats-only restriction: skip any non-byty scrape requests.
-  // The cron schedule has been pruned to byty only, this guard prevents
-  // accidental ingestion if any other entry-point calls runSourceScrape.
-  if (propertyType !== "byty") {
+  // Flats + houses only: skip any other property type.
+  // Guard prevents accidental ingestion of land/commercial/other categories.
+  if (propertyType !== "byty" && propertyType !== "domy") {
     return {
       source: sourceKey,
       deal_type: dealType,
@@ -60,7 +59,7 @@ export async function runSourceScrape(
       items_deactivated: 0,
       duration_ms: Date.now() - startedAt,
       run_id: "",
-      error: "skipped: only property_type='byty' is scraped",
+      error: "skipped: only property_type 'byty' or 'domy' is scraped",
     };
   }
   const limit = FAST_SOURCES.has(sourceKey) ? 100 : 50;
@@ -138,6 +137,7 @@ export async function runSourceScrape(
         kraj,
         city: l.locality || null,
         area_m2,
+        land_area_m2: typeof l.land_area_m2 === "number" && l.land_area_m2 > 0 ? l.land_area_m2 : null,
         // price_per_m2 is a generated column — do not set
         ownership: own.ownership,
         ownership_confidence: own.ownership_confidence,

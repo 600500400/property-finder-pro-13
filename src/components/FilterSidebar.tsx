@@ -72,6 +72,31 @@ export function FilterSidebar({ filters, setFilters, view, setView, onExport, ca
 
   return (
     <aside className="flex h-full flex-col gap-5 overflow-y-auto border-r border-border bg-[var(--color-surface)] p-5 pb-32 md:pb-5">
+      <Section label="Typ nemovitosti">
+        <div className="grid grid-cols-3 gap-1.5">
+          {([
+            ["both", "Byty + domy"],
+            ["byty", "Byty"],
+            ["domy", "Domy"],
+          ] as const).map(([key, label]) => {
+            const current = (filters.property_types ?? ["byty", "domy"]);
+            const active = key === "both" ? current.length > 1 : current.length === 1 && current[0] === key;
+            return (
+              <button
+                key={key}
+                type="button"
+                onClick={() => update("property_types", key === "both" ? ["byty", "domy"] : [key])}
+                className={`rounded-lg border px-2 py-2 text-xs font-semibold transition ${
+                  active ? "border-primary/60 bg-primary/10 text-primary" : "border-border bg-[var(--color-surface-2)] text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {label}
+              </button>
+            );
+          })}
+        </div>
+      </Section>
+
       <Section label="Lokalita">
         <Label>Kraj</Label>
         <Select value={filters.region} onChange={(v) => update("region", v as ScanFilters["region"])}

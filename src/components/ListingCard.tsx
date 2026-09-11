@@ -238,6 +238,14 @@ function ListingFull({ listing, rank }: { listing: Listing; rank?: number }) {
                 {listing.area}
               </span>
             )}
+            {listing.land_area_m2 ? (
+              <span
+                title="Plocha pozemku"
+                className="rounded-md border border-border bg-[var(--color-surface-2)] px-2 py-1 font-mono text-[11px] font-semibold text-muted-foreground"
+              >
+                🌳 {listing.land_area_m2.toLocaleString("cs-CZ")} m²
+              </span>
+            ) : null}
             <span
               title={own.full}
               className={`inline-flex items-center justify-center rounded-md px-2 py-1 text-[11px] font-bold tracking-wide ${own.cls}`}
