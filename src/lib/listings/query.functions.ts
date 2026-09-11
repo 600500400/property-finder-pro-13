@@ -2,6 +2,8 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import type { Listing, ScanFilters, ScanResult, SourceKey } from "@/lib/scanner/types";
 import type { RentComp } from "./yield.server";
+import { indexPriceComps, computePriceCompare, type PriceCompRow } from "./price-compare";
+
 
 const SOURCE_LABEL: Record<SourceKey, string> = {
   sreality: "Sreality",
