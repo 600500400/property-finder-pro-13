@@ -276,8 +276,19 @@ function ListingFull({ listing, rank }: { listing: Listing; rank?: number }) {
         )}
       </div>
 
+      {/* DOMY — hlavní metrika je cena/m² vs. průměr (nájemní výnos se nezobrazuje) */}
+      {isHouse && (
+        <div className={`flex flex-col gap-3 p-3 ${PC_BLOCK[listing.price_compare?.band ?? "none"]}`}>
+          <PriceCompareHero pc={listing.price_compare} />
+          <div className="flex items-center justify-end gap-1.5">
+            <SaveBookmarkButton listing={listing} />
+            <AIAnalysisButton listing={listing} />
+          </div>
+        </div>
+      )}
+
       {/* VERDICT BLOCK — hero (velký výnos + hvězdy) + 3 metriky */}
-      {inv && (
+      {!isHouse && inv && (
         <div className={`flex flex-col gap-3 p-3 ${TIER_VERDICT[tier]}`}>
           <div className="flex items-end justify-between gap-2">
             <div className="flex flex-col leading-none">
@@ -306,6 +317,8 @@ function ListingFull({ listing, rank }: { listing: Listing; rank?: number }) {
             <Metric label="Nájem/měs." value={`${inv.monthly_rent.toLocaleString("cs-CZ")} Kč`} />
             <Metric label="Návratnost" value={`${inv.payback_years} let`} />
           </div>
+
+          <PriceCompareBadge pc={listing.price_compare} />
 
           {inv.rent_basis_label && (
             <div
@@ -337,6 +350,7 @@ function ListingFull({ listing, rank }: { listing: Listing; rank?: number }) {
           </div>
         </div>
       )}
+
     </a>
   );
 }
