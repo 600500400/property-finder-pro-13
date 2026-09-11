@@ -137,6 +137,90 @@ function Stars({ n, cls }: { n: number; cls: string }) {
   );
 }
 
+/* ---------- Cena/m² vs. průměr srovnatelných ---------- */
+
+const PC_BLOCK: Record<string, string> = {
+  below: "border-t border-emerald-400/30 bg-gradient-to-b from-emerald-500/12 to-emerald-500/[0.03]",
+  avg: "border-t border-border bg-[var(--color-surface-2)]/40",
+  above: "border-t border-red-400/25 bg-gradient-to-b from-red-500/10 to-red-500/[0.03]",
+  none: "border-t border-border bg-[var(--color-surface-2)]/30",
+};
+
+const PC_TEXT: Record<string, string> = {
+  below: "text-emerald-300",
+  avg: "text-muted-foreground",
+  above: "text-red-300",
+};
+
+const PC_LABEL: Record<string, string> = {
+  below: "levnější než průměr",
+  avg: "v průměru",
+  above: "dražší než průměr",
+};
+
+function pcScope(scope: string): string {
+  return scope === "okres" ? "okres" : scope === "kraj" ? "kraj" : "celá ČR";
+}
+
+function pcDiff(diff: number): string {
+  if (diff === 0) return "0 %";
+  return `${diff > 0 ? "+" : "−"}${Math.abs(diff)} %`;
+}
+
+function PriceCompareHero({ pc }: { pc?: Listing["price_compare"] }) {
+  if (!pc) {
+    return (
+      <div className="flex flex-col leading-none">
+        <span className="font-mono text-lg font-bold text-muted-foreground">nedostatek dat pro srovnání</span>
+        <span className="mt-1 text-[10px] uppercase tracking-wider text-muted-foreground">
+          cena/m² vs. průměr
+        </span>
+      </div>
+    );
+  }
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="flex items-end justify-between gap-2">
+        <div className="flex flex-col leading-none">
+          <span className={`font-mono text-3xl font-bold ${PC_TEXT[pc.band]}`}>{pcDiff(pc.diff_pct)}</span>
+          <span className="mt-1 text-[10px] uppercase tracking-wider text-muted-foreground">
+            cena/m² vs. průměr
+          </span>
+        </div>
+        <span className={`text-[11px] font-semibold ${PC_TEXT[pc.band]}`}>{PC_LABEL[pc.band]}</span>
+      </div>
+      <div className="grid grid-cols-2 gap-2 border-t border-border/40 pt-2">
+        <Metric label="Tato nabídka" value={`${pc.own_per_m2.toLocaleString("cs-CZ")} Kč/m²`} />
+        <Metric label="Medián srovnatelných" value={`${pc.median_per_m2.toLocaleString("cs-CZ")} Kč/m²`} />
+      </div>
+      <div className="text-[10px] text-muted-foreground">
+        Medián z {pc.samples} srovnatelných ({pcScope(pc.scope)}, plocha ±25 %)
+      </div>
+    </div>
+  );
+}
+
+function PriceCompareBadge({ pc }: { pc?: Listing["price_compare"] }) {
+  if (!pc) {
+    return (
+      <div className="text-[10px] text-muted-foreground">Cena/m²: nedostatek dat pro srovnání</div>
+    );
+  }
+  return (
+    <div className="flex flex-wrap items-center gap-1.5 text-[10px] text-muted-foreground">
+      <span className={`rounded-md border px-1.5 py-0.5 font-semibold ${PC_TEXT[pc.band]} ${
+        pc.band === "below" ? "border-emerald-500/40 bg-emerald-500/10"
+          : pc.band === "above" ? "border-red-500/40 bg-red-500/10"
+          : "border-border bg-muted/40"
+      }`}>
+        {pcDiff(pc.diff_pct)} {PC_LABEL[pc.band]}
+      </span>
+      <span>medián z {pc.samples} srovnatelných ({pcScope(pc.scope)})</span>
+    </div>
+  );
+}
+
+
 export function ListingCard({ listing, density = "card", rank }: { listing: Listing; density?: Density; rank?: number }) {
   if (density === "list") return <ListingRow listing={listing} />;
   if (density === "compact") return <ListingCompact listing={listing} />;
@@ -158,6 +242,8 @@ function ListingFull({ listing, rank }: { listing: Listing; rank?: number }) {
   const pricePerM2 = listing.price && listing.area_m2 ? Math.round(listing.price / listing.area_m2) : null;
   const tier = tierOf(inv?.stars);
   const trap = hasPriceTrap(listing.flags);
+  const isHouse = listing.property_type === "domy";
+
 
   return (
     <a
@@ -276,8 +362,19 @@ function ListingFull({ listing, rank }: { listing: Listing; rank?: number }) {
         )}
       </div>
 
+      {/* DOMY — hlavní metrika je cena/m² vs. průměr (nájemní výnos se nezobrazuje) */}
+      {isHouse && (
+        <div className={`flex flex-col gap-3 p-3 ${PC_BLOCK[listing.price_compare?.band ?? "none"]}`}>
+          <PriceCompareHero pc={listing.price_compare} />
+          <div className="flex items-center justify-end gap-1.5">
+            <SaveBookmarkButton listing={listing} />
+            <AIAnalysisButton listing={listing} />
+          </div>
+        </div>
+      )}
+
       {/* VERDICT BLOCK — hero (velký výnos + hvězdy) + 3 metriky */}
-      {inv && (
+      {!isHouse && inv && (
         <div className={`flex flex-col gap-3 p-3 ${TIER_VERDICT[tier]}`}>
           <div className="flex items-end justify-between gap-2">
             <div className="flex flex-col leading-none">
@@ -306,6 +403,8 @@ function ListingFull({ listing, rank }: { listing: Listing; rank?: number }) {
             <Metric label="Nájem/měs." value={`${inv.monthly_rent.toLocaleString("cs-CZ")} Kč`} />
             <Metric label="Návratnost" value={`${inv.payback_years} let`} />
           </div>
+
+          <PriceCompareBadge pc={listing.price_compare} />
 
           {inv.rent_basis_label && (
             <div
@@ -337,6 +436,7 @@ function ListingFull({ listing, rank }: { listing: Listing; rank?: number }) {
           </div>
         </div>
       )}
+
     </a>
   );
 }
@@ -397,7 +497,20 @@ function ListingCompact({ listing }: { listing: Listing }) {
           <span className="font-mono text-[10px] text-muted-foreground">{listing.area}</span>
         )}
       </div>
-      {inv && (() => {
+      {listing.property_type === "domy" ? (
+        <div className={`flex items-center justify-between rounded-sm px-1.5 py-1 text-[10px] ${PC_BLOCK[listing.price_compare?.band ?? "none"]}`}>
+          {listing.price_compare ? (
+            <>
+              <span className={`font-mono font-semibold ${PC_TEXT[listing.price_compare.band]}`}>
+                {pcDiff(listing.price_compare.diff_pct)} vs. průměr
+              </span>
+              <span className="text-muted-foreground">n={listing.price_compare.samples}</span>
+            </>
+          ) : (
+            <span className="text-muted-foreground">nedostatek dat pro srovnání</span>
+          )}
+        </div>
+      ) : inv ? (() => {
         const t = tierOf(inv.stars);
         return (
           <div className={`flex items-center justify-between rounded-sm px-1.5 py-1 text-[10px] ${TIER_VERDICT[t]}`}>
@@ -407,7 +520,8 @@ function ListingCompact({ listing }: { listing: Listing }) {
             </span>
           </div>
         );
-      })()}
+      })() : null}
+
     </a>
   );
 }
@@ -460,11 +574,18 @@ function ListingRow({ listing }: { listing: Listing }) {
       </div>
       <div className="flex shrink-0 flex-col items-end gap-0.5">
         <span className="font-mono text-sm font-bold text-primary">{listing.price_text}</span>
-        {inv && (
+        {listing.property_type === "domy" ? (
+          listing.price_compare && (
+            <span className={`font-mono text-[10px] font-semibold ${PC_TEXT[listing.price_compare.band]}`}>
+              {pcDiff(listing.price_compare.diff_pct)} vs. průměr
+            </span>
+          )
+        ) : inv ? (
           <span className={`font-mono text-[10px] font-semibold ${TIER_YIELD[tierOf(inv.stars)]}`}>
             {inv.net_yield}% · {"★".repeat(inv.stars)}
           </span>
-        )}
+        ) : null}
+
       </div>
     </a>
   );

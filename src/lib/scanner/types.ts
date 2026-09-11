@@ -100,9 +100,14 @@ export interface Listing {
   description_snippet?: string;
   anuity?: AnuityInfo;
   invest: Investment | null;
+  /** byty / domy — drives which rating is shown. */
+  property_type?: PropertyType;
+  /** Asking Kč/m² vs. median of comparable listings (same type, area ±25 %). */
+  price_compare?: import("@/lib/listings/price-compare").PriceCompare;
   badges?: string[];
   flags?: Flag[];
 }
+
 
 export interface Diagnostic {
   source: string;
