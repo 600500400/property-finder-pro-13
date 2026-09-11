@@ -81,7 +81,9 @@ export function computePriceCompare(args: {
   const { propertyType, kraj, areaM2, price, index } = args;
   if (!propertyType || !areaM2 || !price) return null;
   const own = price / areaM2;
-  if (!Number.isFinite(own) || own <= 0) return null;
+  // Sanity: nesmyslné ceny (0 Kč, „cena v RK", nájem omylem) nesrovnáváme.
+  if (!Number.isFinite(own) || own < 3000 || own > 400_000) return null;
+
 
   const okres = okresFromLocality(args.city ?? undefined);
   const lo = areaM2 * 0.75;
