@@ -28,8 +28,8 @@ function buildQueries(imgFragment: string, dateField: string, landField: string)
     + (dateField ? " " + dateField : "")
     + (imgFragment ? " " + imgFragment : "");
   const body = "{ list{ " + fields + " } totalCount }";
-  const region = `query($offerType:[OfferType],$estateType:[EstateType],$regionOsmIds:[ID],$limit:Int,$order:ResultOrder){ listAdverts(offerType:$offerType,estateType:$estateType,regionOsmIds:$regionOsmIds,limit:$limit,order:$order) ${body} }`;
-  const plain = `query($offerType:[OfferType],$estateType:[EstateType],$limit:Int,$order:ResultOrder){ listAdverts(offerType:$offerType,estateType:$estateType,limit:$limit,order:$order) ${body} }`;
+  const region = `query($offerType:[OfferType],$estateType:[EstateType],$regionOsmIds:[ID],$limit:Int,$offset:Int,$order:ResultOrder){ listAdverts(offerType:$offerType,estateType:$estateType,regionOsmIds:$regionOsmIds,limit:$limit,offset:$offset,order:$order) ${body} }`;
+  const plain = `query($offerType:[OfferType],$estateType:[EstateType],$limit:Int,$offset:Int,$order:ResultOrder){ listAdverts(offerType:$offerType,estateType:$estateType,limit:$limit,offset:$offset,order:$order) ${body} }`;
   return { region, plain };
 }
 
