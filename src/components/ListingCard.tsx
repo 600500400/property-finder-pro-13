@@ -176,6 +176,12 @@ function pcDiff(diff: number): string {
   return `${diff > 0 ? "+" : "−"}${Math.abs(diff)} %`;
 }
 
+const HOUSE_COMPARISON_WARNING = "Srovnání je orientační — málo srovnatelných domů v okolí (často se porovnává s domy ve městech i na vesnici).";
+
+function isWeakHouseComparison(pc: NonNullable<Listing["price_compare"]>): boolean {
+  return pc.scope === "kraj" || pc.samples < 10;
+}
+
 function PriceCompareHero({ pc }: { pc?: Listing["price_compare"] }) {
   if (!pc) {
     return (
@@ -187,16 +193,20 @@ function PriceCompareHero({ pc }: { pc?: Listing["price_compare"] }) {
       </div>
     );
   }
+  const weak = isWeakHouseComparison(pc);
   return (
-    <div className="flex flex-col gap-2">
+    <div className={`flex flex-col gap-2 ${weak ? "text-muted-foreground" : ""}`} title={weak ? HOUSE_COMPARISON_WARNING : undefined}>
       <div className="flex items-end justify-between gap-2">
         <div className="flex flex-col leading-none">
-          <span className={`font-mono text-3xl font-bold ${PC_TEXT[pc.band]}`}>{pcDiff(pc.diff_pct)}</span>
+          <span className={`inline-flex items-center gap-1.5 font-mono text-3xl font-bold ${weak ? "text-muted-foreground" : PC_TEXT[pc.band]}`}>
+            {weak && <AlertTriangle className="h-4 w-4 shrink-0" aria-label="Orientační srovnání" />}
+            {pcDiff(pc.diff_pct)}
+          </span>
           <span className="mt-1 text-[10px] uppercase tracking-wider text-muted-foreground">
             cena/m² vs. {pcScopeMedian(pc.scope)} (n={pc.samples})
           </span>
         </div>
-        <span className={`text-[11px] font-semibold ${PC_TEXT[pc.band]}`}>{PC_LABEL[pc.band]}</span>
+        <span className={`text-[11px] font-semibold ${weak ? "text-muted-foreground" : PC_TEXT[pc.band]}`}>{PC_LABEL[pc.band]}</span>
       </div>
       <div className="grid grid-cols-2 gap-2 border-t border-border/40 pt-2">
         <Metric label="Tato nabídka" value={`${pc.own_per_m2.toLocaleString("cs-CZ")} Kč/m²`} />
@@ -507,10 +517,14 @@ function ListingCompact({ listing }: { listing: Listing }) {
         )}
       </div>
       {listing.property_type === "domy" ? (
-        <div className={`flex items-center justify-between rounded-sm px-1.5 py-1 text-[10px] ${PC_BLOCK[listing.price_compare?.band ?? "none"]}`}>
+        <div
+          className={`flex items-center justify-between rounded-sm px-1.5 py-1 text-[10px] ${PC_BLOCK[listing.price_compare?.band ?? "none"]}`}
+          title={listing.price_compare && isWeakHouseComparison(listing.price_compare) ? HOUSE_COMPARISON_WARNING : undefined}
+        >
           {listing.price_compare ? (
             <>
-              <span className={`font-mono font-semibold ${PC_TEXT[listing.price_compare.band]}`}>
+              <span className={`inline-flex items-center gap-1 font-mono font-semibold ${isWeakHouseComparison(listing.price_compare) ? "text-muted-foreground" : PC_TEXT[listing.price_compare.band]}`}>
+                {isWeakHouseComparison(listing.price_compare) && <AlertTriangle className="h-3 w-3 shrink-0" aria-label="Orientační srovnání" />}
                 {pcDiff(listing.price_compare.diff_pct)} vs. {pcScopeMedian(listing.price_compare.scope)}
               </span>
               <span className="text-muted-foreground">n={listing.price_compare.samples}</span>
@@ -585,7 +599,11 @@ function ListingRow({ listing }: { listing: Listing }) {
         <span className="font-mono text-sm font-bold text-primary">{listing.price_text}</span>
         {listing.property_type === "domy" ? (
           listing.price_compare && (
-            <span className={`font-mono text-[10px] font-semibold ${PC_TEXT[listing.price_compare.band]}`}>
+            <span
+              className={`inline-flex items-center gap-1 font-mono text-[10px] font-semibold ${isWeakHouseComparison(listing.price_compare) ? "text-muted-foreground" : PC_TEXT[listing.price_compare.band]}`}
+              title={isWeakHouseComparison(listing.price_compare) ? HOUSE_COMPARISON_WARNING : undefined}
+            >
+              {isWeakHouseComparison(listing.price_compare) && <AlertTriangle className="h-3 w-3 shrink-0" aria-label="Orientační srovnání" />}
               {pcVs(listing.price_compare)}
             </span>
           )

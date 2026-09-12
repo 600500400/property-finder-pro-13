@@ -167,7 +167,7 @@ export const CITY_TO_OKRES: Record<string, string> = {
   "trutnov": "trutnov", "vrchlabi": "trutnov", "dvur-kralove-nad-labem": "trutnov",
   // Pardubický
   "chrudim": "chrudim", "hlinsko": "chrudim", "skutec": "chrudim",
-  "pardubice": "pardubice", "prelouc": "pardubice", "holice": "pardubice",
+  "pardubice": "pardubice", "prelouc": "pardubice", "holice": "pardubice", "mikulovice-u-pardubic": "pardubice",
   "svitavy": "svitavy", "litomysl": "svitavy", "polic-ka": "svitavy", "policka": "svitavy",
   "usti-nad-orlici": "usti-nad-orlici", "vysoke-myto": "usti-nad-orlici", "ceska-trebova": "usti-nad-orlici", "lanskroun": "usti-nad-orlici",
   // Vysočina
@@ -185,7 +185,7 @@ export const CITY_TO_OKRES: Record<string, string> = {
   "vyskov": "vyskov", "buciovice": "vyskov", "slavkov-u-brna": "vyskov",
   "znojmo": "znojmo", "moravsky-krumlov": "znojmo",
   // Olomoucký
-  "jesenik": "jesenik",
+  "jesenik": "jesenik", "mikulovice-u-jesenika": "jesenik",
   "olomouc": "olomouc", "litovel": "olomouc", "unicov": "olomouc",
   "prerov": "prerov", "hranice": "prerov", "lipnik-nad-becvou": "prerov",
   "prostejov": "prostejov", "konice": "prostejov",
@@ -250,10 +250,13 @@ export function okresFromLocality(locality: string | undefined): string | null {
   for (const t of tokens) {
     if (CITY_TO_OKRES[t]) return CITY_TO_OKRES[t];
   }
-  // Multi-word "kutna hora"
+  // Multi-word names. Match complete slug segments only: `mikulov` must not
+  // match inside `mikulovice`, while `kutna-hora` may match `ulice-kutna-hora`.
   const joined = slugifyCity(norm);
   for (const key of Object.keys(CITY_TO_OKRES)) {
-    if (joined.includes(key)) return CITY_TO_OKRES[key];
+    if (joined === key || joined.startsWith(`${key}-`) || joined.endsWith(`-${key}`) || joined.includes(`-${key}-`)) {
+      return CITY_TO_OKRES[key];
+    }
   }
   return null;
 }
