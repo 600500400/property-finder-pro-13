@@ -63,6 +63,16 @@ export async function runSourceScrape(
     };
   }
   const limit = FAST_SOURCES.has(sourceKey) ? 100 : 50;
+  // Houses are a much smaller national pool than flats, so we walk deeper pages
+  // to build volume. Flats keep a single page (unchanged behaviour).
+  const HOUSE_PAGES: Record<string, number> = {
+    sreality: 10,
+    bezrealitky: 10,
+    bazos: 25,
+    idnes: 8,
+  };
+  const maxPages = propertyType === "domy" ? (HOUSE_PAGES[sourceKey] ?? 1) : 1;
+  const perSourceLimit = propertyType === "domy" && sourceKey === "bazos" ? 500 : limit;
 
   const { data: runRow, error: insertErr } = await supabaseAdmin
     .from("scrape_runs")
@@ -91,7 +101,8 @@ export async function runSourceScrape(
       region: "",
       sources: [sourceKey],
       sort_by: "date_desc",
-      per_source_limit: limit,
+      per_source_limit: perSourceLimit,
+      max_pages: maxPages,
     };
 
     const fetcher = FETCHERS[sourceKey];
@@ -103,18 +114,24 @@ export async function runSourceScrape(
     let updatedCount = 0;
     const newUrls: string[] = [];
 
+    // Which external ids already exist? One batched lookup instead of one query per listing.
+    const allIds = listings.filter(l => l.url).map(l => deriveExternalId(sourceKey, l.url));
+    const existingIds = new Set<string>();
+    for (let i = 0; i < allIds.length; i += 200) {
+      const { data: found } = await supabaseAdmin
+        .from("listings")
+        .select("external_id")
+        .eq("source", sourceKey)
+        .in("external_id", allIds.slice(i, i + 200));
+      for (const r of found ?? []) existingIds.add(r.external_id as string);
+    }
+
+    const rows: Array<Record<string, unknown>> = [];
     for (const l of listings) {
       if (!l.url) continue;
       const external_id = deriveExternalId(sourceKey, l.url);
       const own = resolveOwnership(l, filters);
-
-      // Check existence to count new vs updated
-      const { data: existing } = await supabaseAdmin
-        .from("listings")
-        .select("id")
-        .eq("source", sourceKey)
-        .eq("external_id", external_id)
-        .maybeSingle();
+      const existing = existingIds.has(external_id);
 
       const area_m2 = sanitizeAreaM2(l.area_m2 ?? null);
       const kraj = regionFromLocality(l.locality);
@@ -150,13 +167,7 @@ export async function runSourceScrape(
         is_active: true,
       };
 
-      const { error: upErr } = await supabaseAdmin
-        .from("listings")
-        .upsert(row, { onConflict: "source,external_id" });
-      if (upErr) {
-        console.error(`[persist:${sourceKey}] upsert error`, upErr.message);
-        continue;
-      }
+      rows.push(row);
       if (existing) {
         updatedCount++;
       } else {
@@ -164,6 +175,18 @@ export async function runSourceScrape(
         newUrls.push(l.url);
       }
     }
+
+    // Upsert in chunks; one row per external_id so Postgres never sees a dupe key twice.
+    const byId = new Map<string, Record<string, unknown>>();
+    for (const r of rows) byId.set(String(r.external_id), r);
+    const unique = [...byId.values()];
+    for (let i = 0; i < unique.length; i += 100) {
+      const { error: upErr } = await supabaseAdmin
+        .from("listings")
+        .upsert(unique.slice(i, i + 100) as never, { onConflict: "source,external_id" });
+      if (upErr) console.error(`[persist:${sourceKey}] upsert error`, upErr.message);
+    }
+
 
     counts.items_new = newCount;
     counts.items_updated = updatedCount;

@@ -18,15 +18,19 @@ const BAZOS_CAT: Record<string, string> = {
   ostatni: "garaz",
 };
 
-function buildUrl(f: ScanFilters): string {
+function buildUrl(f: ScanFilters, offset = 0): string {
   const cat = BAZOS_CAT[f.property_type] || "garaz";
   const deal = f.deal_type === "pronajem" ? "pronajmu" : "prodam";
   const qs = new URLSearchParams();
   if (f.price_min) qs.set("cenaod", String(f.price_min));
   if (f.price_max) qs.set("cenado", String(f.price_max));
   const q = qs.toString();
-  return `https://reality.bazos.cz/${deal}/${cat}/${q ? "?" + q : ""}`;
+  // Bazoš pagines through an offset path segment: /prodam/dum/20/
+  return `https://reality.bazos.cz/${deal}/${cat}/${offset ? offset + "/" : ""}${q ? "?" + q : ""}`;
 }
+
+/** Bazoš lists 20 items per page. */
+const BAZOS_PAGE_SIZE = 20;
 
 // strip <tag> ... </tag> while keeping inner text
 function stripTags(s: string): string {
@@ -52,9 +56,7 @@ async function fetchDetailText(url: string): Promise<string> {
   }
 }
 
-export async function fetchBazos(f: ScanFilters): Promise<Listing[]> {
-  const url = buildUrl(f);
-  const cap = Math.max(1, Math.min(100, f.per_source_limit || 20));
+async function fetchListPage(url: string): Promise<string> {
   const res = await fetch(url, {
     headers: {
       "User-Agent":
@@ -65,8 +67,10 @@ export async function fetchBazos(f: ScanFilters): Promise<Listing[]> {
     signal: AbortSignal.timeout(15000),
   });
   if (!res.ok) throw new Error(`Bazoš HTTP ${res.status}`);
-  const html = await res.text();
+  return res.text();
+}
 
+function parseListPage(html: string, cap: number): Listing[] {
   // Split into listing blocks
   const blockRe = /<div class="inzeraty inzeratyflex">([\s\S]*?)(?=<div class="inzeraty inzeratyflex">|<div class="strankovani)/g;
   const out: Listing[] = [];
@@ -122,14 +126,49 @@ export async function fetchBazos(f: ScanFilters): Promise<Listing[]> {
       badges: badges.length ? badges : undefined,
     });
   }
-  return Promise.all(out.map(async (listing) => {
-    if (listing.ownership) return listing;
-    const detailText = await fetchDetailText(listing.url);
-    if (!detailText) return listing;
-    return {
-      ...listing,
-      ownership: parseOwnership(`${listing.name} ${detailText}`) ?? listing.ownership,
-      description_snippet: detailText.slice(0, 600),
-    };
-  }));
+  return out;
+}
+
+export async function fetchBazos(f: ScanFilters): Promise<Listing[]> {
+  const cap = Math.max(1, f.per_source_limit || 20);
+  const maxPages = Math.max(1, f.max_pages ?? 1);
+  const collected: Listing[] = [];
+  const seen = new Set<string>();
+
+  for (let page = 0; page < maxPages && collected.length < cap; page++) {
+    const html = page === 0
+      ? await fetchListPage(buildUrl(f, 0))
+      : await fetchListPage(buildUrl(f, page * BAZOS_PAGE_SIZE)).catch(() => "");
+    if (!html) break;
+    const items = parseListPage(html, cap - collected.length);
+    if (!items.length) break;
+    let added = 0;
+    for (const it of items) {
+      if (seen.has(it.url)) continue;
+      seen.add(it.url);
+      collected.push(it);
+      added++;
+    }
+    if (added === 0) break;
+    if (page < maxPages - 1) await new Promise((res) => setTimeout(res, 300));
+  }
+
+  // Ownership detail lookups, 6 at a time so we stay polite on deep runs.
+  const queue = collected.map((l, i) => ({ l, i })).filter(j => !j.l.ownership).slice(0, 600);
+  await Promise.all(
+    Array.from({ length: 6 }, async () => {
+      for (;;) {
+        const job = queue.shift();
+        if (!job) return;
+        const detailText = await fetchDetailText(job.l.url);
+        if (!detailText) continue;
+        collected[job.i] = {
+          ...job.l,
+          ownership: parseOwnership(`${job.l.name} ${detailText}`) ?? job.l.ownership,
+          description_snippet: detailText.slice(0, 600),
+        };
+      }
+    }),
+  );
+  return collected;
 }

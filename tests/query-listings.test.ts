@@ -31,6 +31,7 @@ function makeQB(rows: unknown[]) {
     order: passthrough,
     lt: (col: string, val: string) => { ltCalls.push({ col, val }); return qb; },
     limit: (n: number) => { limitCalls.push(n); return qb; },
+    range: passthrough,
     then: (resolve: (v: { data: unknown[]; error: null }) => unknown) =>
       Promise.resolve({ data: rows, error: null }).then(resolve),
   });

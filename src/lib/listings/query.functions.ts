@@ -101,16 +101,24 @@ export const queryListings = createServerFn({ method: "POST" })
     }
 
     // ----- asking Kč/m² comparables (same deal type, never mixing byty × domy) -----
-    const { data: compRows } = await supabaseAdmin
-      .from("listings")
-      .select("property_type, kraj, city, area_m2, price")
-      .eq("is_active", true)
-      .eq("deal_type", filters.deal_type)
-      .in("property_type", propertyTypes)
-      .not("area_m2", "is", null)
-      .not("price", "is", null)
-      .limit(20000);
-    const priceIndex = indexPriceComps((compRows ?? []) as PriceCompRow[]);
+    // PostgREST returns at most 1000 rows per request, so page through explicitly.
+    const compRows: PriceCompRow[] = [];
+    const PAGE = 1000;
+    for (let from = 0; from < 30000; from += PAGE) {
+      const { data: chunk } = await supabaseAdmin
+        .from("listings")
+        .select("property_type, kraj, city, area_m2, price, url")
+        .eq("is_active", true)
+        .eq("deal_type", filters.deal_type)
+        .in("property_type", propertyTypes)
+        .not("area_m2", "is", null)
+        .not("price", "is", null)
+        .range(from, from + PAGE - 1);
+      if (!chunk?.length) break;
+      compRows.push(...(chunk as PriceCompRow[]));
+      if (chunk.length < PAGE) break;
+    }
+    const priceIndex = indexPriceComps(compRows);
 
     const bench = await getBenchmark();
 
@@ -143,6 +151,7 @@ export const queryListings = createServerFn({ method: "POST" })
         areaM2,
         price: r.price,
         index: priceIndex,
+        selfUrl: r.url,
       }) ?? undefined;
 
       return {

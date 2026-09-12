@@ -28,8 +28,8 @@ function buildQueries(imgFragment: string, dateField: string, landField: string)
     + (dateField ? " " + dateField : "")
     + (imgFragment ? " " + imgFragment : "");
   const body = "{ list{ " + fields + " } totalCount }";
-  const region = `query($offerType:[OfferType],$estateType:[EstateType],$regionOsmIds:[ID],$limit:Int,$order:ResultOrder){ listAdverts(offerType:$offerType,estateType:$estateType,regionOsmIds:$regionOsmIds,limit:$limit,order:$order) ${body} }`;
-  const plain = `query($offerType:[OfferType],$estateType:[EstateType],$limit:Int,$order:ResultOrder){ listAdverts(offerType:$offerType,estateType:$estateType,limit:$limit,order:$order) ${body} }`;
+  const region = `query($offerType:[OfferType],$estateType:[EstateType],$regionOsmIds:[ID],$limit:Int,$offset:Int,$order:ResultOrder){ listAdverts(offerType:$offerType,estateType:$estateType,regionOsmIds:$regionOsmIds,limit:$limit,offset:$offset,order:$order) ${body} }`;
+  const plain = `query($offerType:[OfferType],$estateType:[EstateType],$limit:Int,$offset:Int,$order:ResultOrder){ listAdverts(offerType:$offerType,estateType:$estateType,limit:$limit,offset:$offset,order:$order) ${body} }`;
   return { region, plain };
 }
 
@@ -77,6 +77,7 @@ export async function fetchBezrealitky(f: ScanFilters): Promise<Listing[]> {
     offerType: [OFFER[f.deal_type] || "PRODEJ"],
     estateType: [ESTATE[f.property_type] || "BYT"],
     limit: Math.max(1, Math.min(100, f.per_source_limit || 20)),
+    offset: 0,
     order: "TIMEORDER_DESC",
   };
   const regionVars = { ...baseVars, regionOsmIds: ["R51684"] };
@@ -101,6 +102,8 @@ export async function fetchBezrealitky(f: ScanFilters): Promise<Listing[]> {
   let firstErr: any = null;
   let usedDate = "";
   let usedLand = "";
+  let usedQuery = "";
+  let usedIsRegion = true;
   outer: for (const landField of LAND_VARIANTS) {
     for (const dateField of DATE_VARIANTS) {
       for (const frag of IMG_VARIANTS) {
@@ -110,15 +113,46 @@ export async function fetchBezrealitky(f: ScanFilters): Promise<Listing[]> {
         if (p.errors && landField && isFieldError(p.errors) && JSON.stringify(p.errors).includes(landField)) { firstErr ||= p.errors; continue outer; }
         if (p.errors && frag && isFieldError(p.errors)) { firstErr ||= p.errors; continue; }
         if (p.errors && dateField && isFieldError(p.errors)) { firstErr ||= p.errors; break; }
-        if (p.errors) p = await run(plain, baseVars);
-        if (!p.errors) { payload = p; usedDate = dateField; usedLand = landField; break outer; }
+        if (p.errors) { p = await run(plain, baseVars); usedIsRegion = false; }
+        if (!p.errors) {
+          payload = p; usedDate = dateField; usedLand = landField;
+          usedQuery = usedIsRegion ? region : plain;
+          break outer;
+        }
+        usedIsRegion = true;
         firstErr ||= p.errors;
       }
     }
   }
   if (!payload) throw new Error(`GraphQL: ${JSON.stringify((firstErr || [])[0] || {}).slice(0, 160)}`);
 
-  const lst = payload.data?.listAdverts?.list || [];
+  const lst: any[] = [...(payload.data?.listAdverts?.list || [])];
+
+  // Deeper pages for large scrapes (houses); flats keep max_pages = 1.
+  const pageSize: number = baseVars.limit;
+  const maxPages = Math.max(1, f.max_pages ?? 1);
+  const seenUri = new Set<string>(lst.map((it: any) => String(it?.uri ?? it?.id ?? "")));
+  for (let page = 1; page < maxPages; page++) {
+    const vars = { ...(usedIsRegion ? regionVars : baseVars), offset: page * pageSize };
+    let p: any;
+    try {
+      p = await run(usedQuery, vars);
+    } catch {
+      break;
+    }
+    const chunk: any[] = p?.data?.listAdverts?.list || [];
+    if (!chunk.length || p?.errors) break;
+    let added = 0;
+    for (const it of chunk) {
+      const key = String(it?.uri ?? it?.id ?? "");
+      if (key && seenUri.has(key)) continue;
+      if (key) seenUri.add(key);
+      lst.push(it);
+      added++;
+    }
+    if (added === 0 || chunk.length < pageSize) break;
+    await new Promise((res) => setTimeout(res, 250));
+  }
   const out: Listing[] = [];
   for (const it of lst) {
     const price = it.price || 0;

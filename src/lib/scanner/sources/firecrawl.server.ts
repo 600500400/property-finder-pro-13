@@ -19,7 +19,7 @@ const IDNES_REGION: Record<string, string> = {
   vysocina: "vysocina", zlinsky: "zlinsky",
 };
 
-function buildIdnesUrl(f: ScanFilters): string {
+function buildIdnesUrl(f: ScanFilters, page = 1): string {
   const deal = f.deal_type === "pronajem" ? "pronajem" : "prodej";
   const cat = f.property_type === "byty" ? "byty"
     : f.property_type === "domy" ? "domy"
@@ -27,7 +27,7 @@ function buildIdnesUrl(f: ScanFilters): string {
     : f.property_type === "komercni" ? "komercni-objekty"
     : "garaze";
   const region = f.region ? IDNES_REGION[f.region] : "";
-  return `https://reality.idnes.cz/s/${deal}/${cat}/${region ? region + "/" : ""}`;
+  return `https://reality.idnes.cz/s/${deal}/${cat}/${region ? region + "/" : ""}${page > 1 ? `?page=${page}` : ""}`;
 }
 
 function buildRealityMixUrl(f: ScanFilters): string {
@@ -67,7 +67,7 @@ const LISTING_SCHEMA = {
   required: ["listings"],
 } as const;
 
-const PROMPT = "Extrahuj seznam realitních inzerátů ze stránky výpisu. Pro každý inzerát najdi titulek, ABSOLUTNÍ URL detailu (musí začínat https://), cenu (přesný text vč. měny), lokalitu a ABSOLUTNÍ URL náhledové fotky. U obrázku zkontroluj atributy src, data-src, data-original, data-lazy a srcset (ze srcset vezmi první URL). Vynech 1×1 pixel placeholdery, base64 data: URI a tracking pixely. Vynech reklamní, doporučené a sponzorované bloky, paginaci a opakující se navigaci. Maximálně 20 položek.";
+const PROMPT = "Extrahuj seznam realitních inzerátů ze stránky výpisu. Pro každý inzerát najdi titulek, ABSOLUTNÍ URL detailu (musí začínat https://), cenu (přesný text vč. měny), lokalitu a ABSOLUTNÍ URL náhledové fotky. U obrázku zkontroluj atributy src, data-src, data-original, data-lazy a srcset (ze srcset vezmi první URL). Vynech 1×1 pixel placeholdery, base64 data: URI a tracking pixely. Vynech reklamní, doporučené a sponzorované bloky, paginaci a opakující se navigaci. Maximálně 30 položek.";
 
 interface ExtractedItem {
   title?: string;
@@ -152,8 +152,30 @@ async function scrapeViaFirecrawl(
 
 // ---------- Public functions ----------
 
-export const fetchIdnes = (f: ScanFilters) =>
-  scrapeViaFirecrawl(buildIdnesUrl(f), "iDnes Reality", "idnes");
+/** iDnes runs through Firecrawl, so pages are billed credits: cap the walk at 8 pages. */
+export async function fetchIdnes(f: ScanFilters): Promise<Listing[]> {
+  const maxPages = Math.min(8, Math.max(1, f.max_pages ?? 1));
+  const out: Listing[] = [];
+  const seen = new Set<string>();
+  for (let page = 1; page <= maxPages; page++) {
+    let items: Listing[] = [];
+    try {
+      items = await scrapeViaFirecrawl(buildIdnesUrl(f, page), "iDnes Reality", "idnes");
+    } catch (e) {
+      if (page === 1) throw e;
+      break;
+    }
+    let added = 0;
+    for (const it of items) {
+      if (seen.has(it.url)) continue;
+      seen.add(it.url);
+      out.push(it);
+      added++;
+    }
+    if (added === 0) break;
+  }
+  return out;
+}
 
 export const fetchRealityMix = (f: ScanFilters) =>
   scrapeViaFirecrawl(buildRealityMixUrl(f), "RealityMix", "realitymix");

@@ -209,6 +209,8 @@ export async function fetchSreality(f: ScanFilters): Promise<Listing[]> {
   const mainCb = SREALITY_CATEGORY_MAIN[f.property_type] ?? 5;
   const typeCb = SREALITY_CATEGORY_TYPE[f.deal_type] ?? 1;
   const perPage = Math.max(20, Math.min(100, f.per_source_limit || 60));
+  const maxPages = Math.max(1, f.max_pages ?? 1);
+  const wanted = perPage * maxPages;
 
   const params: Record<string, string | number> = {
     category_main_cb: mainCb,
@@ -240,22 +242,44 @@ export async function fetchSreality(f: ScanFilters): Promise<Listing[]> {
     "Referer": "https://www.sreality.cz/hledani/byty",
   };
 
-  let estates: any[] = [];
+  const estates: any[] = [];
   let lastStatus: number | null = null;
+  let workingEp: string | null = null;
+  const seenHash = new Set<string>();
 
-  for (const ep of endpoints) {
-    const qs = new URLSearchParams();
-    for (const [k, v] of Object.entries(params)) qs.set(k, String(v));
-    try {
-      const r = await fetch(`${ep}?${qs}`, { headers, signal: AbortSignal.timeout(15000) });
-      lastStatus = r.status;
-      if (!r.ok) continue;
-      const data: any = await r.json();
-      const est = data.results || data._embedded?.estates || data.estates || data.data || [];
-      if (Array.isArray(est) && est.length) { estates = est; break; }
-    } catch {
-      // try next
+  // Walk listing pages until max_pages is reached or the portal stops adding rows.
+  for (let page = 0; page < maxPages && estates.length < wanted; page++) {
+    let pageEstates: any[] = [];
+    const eps: string[] = workingEp ? [workingEp] : endpoints;
+    for (const ep of eps) {
+      const qs = new URLSearchParams();
+      for (const [k, v] of Object.entries(params)) qs.set(k, String(v));
+      qs.set("page", String(page + 1));
+      qs.set("offset", String(page * perPage));
+      try {
+        const r = await fetch(`${ep}?${qs}`, { headers, signal: AbortSignal.timeout(15000) });
+        lastStatus = r.status;
+        if (!r.ok) continue;
+        const data: any = await r.json();
+        const est = data.results || data._embedded?.estates || data.estates || data.data || [];
+        if (Array.isArray(est) && est.length) { pageEstates = est; workingEp = ep; break; }
+      } catch {
+        // try next endpoint
+      }
     }
+    if (!pageEstates.length) break;
+    let added = 0;
+    for (const e of pageEstates) {
+      const h = String(e?.hash_id ?? "");
+      if (h) {
+        if (seenHash.has(h)) continue;
+        seenHash.add(h);
+      }
+      estates.push(e);
+      added++;
+    }
+    if (added === 0 || pageEstates.length < perPage) break;
+    if (page < maxPages - 1) await new Promise((res) => setTimeout(res, 250));
   }
 
   if (!estates.length) {
@@ -263,7 +287,19 @@ export async function fetchSreality(f: ScanFilters): Promise<Listing[]> {
   }
 
   const typeS = TYPE_SLUG[typeCb] || "prodej";
-  const details = await Promise.all(estates.map(e => detailInfo(e?.hash_id, headers)));
+  // Detail calls are rate-limit sensitive: run them 8 at a time and cap the total.
+  const DETAIL_CAP = 500;
+  const details: Array<Awaited<ReturnType<typeof detailInfo>>> = new Array(estates.length).fill({});
+  const queue = estates.slice(0, DETAIL_CAP).map((e, i) => ({ e, i }));
+  await Promise.all(
+    Array.from({ length: 8 }, async () => {
+      for (;;) {
+        const job = queue.shift();
+        if (!job) return;
+        details[job.i] = await detailInfo(job.e?.hash_id, headers);
+      }
+    }),
+  );
   const out: Listing[] = [];
   let withImg = 0;
   for (const [idx, e] of estates.entries()) {
