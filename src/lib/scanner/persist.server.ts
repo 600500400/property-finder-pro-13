@@ -167,13 +167,7 @@ export async function runSourceScrape(
         is_active: true,
       };
 
-      const { error: upErr } = await supabaseAdmin
-        .from("listings")
-        .upsert(row, { onConflict: "source,external_id" });
-      if (upErr) {
-        console.error(`[persist:${sourceKey}] upsert error`, upErr.message);
-        continue;
-      }
+      rows.push(row);
       if (existing) {
         updatedCount++;
       } else {
@@ -181,6 +175,18 @@ export async function runSourceScrape(
         newUrls.push(l.url);
       }
     }
+
+    // Upsert in chunks; one row per external_id so Postgres never sees a dupe key twice.
+    const byId = new Map<string, Record<string, unknown>>();
+    for (const r of rows) byId.set(String(r.external_id), r);
+    const unique = [...byId.values()];
+    for (let i = 0; i < unique.length; i += 100) {
+      const { error: upErr } = await supabaseAdmin
+        .from("listings")
+        .upsert(unique.slice(i, i + 100) as never, { onConflict: "source,external_id" });
+      if (upErr) console.error(`[persist:${sourceKey}] upsert error`, upErr.message);
+    }
+
 
     counts.items_new = newCount;
     counts.items_updated = updatedCount;
