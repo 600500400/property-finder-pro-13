@@ -6,6 +6,7 @@ import { regionFromLocality, sanitizeAreaM2 } from "./kraj-mapping";
 import { detectFlags } from "./flags";
 import { deriveHouseSubtype } from "./house-subtype";
 import { parseLandArea } from "./land-area";
+import { parseFloorArea } from "./floor-area";
 
 import { fetchSreality } from "./sources/sreality.server";
 import { fetchBezrealitky } from "./sources/bezrealitky.server";
