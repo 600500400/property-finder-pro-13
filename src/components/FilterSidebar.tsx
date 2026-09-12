@@ -98,10 +98,65 @@ export function FilterSidebar({ filters, setFilters, view, setView, onExport, ca
       </Section>
 
       <Section label="Lokalita">
-        <Label>Kraj</Label>
-        <Select value={filters.region} onChange={(v) => update("region", v as ScanFilters["region"])}
-          options={REGIONS} />
+        <Label>Kraje (lze vybrat více)</Label>
+        <div className="grid grid-cols-2 gap-1.5">
+          <button
+            type="button"
+            onClick={() => setFilters({ ...filters, regions: [], region: "" })}
+            className={`col-span-2 rounded-lg border px-2 py-1.5 text-xs font-semibold transition ${
+              selectedRegions.length === 0
+                ? "border-primary/60 bg-primary/10 text-primary"
+                : "border-border bg-[var(--color-surface-2)] text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            Celá ČR
+          </button>
+          {REGIONS.filter(([v]) => v !== "").map(([value, label]) => {
+            const active = selectedRegions.includes(value as string);
+            return (
+              <button
+                key={value}
+                type="button"
+                onClick={() => toggleRegion(value as string)}
+                className={`rounded-lg border px-2 py-1.5 text-left text-xs font-medium transition ${
+                  active
+                    ? "border-primary/60 bg-primary/10 text-primary"
+                    : "border-border bg-[var(--color-surface-2)] text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {label}
+              </button>
+            );
+          })}
+        </div>
       </Section>
+
+      <Section label="Plocha pozemku (m²)">
+        <div className="grid grid-cols-2 gap-2">
+          <div>
+            <Label>Od</Label>
+            <input
+              type="number" min={0} step={100} placeholder="0"
+              value={filters.land_area_min ?? ""}
+              onChange={(e) => update("land_area_min", e.target.value ? Number(e.target.value) : undefined)}
+              className="w-full rounded-lg border border-border bg-[var(--color-surface-2)] px-2.5 py-2 text-sm outline-none focus:border-primary"
+            />
+          </div>
+          <div>
+            <Label>Do</Label>
+            <input
+              type="number" min={0} step={100} placeholder="bez limitu"
+              value={filters.land_area_max ?? ""}
+              onChange={(e) => update("land_area_max", e.target.value ? Number(e.target.value) : undefined)}
+              className="w-full rounded-lg border border-border bg-[var(--color-surface-2)] px-2.5 py-2 text-sm outline-none focus:border-primary"
+            />
+          </div>
+        </div>
+        <p className="text-[10px] leading-relaxed text-muted-foreground">
+          Platí pro domy — byty pozemek nemají, takže se při zadání nezobrazí.
+        </p>
+      </Section>
+
 
 
       <Section label="Cena (Kč)">
