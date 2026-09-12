@@ -166,7 +166,8 @@ export async function runSourceScrape(
         kraj,
         city: l.locality || null,
         area_m2,
-        land_area_m2: typeof l.land_area_m2 === "number" && l.land_area_m2 > 0 ? l.land_area_m2 : null,
+        land_area_m2,
+        house_subtype,
         // price_per_m2 is a generated column — do not set
         ownership: own.ownership,
         ownership_confidence: own.ownership_confidence,
