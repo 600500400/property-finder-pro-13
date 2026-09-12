@@ -27,8 +27,12 @@ const RULES: Rule[] = [
   { code: "doplatek",     category: "price_trap", label: "Doplatek úvěru",                     re: /\bdoplat/ },
   { code: "provize",      category: "price_trap", label: "+ provize RK",                       re: /\bprovize\b|\+\s*provize|provize\s+real/ },
   { code: "bez_dph",      category: "price_trap", label: "Cena bez DPH",                       re: /\bbez\s*dph\b/ },
-  { code: "drazba",       category: "price_trap", label: "Dražba / aukce",                     re: /\bdrazb|\baukc/ },
+  { code: "drazba",       category: "price_trap", label: "Dražba / aukce / exekuce",           re: /\bdrazb|\baukc|\bexekuc|\binsolven/ },
   { code: "podil",        category: "price_trap", label: "Spoluvlastnický podíl",              re: /\bspoluvlastnick|\bpodil(?:\s|u|y|em|ova)/ },
+  { code: "demolice",     category: "price_trap", label: "K demolici / ruina",                 re: /\bk\s*demolici|\bdemolic|\bruina\b|\bzricenin/ },
+  { code: "garaz_only",   category: "type_nuance", label: "Prodej garáže, ne domu",            re: /\bprodej\s+garaz|\bprodej\s+garaze\b/ },
+  { code: "pozemek_only", category: "type_nuance", label: "Prodej pozemku, ne domu",           re: /\bprodej\s+(?:stavebn\w*\s+)?pozemk|\bstavebni\s+parcela\b/ },
+  { code: "montovany",    category: "type_nuance", label: "Montovaný / typový dům (bez pozemku)", re: /\bmontovan|\bshowroom|\btypov\w*\s+d(?:um|omy)|\bmobilni\s+d(?:um|omek)|\bdum\s+na\s+klic/ },
 
   // Foreign property
   { code: "foreign_es",   category: "foreign",    label: "Možná zahraniční (Španělsko)",       re: /\bspanel/ },
