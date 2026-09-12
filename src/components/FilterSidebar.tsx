@@ -64,6 +64,19 @@ export function FilterSidebar({ filters, setFilters, view, setView, onExport, ca
   const update = <K extends keyof ScanFilters>(k: K, v: ScanFilters[K]) =>
     setFilters({ ...filters, [k]: v });
 
+  // Kraj is multi-select; the legacy single `region` is kept in sync for saved searches.
+  const selectedRegions: string[] = (filters.regions ?? []).filter(Boolean) as string[];
+  const toggleRegion = (r: string) => {
+    const next = selectedRegions.includes(r)
+      ? selectedRegions.filter(x => x !== r)
+      : [...selectedRegions, r];
+    setFilters({
+      ...filters,
+      regions: next as ScanFilters["regions"],
+      region: (next.length === 1 ? next[0] : "") as ScanFilters["region"],
+    });
+  };
+
   const toggleSource = (s: SourceKey) => {
     const has = filters.sources.includes(s);
     update("sources", has ? filters.sources.filter(x => x !== s) : [...filters.sources, s]);
