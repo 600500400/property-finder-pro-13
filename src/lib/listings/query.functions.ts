@@ -116,7 +116,7 @@ export const queryListings = createServerFn({ method: "POST" })
     for (let from = 0; from < 30000; from += PAGE) {
       const { data: chunk } = await supabaseAdmin
         .from("listings")
-        .select("property_type, kraj, city, area_m2, price, url")
+        .select("property_type, house_subtype, kraj, city, area_m2, price, url, title, flags")
         .eq("is_active", true)
         .eq("deal_type", filters.deal_type)
         .in("property_type", propertyTypes)
@@ -161,6 +161,9 @@ export const queryListings = createServerFn({ method: "POST" })
         price: r.price,
         index: priceIndex,
         selfUrl: r.url,
+        title: r.title,
+        description: r.description_snippet,
+        houseSubtype: r.house_subtype,
       }) ?? undefined;
 
       return {
@@ -183,6 +186,7 @@ export const queryListings = createServerFn({ method: "POST" })
         flags: (r.flags as unknown as Listing["flags"]) ?? [],
         invest: inv,
         property_type: propertyType,
+        house_subtype: (r.house_subtype ?? undefined) as Listing["house_subtype"],
         price_compare: priceCompare,
 
       };
