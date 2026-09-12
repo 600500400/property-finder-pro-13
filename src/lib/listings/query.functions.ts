@@ -25,8 +25,11 @@ const FilterSchema = z.object({
     "kralovehradecky", "liberecky", "moravskoslezsky", "olomoucky",
     "pardubicky", "plzensky", "ustecky", "vysocina", "zlinsky",
   ]),
+  regions: z.array(z.string()).optional(),
   price_min: z.number().optional(),
   price_max: z.number().optional(),
+  land_area_min: z.number().optional(),
+  land_area_max: z.number().optional(),
   sources: z.array(z.enum([
     "sreality", "bazos", "bezrealitky", "hyperinzerce", "realitymix", "annonce", "idnes",
   ])),
