@@ -162,6 +162,15 @@ function pcScope(scope: string): string {
   return scope === "okres" ? "okres" : scope === "kraj" ? "kraj" : "celá ČR";
 }
 
+/** Geographic level of the median — okres is a far stronger signal than kraj. */
+function pcScopeMedian(scope: string): string {
+  return scope === "okres" ? "medián okresu" : scope === "kraj" ? "medián kraje" : "medián ČR";
+}
+
+function pcVs(pc: { diff_pct: number; scope: string; samples: number }): string {
+  return `${pcDiff(pc.diff_pct)} vs. ${pcScopeMedian(pc.scope)} (n=${pc.samples})`;
+}
+
 function pcDiff(diff: number): string {
   if (diff === 0) return "0 %";
   return `${diff > 0 ? "+" : "−"}${Math.abs(diff)} %`;
@@ -184,7 +193,7 @@ function PriceCompareHero({ pc }: { pc?: Listing["price_compare"] }) {
         <div className="flex flex-col leading-none">
           <span className={`font-mono text-3xl font-bold ${PC_TEXT[pc.band]}`}>{pcDiff(pc.diff_pct)}</span>
           <span className="mt-1 text-[10px] uppercase tracking-wider text-muted-foreground">
-            cena/m² vs. průměr
+            cena/m² vs. {pcScopeMedian(pc.scope)} (n={pc.samples})
           </span>
         </div>
         <span className={`text-[11px] font-semibold ${PC_TEXT[pc.band]}`}>{PC_LABEL[pc.band]}</span>
@@ -213,9 +222,9 @@ function PriceCompareBadge({ pc }: { pc?: Listing["price_compare"] }) {
           : pc.band === "above" ? "border-red-500/40 bg-red-500/10"
           : "border-border bg-muted/40"
       }`}>
-        {pcDiff(pc.diff_pct)} {PC_LABEL[pc.band]}
+        {pcVs(pc)}
       </span>
-      <span>medián z {pc.samples} srovnatelných ({pcScope(pc.scope)})</span>
+      <span>{PC_LABEL[pc.band]} · medián z {pc.samples} srovnatelných ({pcScope(pc.scope)})</span>
     </div>
   );
 }
@@ -502,7 +511,7 @@ function ListingCompact({ listing }: { listing: Listing }) {
           {listing.price_compare ? (
             <>
               <span className={`font-mono font-semibold ${PC_TEXT[listing.price_compare.band]}`}>
-                {pcDiff(listing.price_compare.diff_pct)} vs. průměr
+                {pcDiff(listing.price_compare.diff_pct)} vs. {pcScopeMedian(listing.price_compare.scope)}
               </span>
               <span className="text-muted-foreground">n={listing.price_compare.samples}</span>
             </>
@@ -577,7 +586,7 @@ function ListingRow({ listing }: { listing: Listing }) {
         {listing.property_type === "domy" ? (
           listing.price_compare && (
             <span className={`font-mono text-[10px] font-semibold ${PC_TEXT[listing.price_compare.band]}`}>
-              {pcDiff(listing.price_compare.diff_pct)} vs. průměr
+              {pcVs(listing.price_compare)}
             </span>
           )
         ) : inv ? (
