@@ -135,7 +135,12 @@ export async function runSourceScrape(
       const own = resolveOwnership(l, filters);
       const existing = existingIds.has(external_id);
 
-      const area_m2 = sanitizeAreaM2(l.area_m2 ?? null);
+      // Houses often carry the floor area only in free text (Bazoš, iDnes).
+      // Recover it so the listing both gets and contributes to a Kč/m² median.
+      const rawArea = l.area_m2 ?? (propertyType === "domy"
+        ? (parseFloorArea(l.name) ?? parseFloorArea(l.description_snippet) ?? null)
+        : null);
+      const area_m2 = sanitizeAreaM2(rawArea);
       const kraj = regionFromLocality(l.locality);
       const price = l.price || null;
       const flags = detectFlags({
