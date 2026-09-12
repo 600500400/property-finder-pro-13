@@ -24,16 +24,21 @@ export function deriveHouseSubtype(input: {
   const cat = norm(input.sourceCategory ?? "");
   if (cat.includes("rekreacni")) return "chalupa_chata";
 
-  const t = norm(`${input.title ?? ""} ${input.description ?? ""}`);
-  if (!t.trim()) return "jine";
+  // The title carries the portal's own category wording, so classify from it first
+  // and only fall back to the description when the title says nothing useful.
+  const fromTitle = classify(norm(input.title ?? ""));
+  if (fromTitle) return fromTitle;
+  return classify(norm(input.description ?? "")) ?? "jine";
+}
 
-  if (/\busedlost|\bstatek\b|\bzemedelska\s+usedlost/.test(t)) return "usedlost";
-  if (/\bchata\b|\bchaty\b|\bchatu\b|\bchalup|\brekreacni\s+objekt|\brekreacni\s+chat|\bsrub\b|\bzahradni\s+domek/.test(t)) return "chalupa_chata";
+function classify(t: string): HouseSubtype | null {
+  if (!t.trim()) return null;
+  if (/\busedlost|\bstatek\b|\bstatku\b/.test(t)) return "usedlost";
+  if (/\bchata\b|\bchaty\b|\bchatu\b|\bchalup|\brekreacni\s+objekt|\bsrub\b|\bzahradni\s+domek/.test(t)) return "chalupa_chata";
   if (/\bvila\b|\bvily\b|\bvilu\b|\bvilov/.test(t)) return "vila";
-  if (/\bradov[ye]?\b|\bradovk|\bdvojdom|\bdvojdomk|\brodinn\w*\s+radov/.test(t)) return "dvojdomek_radovka";
-  if (/\brodinn\w*\s+d(?:um|omu|om)\b|\brodinneho\s+domu|\brd\b/.test(t)) return "rodinny_dum";
-  if (/\bdomek\b|\bdum\b|\bdomu\b/.test(t)) return "rodinny_dum";
-  return "jine";
+  if (/\bradov[ye]?\b|\bradovk|\bdvojdom/.test(t)) return "dvojdomek_radovka";
+  if (/\brodinn|\bdomek\b|\bdum\b|\bdomu\b|\brd\b/.test(t)) return "rodinny_dum";
+  return null;
 }
 
 /** Comparable pools: family homes / villas / terraced together, recreational together. */
