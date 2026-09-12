@@ -162,6 +162,15 @@ function pcScope(scope: string): string {
   return scope === "okres" ? "okres" : scope === "kraj" ? "kraj" : "celá ČR";
 }
 
+/** Geographic level of the median — okres is a far stronger signal than kraj. */
+function pcScopeMedian(scope: string): string {
+  return scope === "okres" ? "medián okresu" : scope === "kraj" ? "medián kraje" : "medián ČR";
+}
+
+function pcVs(pc: { diff_pct: number; scope: string; samples: number }): string {
+  return `${pcDiff(pc.diff_pct)} vs. ${pcScopeMedian(pc.scope)} (n=${pc.samples})`;
+}
+
 function pcDiff(diff: number): string {
   if (diff === 0) return "0 %";
   return `${diff > 0 ? "+" : "−"}${Math.abs(diff)} %`;
