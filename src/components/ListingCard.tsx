@@ -511,7 +511,7 @@ function ListingCompact({ listing }: { listing: Listing }) {
           {listing.price_compare ? (
             <>
               <span className={`font-mono font-semibold ${PC_TEXT[listing.price_compare.band]}`}>
-                {pcDiff(listing.price_compare.diff_pct)} vs. průměr
+                {pcDiff(listing.price_compare.diff_pct)} vs. {pcScopeMedian(listing.price_compare.scope)}
               </span>
               <span className="text-muted-foreground">n={listing.price_compare.samples}</span>
             </>
