@@ -250,7 +250,8 @@ export async function fetchSreality(f: ScanFilters): Promise<Listing[]> {
   // Walk listing pages until max_pages is reached or the portal stops adding rows.
   for (let page = 0; page < maxPages && estates.length < wanted; page++) {
     let pageEstates: any[] = [];
-    for (const ep of workingEp ? [workingEp] : endpoints) {
+    const eps: string[] = workingEp ? [workingEp] : endpoints;
+    for (const ep of eps) {
       const qs = new URLSearchParams();
       for (const [k, v] of Object.entries(params)) qs.set(k, String(v));
       qs.set("page", String(page + 1));
