@@ -8,6 +8,13 @@
       "when": 1789151379276,
       "tag": "0000_add_land_area_m2",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1789200147922,
+      "tag": "0001_house_subtype_and_land_backfill",
+      "breakpoints": true
     }
   ]
 }

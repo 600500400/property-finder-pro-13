@@ -106,6 +106,7 @@ export type Database = {
           external_id: string
           first_seen_at: string
           flags: Json
+          house_subtype: string | null
           id: string
           image_url: string | null
           is_active: boolean
@@ -130,6 +131,7 @@ export type Database = {
           external_id: string
           first_seen_at?: string
           flags?: Json
+          house_subtype?: string | null
           id?: string
           image_url?: string | null
           is_active?: boolean
@@ -154,6 +156,7 @@ export type Database = {
           external_id?: string
           first_seen_at?: string
           flags?: Json
+          house_subtype?: string | null
           id?: string
           image_url?: string | null
           is_active?: boolean
