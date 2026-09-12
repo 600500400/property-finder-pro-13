@@ -222,9 +222,9 @@ function PriceCompareBadge({ pc }: { pc?: Listing["price_compare"] }) {
           : pc.band === "above" ? "border-red-500/40 bg-red-500/10"
           : "border-border bg-muted/40"
       }`}>
-        {pcDiff(pc.diff_pct)} {PC_LABEL[pc.band]}
+        {pcVs(pc)}
       </span>
-      <span>medián z {pc.samples} srovnatelných ({pcScope(pc.scope)})</span>
+      <span>{PC_LABEL[pc.band]} · medián z {pc.samples} srovnatelných ({pcScope(pc.scope)})</span>
     </div>
   );
 }
