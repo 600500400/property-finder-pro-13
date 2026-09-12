@@ -7,6 +7,7 @@ export interface PriceCompRow {
   city: string | null;
   area_m2: number | null;
   price: number | null;
+  url: string | null;
 }
 
 export type PriceBand = "below" | "avg" | "above";
@@ -27,6 +28,7 @@ interface Comp {
   okres: string;
   area: number;
   ppm2: number;
+  url: string;
 }
 
 export type PriceCompIndex = Map<string, Comp[]>;
@@ -52,7 +54,7 @@ export function indexPriceComps(rows: PriceCompRow[]): PriceCompIndex {
     const ppm2 = r.price / r.area_m2;
     if (!Number.isFinite(ppm2) || ppm2 < 3000 || ppm2 > 400_000) continue;
     const okres = okresFromLocality(r.city ?? undefined) ?? "";
-    const c: Comp = { pt: r.property_type, kraj: r.kraj ?? "", okres, area: r.area_m2, ppm2 };
+    const c: Comp = { pt: r.property_type, kraj: r.kraj ?? "", okres, area: r.area_m2, ppm2, url: r.url ?? "" };
     push(idx, `${c.pt}|cr`, c);
     if (c.kraj) push(idx, `${c.pt}|kraj:${c.kraj}`, c);
     if (c.okres) push(idx, `${c.pt}|okres:${c.okres}`, c);
@@ -69,7 +71,9 @@ function bandOf(diff: number): PriceBand {
 }
 
 /** Median asking Kč/m² of comparable listings: same property type (never mixed),
- * area within ±25 %, narrowing from okres → kraj → celá ČR. */
+ * area within ±25 %, narrowing from okres → kraj → celá ČR.
+ * Houses stop at kraj — a national median mixing Prague with villages is meaningless.
+ * The evaluated listing is always excluded from its own sample. */
 export function computePriceCompare(args: {
   propertyType: string | null;
   kraj: string | null;
@@ -77,8 +81,9 @@ export function computePriceCompare(args: {
   areaM2: number | null;
   price: number | null;
   index: PriceCompIndex;
+  selfUrl?: string | null;
 }): PriceCompare | null {
-  const { propertyType, kraj, areaM2, price, index } = args;
+  const { propertyType, kraj, areaM2, price, index, selfUrl } = args;
   if (!propertyType || !areaM2 || !price) return null;
   const own = price / areaM2;
   // Sanity: nesmyslné ceny (0 Kč, „cena v RK", nájem omylem) nesrovnáváme.
@@ -92,12 +97,14 @@ export function computePriceCompare(args: {
   const scopes: Array<{ scope: PriceScope; key: string }> = [];
   if (okres) scopes.push({ scope: "okres", key: `${propertyType}|okres:${okres}` });
   if (kraj) scopes.push({ scope: "kraj", key: `${propertyType}|kraj:${kraj}` });
-  scopes.push({ scope: "cr", key: `${propertyType}|cr` });
+  if (propertyType !== "domy") scopes.push({ scope: "cr", key: `${propertyType}|cr` });
 
   for (const s of scopes) {
     const bucket = index.get(s.key);
     if (!bucket) continue;
-    const matched = bucket.filter(c => c.area >= lo && c.area <= hi).map(c => c.ppm2);
+    const matched = bucket
+      .filter(c => c.area >= lo && c.area <= hi && !(selfUrl && c.url === selfUrl))
+      .map(c => c.ppm2);
     if (matched.length < MIN_SAMPLES) continue;
     const med = median(matched);
     if (!med) continue;

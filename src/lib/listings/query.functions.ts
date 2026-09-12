@@ -103,7 +103,7 @@ export const queryListings = createServerFn({ method: "POST" })
     // ----- asking Kč/m² comparables (same deal type, never mixing byty × domy) -----
     const { data: compRows } = await supabaseAdmin
       .from("listings")
-      .select("property_type, kraj, city, area_m2, price")
+      .select("property_type, kraj, city, area_m2, price, url")
       .eq("is_active", true)
       .eq("deal_type", filters.deal_type)
       .in("property_type", propertyTypes)
@@ -143,6 +143,7 @@ export const queryListings = createServerFn({ method: "POST" })
         areaM2,
         price: r.price,
         index: priceIndex,
+        selfUrl: r.url,
       }) ?? undefined;
 
       return {

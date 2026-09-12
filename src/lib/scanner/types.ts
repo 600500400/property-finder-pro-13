@@ -55,7 +55,8 @@ export interface ScanFilters {
   sources: SourceKey[];
   sort_by: SortBy;
   per_source_limit: number;
-  
+  /** How many listing pages to walk per source (default 1). Used for deep house scrapes. */
+  max_pages?: number;
 }
 
 
