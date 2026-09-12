@@ -180,7 +180,7 @@ function landAreaOf(result: any): number | undefined {
   return undefined;
 }
 
-async function detailInfo(hashId: string | number | undefined, headers: HeadersInit): Promise<{ ownership?: Ownership; description?: string; land_area_m2?: number }> {
+async function detailInfo(hashId: string | number | undefined, headers: HeadersInit): Promise<{ ownership?: Ownership; description?: string; land_area_m2?: number; locality?: string }> {
   if (!hashId) return {};
   try {
     const r = await fetch(`https://www.sreality.cz/api/v1/estates/${hashId}`, { headers, signal: AbortSignal.timeout(12000) });
@@ -188,10 +188,20 @@ async function detailInfo(hashId: string | number | undefined, headers: HeadersI
     const data: any = await r.json();
     const result = data.result || data;
     const description = cleanText(result.advert_description || result.description || "");
+    const detailLocality = result.locality;
+    const locality = detailLocality && typeof detailLocality === "object"
+      ? cleanText([
+          detailLocality.city,
+          detailLocality.citypart && detailLocality.citypart !== detailLocality.city ? detailLocality.citypart : null,
+          detailLocality.district ? `okres ${detailLocality.district}` : null,
+          detailLocality.region,
+        ].filter(Boolean).join(", "))
+      : undefined;
     return {
       ownership: ownershipFromValue(result.ownership) ?? parseOwnership(description),
       description,
       land_area_m2: landAreaOf(result),
+      locality,
     };
   } catch {
     return {};
@@ -316,7 +326,7 @@ export async function fetchSreality(f: ScanFilters): Promise<Listing[]> {
       source: "Sreality",
       source_key: "sreality",
       name,
-      locality: localityOf(e),
+      locality: details[idx]?.locality ?? localityOf(e),
       price,
       price_text: price ? fmtPrice(price) : "Cena na vyžádání",
       url,

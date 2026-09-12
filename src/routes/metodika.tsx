@@ -227,6 +227,12 @@ function Metodika() {
             malý. Metrika je proto pouze hrubý screeningový signál, ne ocenění. Plochu
             pozemku zobrazujeme u karty tam, kde ji zdroj uvádí.
           </p>
+          <p className="mt-2">
+            Srovnání domů je výrazně méně spolehlivé než u bytů: domy se liší velikostí
+            pozemku, technickým stavem i tím, zda jde o novostavbu nebo nemovitost k
+            rekonstrukci, a v jednotlivých regionech je navíc málo skutečně srovnatelných
+            nabídek. Výsledek proto berte jako hrubý screeningový signál, nikoli ocenění.
+          </p>
         </Section>
 
 
