@@ -148,6 +148,27 @@ export function detectFlags(input: DetectInput): Flag[] {
   return found;
 }
 
+/** Flag codes that disqualify a listing from the price/m² COMPARABLE POOL.
+ * They stay visible in the feed — they just must not pollute the medians. */
+export const EXCLUDED_FROM_COMPS = [
+  "podil", "drazba", "demolice", "garaz_only", "pozemek_only", "montovany",
+] as const;
+
+const EXCLUDED_SET = new Set<string>(EXCLUDED_FROM_COMPS);
+
+/** Text fallback for legacy rows whose flags were computed before these rules existed. */
+const JUNK_TEXT_RE = /spoluvlastnick|podil|drazb|aukc|exekuc|demolic|ruina|montovan|showroom|typovy dum|mobilni dum|prodej pozemk|prodej garaz/;
+
+export function isCompEligible(input: { flags?: unknown; title?: string | null }): boolean {
+  const flags = Array.isArray(input.flags) ? (input.flags as Array<{ code?: string }>) : [];
+  if (flags.some(f => f?.code && EXCLUDED_SET.has(f.code))) return false;
+  if (input.title) {
+    const t = input.title.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    if (JUNK_TEXT_RE.test(t)) return false;
+  }
+  return true;
+}
+
 export function hasPriceTrap(flags: Flag[] | undefined | null): boolean {
   if (!flags) return false;
   return flags.some(f => f.category === "price_trap");
