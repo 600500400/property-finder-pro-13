@@ -193,7 +193,7 @@ function PriceCompareHero({ pc }: { pc?: Listing["price_compare"] }) {
         <div className="flex flex-col leading-none">
           <span className={`font-mono text-3xl font-bold ${PC_TEXT[pc.band]}`}>{pcDiff(pc.diff_pct)}</span>
           <span className="mt-1 text-[10px] uppercase tracking-wider text-muted-foreground">
-            cena/m² vs. průměr
+            cena/m² vs. {pcScopeMedian(pc.scope)} (n={pc.samples})
           </span>
         </div>
         <span className={`text-[11px] font-semibold ${PC_TEXT[pc.band]}`}>{PC_LABEL[pc.band]}</span>
