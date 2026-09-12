@@ -63,6 +63,16 @@ export async function runSourceScrape(
     };
   }
   const limit = FAST_SOURCES.has(sourceKey) ? 100 : 50;
+  // Houses are a much smaller national pool than flats, so we walk deeper pages
+  // to build volume. Flats keep a single page (unchanged behaviour).
+  const HOUSE_PAGES: Record<string, number> = {
+    sreality: 10,
+    bezrealitky: 10,
+    bazos: 25,
+    idnes: 8,
+  };
+  const maxPages = propertyType === "domy" ? (HOUSE_PAGES[sourceKey] ?? 1) : 1;
+  const perSourceLimit = propertyType === "domy" && sourceKey === "bazos" ? 500 : limit;
 
   const { data: runRow, error: insertErr } = await supabaseAdmin
     .from("scrape_runs")
