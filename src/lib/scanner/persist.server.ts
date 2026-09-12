@@ -101,7 +101,8 @@ export async function runSourceScrape(
       region: "",
       sources: [sourceKey],
       sort_by: "date_desc",
-      per_source_limit: limit,
+      per_source_limit: perSourceLimit,
+      max_pages: maxPages,
     };
 
     const fetcher = FETCHERS[sourceKey];
@@ -113,18 +114,24 @@ export async function runSourceScrape(
     let updatedCount = 0;
     const newUrls: string[] = [];
 
+    // Which external ids already exist? One batched lookup instead of one query per listing.
+    const allIds = listings.filter(l => l.url).map(l => deriveExternalId(sourceKey, l.url));
+    const existingIds = new Set<string>();
+    for (let i = 0; i < allIds.length; i += 200) {
+      const { data: found } = await supabaseAdmin
+        .from("listings")
+        .select("external_id")
+        .eq("source", sourceKey)
+        .in("external_id", allIds.slice(i, i + 200));
+      for (const r of found ?? []) existingIds.add(r.external_id as string);
+    }
+
+    const rows: Array<Record<string, unknown>> = [];
     for (const l of listings) {
       if (!l.url) continue;
       const external_id = deriveExternalId(sourceKey, l.url);
       const own = resolveOwnership(l, filters);
-
-      // Check existence to count new vs updated
-      const { data: existing } = await supabaseAdmin
-        .from("listings")
-        .select("id")
-        .eq("source", sourceKey)
-        .eq("external_id", external_id)
-        .maybeSingle();
+      const existing = existingIds.has(external_id);
 
       const area_m2 = sanitizeAreaM2(l.area_m2 ?? null);
       const kraj = regionFromLocality(l.locality);
