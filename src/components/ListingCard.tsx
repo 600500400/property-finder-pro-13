@@ -586,7 +586,7 @@ function ListingRow({ listing }: { listing: Listing }) {
         {listing.property_type === "domy" ? (
           listing.price_compare && (
             <span className={`font-mono text-[10px] font-semibold ${PC_TEXT[listing.price_compare.band]}`}>
-              {pcDiff(listing.price_compare.diff_pct)} vs. průměr
+              {pcVs(listing.price_compare)}
             </span>
           )
         ) : inv ? (
