@@ -48,7 +48,13 @@ export function matchesSearch(
 
   if (f.deal_type && listing.deal_type && f.deal_type !== listing.deal_type) return false;
   if (f.property_type && listing.property_type && f.property_type !== listing.property_type) return false;
-  if (f.region && listing.kraj && f.region !== listing.kraj) return false;
+  const regions = Array.isArray(f.regions) ? f.regions.filter(Boolean) : [];
+  if (regions.length > 0) {
+    if (listing.kraj && !regions.includes(listing.kraj as typeof regions[number])) return false;
+  } else if (f.region && listing.kraj && f.region !== listing.kraj) return false;
+  const land = (listing as { land_area_m2?: number | null }).land_area_m2 ?? null;
+  if (f.land_area_min != null && (land == null || land < f.land_area_min)) return false;
+  if (f.land_area_max != null && (land == null || land > f.land_area_max)) return false;
   if (Array.isArray(f.sources) && f.sources.length > 0 && !f.sources.includes(listing.source as SourceKey)) return false;
   if (f.price_min != null && (listing.price ?? 0) < f.price_min) return false;
   if (f.price_max != null && (listing.price ?? 0) > f.price_max) return false;
