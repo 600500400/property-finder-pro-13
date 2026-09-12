@@ -59,15 +59,21 @@ export const queryListings = createServerFn({ method: "POST" })
     // ----- main query -----
     let q = supabaseAdmin
       .from("listings")
-      .select("source, external_id, title, price, deal_type, property_type, kraj, city, area_m2, land_area_m2, price_per_m2, ownership, ownership_confidence, url, image_url, description_snippet, first_seen_at, last_seen_at, raw_data, flags")
+      .select("source, external_id, title, price, deal_type, property_type, house_subtype, kraj, city, area_m2, land_area_m2, price_per_m2, ownership, ownership_confidence, url, image_url, description_snippet, first_seen_at, last_seen_at, raw_data, flags")
       .eq("is_active", true)
       .eq("deal_type", filters.deal_type)
       .in("property_type", propertyTypes);
 
-    if (filters.region) q = q.eq("kraj", filters.region);
+    // Multi-select kraj wins over the legacy single-region field.
+    const regions = (filters.regions ?? []).filter(Boolean);
+    if (regions.length > 0) q = q.in("kraj", regions);
+    else if (filters.region) q = q.eq("kraj", filters.region);
     if (filters.sources.length > 0) q = q.in("source", filters.sources);
     if (filters.price_min != null) q = q.gte("price", filters.price_min);
     if (filters.price_max != null) q = q.lte("price", filters.price_max);
+    // Plocha pozemku — houses only (flats have no land_area_m2, so they drop out).
+    if (filters.land_area_min != null) q = q.gte("land_area_m2", filters.land_area_min);
+    if (filters.land_area_max != null) q = q.lte("land_area_m2", filters.land_area_max);
     if (filters.freshness === "24h") {
       q = q.gte("first_seen_at", new Date(Date.now() - 24 * 3600_000).toISOString());
     } else if (filters.freshness === "7d") {
