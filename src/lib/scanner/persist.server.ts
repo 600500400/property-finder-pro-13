@@ -4,6 +4,8 @@ import { resolveOwnership } from "./ownership";
 import { deriveExternalId } from "./external-id";
 import { regionFromLocality, sanitizeAreaM2 } from "./kraj-mapping";
 import { detectFlags } from "./flags";
+import { deriveHouseSubtype } from "./house-subtype";
+import { parseLandArea } from "./land-area";
 
 import { fetchSreality } from "./sources/sreality.server";
 import { fetchBezrealitky } from "./sources/bezrealitky.server";
@@ -144,6 +146,16 @@ export async function runSourceScrape(
         area_m2,
         kraj,
       });
+      // Houses: keep an internal subtype and recover the plot size from text
+      // when the portal (Bazoš, iDnes) doesn't expose a structured field.
+      const isHouse = propertyType === "domy";
+      const structuredLand = typeof l.land_area_m2 === "number" && l.land_area_m2 > 0 ? l.land_area_m2 : null;
+      const land_area_m2 = structuredLand
+        ?? (isHouse ? (parseLandArea(`${l.name ?? ""} ${l.description_snippet ?? ""}`) ?? null) : null);
+      const house_subtype = isHouse
+        ? deriveHouseSubtype({ title: l.name, description: l.description_snippet })
+        : null;
+
       const row = {
         source: sourceKey,
         external_id,
@@ -154,7 +166,8 @@ export async function runSourceScrape(
         kraj,
         city: l.locality || null,
         area_m2,
-        land_area_m2: typeof l.land_area_m2 === "number" && l.land_area_m2 > 0 ? l.land_area_m2 : null,
+        land_area_m2,
+        house_subtype,
         // price_per_m2 is a generated column — do not set
         ownership: own.ownership,
         ownership_confidence: own.ownership_confidence,

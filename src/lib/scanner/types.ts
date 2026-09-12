@@ -50,8 +50,13 @@ export interface ScanFilters {
   property_types?: PropertyType[];
   sub_type: SubType;
   region: Region;
+  /** Multi-select kraj filter; empty = celá ČR. Takes precedence over `region`. */
+  regions?: Region[];
   price_min?: number;
   price_max?: number;
+  /** Plocha pozemku (m²) — applies to houses. */
+  land_area_min?: number;
+  land_area_max?: number;
   sources: SourceKey[];
   sort_by: SortBy;
   per_source_limit: number;
@@ -103,6 +108,8 @@ export interface Listing {
   invest: Investment | null;
   /** byty / domy — drives which rating is shown. */
   property_type?: PropertyType;
+  /** Internal house subtype (no UI filter) — used to compare like with like. */
+  house_subtype?: import("./house-subtype").HouseSubtype;
   /** Asking Kč/m² vs. median of comparable listings (same type, area ±25 %). */
   price_compare?: import("@/lib/listings/price-compare").PriceCompare;
   badges?: string[];

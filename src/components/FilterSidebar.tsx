@@ -64,6 +64,19 @@ export function FilterSidebar({ filters, setFilters, view, setView, onExport, ca
   const update = <K extends keyof ScanFilters>(k: K, v: ScanFilters[K]) =>
     setFilters({ ...filters, [k]: v });
 
+  // Kraj is multi-select; the legacy single `region` is kept in sync for saved searches.
+  const selectedRegions: string[] = (filters.regions ?? []).filter(Boolean) as string[];
+  const toggleRegion = (r: string) => {
+    const next = selectedRegions.includes(r)
+      ? selectedRegions.filter(x => x !== r)
+      : [...selectedRegions, r];
+    setFilters({
+      ...filters,
+      regions: next as ScanFilters["regions"],
+      region: (next.length === 1 ? next[0] : "") as ScanFilters["region"],
+    });
+  };
+
   const toggleSource = (s: SourceKey) => {
     const has = filters.sources.includes(s);
     update("sources", has ? filters.sources.filter(x => x !== s) : [...filters.sources, s]);
@@ -98,10 +111,65 @@ export function FilterSidebar({ filters, setFilters, view, setView, onExport, ca
       </Section>
 
       <Section label="Lokalita">
-        <Label>Kraj</Label>
-        <Select value={filters.region} onChange={(v) => update("region", v as ScanFilters["region"])}
-          options={REGIONS} />
+        <Label>Kraje (lze vybrat více)</Label>
+        <div className="grid grid-cols-2 gap-1.5">
+          <button
+            type="button"
+            onClick={() => setFilters({ ...filters, regions: [], region: "" })}
+            className={`col-span-2 rounded-lg border px-2 py-1.5 text-xs font-semibold transition ${
+              selectedRegions.length === 0
+                ? "border-primary/60 bg-primary/10 text-primary"
+                : "border-border bg-[var(--color-surface-2)] text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            Celá ČR
+          </button>
+          {REGIONS.filter(([v]) => v !== "").map(([value, label]) => {
+            const active = selectedRegions.includes(value as string);
+            return (
+              <button
+                key={value}
+                type="button"
+                onClick={() => toggleRegion(value as string)}
+                className={`rounded-lg border px-2 py-1.5 text-left text-xs font-medium transition ${
+                  active
+                    ? "border-primary/60 bg-primary/10 text-primary"
+                    : "border-border bg-[var(--color-surface-2)] text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {label}
+              </button>
+            );
+          })}
+        </div>
       </Section>
+
+      <Section label="Plocha pozemku (m²)">
+        <div className="grid grid-cols-2 gap-2">
+          <div>
+            <Label>Od</Label>
+            <input
+              type="number" min={0} step={100} placeholder="0"
+              value={filters.land_area_min ?? ""}
+              onChange={(e) => update("land_area_min", e.target.value ? Number(e.target.value) : undefined)}
+              className="w-full rounded-lg border border-border bg-[var(--color-surface-2)] px-2.5 py-2 text-sm outline-none focus:border-primary"
+            />
+          </div>
+          <div>
+            <Label>Do</Label>
+            <input
+              type="number" min={0} step={100} placeholder="bez limitu"
+              value={filters.land_area_max ?? ""}
+              onChange={(e) => update("land_area_max", e.target.value ? Number(e.target.value) : undefined)}
+              className="w-full rounded-lg border border-border bg-[var(--color-surface-2)] px-2.5 py-2 text-sm outline-none focus:border-primary"
+            />
+          </div>
+        </div>
+        <p className="text-[10px] leading-relaxed text-muted-foreground">
+          Platí pro domy — byty pozemek nemají, takže se při zadání nezobrazí.
+        </p>
+      </Section>
+
 
 
       <Section label="Cena (Kč)">
@@ -229,20 +297,4 @@ function Section({ label, children }: { label: string; children: React.ReactNode
 
 function Label({ children }: { children: React.ReactNode }) {
   return <label className="text-[11px] font-medium text-muted-foreground">{children}</label>;
-}
-
-function Select({ value, onChange, options }: {
-  value: string; onChange: (v: string) => void; options: Array<[string, string]>;
-}) {
-  return (
-    <select
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      className="w-full rounded-lg border border-border bg-[var(--color-surface-2)] px-2.5 py-2 text-sm text-foreground outline-none focus:border-primary"
-    >
-      {options.map(([v, label]) => (
-        <option key={v} value={v}>{label}</option>
-      ))}
-    </select>
-  );
 }

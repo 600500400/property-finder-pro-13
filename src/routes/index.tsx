@@ -34,6 +34,7 @@ const DEFAULT_FILTERS: ScanFilters & { freshness: Freshness } = {
   property_types: ["byty", "domy"],
   sub_type: "",
   region: "",
+  regions: [],
   sources: [],
   sort_by: "date_desc",
   per_source_limit: 100,
