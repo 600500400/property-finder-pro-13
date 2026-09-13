@@ -33,6 +33,7 @@ import { Route as ApiPublicCronScrapeBazosRouteImport } from './routes/api/publi
 import { Route as ApiPublicCronScrapeAnnonceRouteImport } from './routes/api/public/cron/scrape-annonce'
 import { Route as ApiPublicCronHealthCheckRouteImport } from './routes/api/public/cron/health-check'
 import { Route as ApiPublicCronDailyDigestRouteImport } from './routes/api/public/cron/daily-digest'
+import { Route as ApiPublicCronCsuCalibrationRouteImport } from './routes/api/public/cron/csu-calibration'
 
 const OchranaOsobnichUdajuRoute = OchranaOsobnichUdajuRouteImport.update({
   id: '/ochrana-osobnich-udaju',
@@ -164,6 +165,12 @@ const ApiPublicCronDailyDigestRoute =
     path: '/api/public/cron/daily-digest',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicCronCsuCalibrationRoute =
+  ApiPublicCronCsuCalibrationRouteImport.update({
+    id: '/api/public/cron/csu-calibration',
+    path: '/api/public/cron/csu-calibration',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -178,6 +185,7 @@ export interface FileRoutesByFullPath {
   '/saved': typeof AuthenticatedSavedRoute
   '/ulozene': typeof AuthenticatedUlozeneRoute
   '/watchdogs': typeof AuthenticatedWatchdogsRoute
+  '/api/public/cron/csu-calibration': typeof ApiPublicCronCsuCalibrationRoute
   '/api/public/cron/daily-digest': typeof ApiPublicCronDailyDigestRoute
   '/api/public/cron/health-check': typeof ApiPublicCronHealthCheckRoute
   '/api/public/cron/scrape-annonce': typeof ApiPublicCronScrapeAnnonceRoute
@@ -203,6 +211,7 @@ export interface FileRoutesByTo {
   '/saved': typeof AuthenticatedSavedRoute
   '/ulozene': typeof AuthenticatedUlozeneRoute
   '/watchdogs': typeof AuthenticatedWatchdogsRoute
+  '/api/public/cron/csu-calibration': typeof ApiPublicCronCsuCalibrationRoute
   '/api/public/cron/daily-digest': typeof ApiPublicCronDailyDigestRoute
   '/api/public/cron/health-check': typeof ApiPublicCronHealthCheckRoute
   '/api/public/cron/scrape-annonce': typeof ApiPublicCronScrapeAnnonceRoute
@@ -230,6 +239,7 @@ export interface FileRoutesById {
   '/_authenticated/saved': typeof AuthenticatedSavedRoute
   '/_authenticated/ulozene': typeof AuthenticatedUlozeneRoute
   '/_authenticated/watchdogs': typeof AuthenticatedWatchdogsRoute
+  '/api/public/cron/csu-calibration': typeof ApiPublicCronCsuCalibrationRoute
   '/api/public/cron/daily-digest': typeof ApiPublicCronDailyDigestRoute
   '/api/public/cron/health-check': typeof ApiPublicCronHealthCheckRoute
   '/api/public/cron/scrape-annonce': typeof ApiPublicCronScrapeAnnonceRoute
@@ -257,6 +267,7 @@ export interface FileRouteTypes {
     | '/saved'
     | '/ulozene'
     | '/watchdogs'
+    | '/api/public/cron/csu-calibration'
     | '/api/public/cron/daily-digest'
     | '/api/public/cron/health-check'
     | '/api/public/cron/scrape-annonce'
@@ -282,6 +293,7 @@ export interface FileRouteTypes {
     | '/saved'
     | '/ulozene'
     | '/watchdogs'
+    | '/api/public/cron/csu-calibration'
     | '/api/public/cron/daily-digest'
     | '/api/public/cron/health-check'
     | '/api/public/cron/scrape-annonce'
@@ -308,6 +320,7 @@ export interface FileRouteTypes {
     | '/_authenticated/saved'
     | '/_authenticated/ulozene'
     | '/_authenticated/watchdogs'
+    | '/api/public/cron/csu-calibration'
     | '/api/public/cron/daily-digest'
     | '/api/public/cron/health-check'
     | '/api/public/cron/scrape-annonce'
@@ -329,6 +342,7 @@ export interface RootRouteChildren {
   MetodikaRoute: typeof MetodikaRoute
   ObchodniPodminkyRoute: typeof ObchodniPodminkyRoute
   OchranaOsobnichUdajuRoute: typeof OchranaOsobnichUdajuRoute
+  ApiPublicCronCsuCalibrationRoute: typeof ApiPublicCronCsuCalibrationRoute
   ApiPublicCronDailyDigestRoute: typeof ApiPublicCronDailyDigestRoute
   ApiPublicCronHealthCheckRoute: typeof ApiPublicCronHealthCheckRoute
   ApiPublicCronScrapeAnnonceRoute: typeof ApiPublicCronScrapeAnnonceRoute
@@ -512,6 +526,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicCronDailyDigestRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/cron/csu-calibration': {
+      id: '/api/public/cron/csu-calibration'
+      path: '/api/public/cron/csu-calibration'
+      fullPath: '/api/public/cron/csu-calibration'
+      preLoaderRoute: typeof ApiPublicCronCsuCalibrationRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -544,6 +565,7 @@ const rootRouteChildren: RootRouteChildren = {
   MetodikaRoute: MetodikaRoute,
   ObchodniPodminkyRoute: ObchodniPodminkyRoute,
   OchranaOsobnichUdajuRoute: OchranaOsobnichUdajuRoute,
+  ApiPublicCronCsuCalibrationRoute: ApiPublicCronCsuCalibrationRoute,
   ApiPublicCronDailyDigestRoute: ApiPublicCronDailyDigestRoute,
   ApiPublicCronHealthCheckRoute: ApiPublicCronHealthCheckRoute,
   ApiPublicCronScrapeAnnonceRoute: ApiPublicCronScrapeAnnonceRoute,
