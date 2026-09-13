@@ -273,10 +273,12 @@ export function FilterSidebar({ filters, setFilters, view, setView, onExport, ca
         </button>
       </div>
 
+      {/* TEMPORARY: Obchodní podmínky and Ochrana osobních údajů (Soukromí) links
+          are hidden from the footer. The pages remain in the codebase and reachable
+          by direct URL. These links MUST be restored before taking real payments. */}
       <div className="mt-3 hidden flex-wrap items-center gap-x-3 gap-y-1 border-t border-border pt-3 text-[11px] text-muted-foreground md:flex">
         <Link to="/cenik" className="hover:text-foreground">Ceník</Link>
-        <Link to="/obchodni-podminky" className="hover:text-foreground">Obchodní podmínky</Link>
-        <Link to="/ochrana-osobnich-udaju" className="hover:text-foreground">Soukromí</Link>
+        <Link to="/metodika" className="hover:text-foreground">Metodika</Link>
       </div>
 
       <SaveSearchDialog open={watchdogOpen} onClose={() => setWatchdogOpen(false)} filters={filters} />
