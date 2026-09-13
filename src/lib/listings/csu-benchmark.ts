@@ -214,6 +214,7 @@ export function computeCsuHouseCompare(args: {
   if (kraj === "praha") {
     const row = indexes.okres.get("okres|praha|praha|50000_plus");
     benchmark = row?.band_price_uplifted ?? row?.price_2025 ?? null;
+    benchmarkLowSample = !!row?.band_price_uplifted && !!row.low_sample;
     avgSize = row?.avg_size_m2 ?? null;
     scope = benchmark ? "praha" : null;
   } else if (okres) {
