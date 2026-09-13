@@ -175,6 +175,36 @@ export type Database = {
         }
         Relationships: []
       }
+      manual_premium_grants: {
+        Row: {
+          granted_at: string
+          granted_by: string | null
+          granted_by_email: string | null
+          manual_premium_until: string | null
+          note: string | null
+          revoked_at: string | null
+          user_id: string
+        }
+        Insert: {
+          granted_at?: string
+          granted_by?: string | null
+          granted_by_email?: string | null
+          manual_premium_until?: string | null
+          note?: string | null
+          revoked_at?: string | null
+          user_id: string
+        }
+        Update: {
+          granted_at?: string
+          granted_by?: string | null
+          granted_by_email?: string | null
+          manual_premium_until?: string | null
+          note?: string | null
+          revoked_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string

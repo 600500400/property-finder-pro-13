@@ -7,6 +7,11 @@ export interface AdminUserRow {
   created_at: string;
   last_sign_in_at: string | null;
   plan: "free" | "premium";
+  premium_source: "stripe" | "manual" | null;
+  /** ISO date; null = unlimited (manual) or unknown */
+  premium_until: string | null;
+  granted_by_email: string | null;
+  granted_at: string | null;
   watchdogs: number;
   ai_analyses_month: number;
 }
@@ -63,7 +68,10 @@ export const getAdminDashboard = createServerFn({ method: "GET" })
     monthStart.setUTCHours(0, 0, 0, 0);
     const monthStartISO = monthStart.toISOString();
 
-    const [subsRes, savedRes, aiMonthRes, aiActRes, alertsRes, activeWatchRes] = await Promise.all([
+    const [manualRes, subsRes, savedRes, aiMonthRes, aiActRes, alertsRes, activeWatchRes] = await Promise.all([
+      supabaseAdmin
+        .from("manual_premium_grants")
+        .select("user_id, manual_premium_until, granted_by_email, granted_at, revoked_at"),
       supabaseAdmin
         .from("subscriptions")
         .select("user_id, plan, status, current_period_end"),
@@ -87,16 +95,36 @@ export const getAdminDashboard = createServerFn({ method: "GET" })
         .eq("is_active", true),
     ]);
 
+    if (manualRes.error) throw new Error(manualRes.error.message);
     if (subsRes.error) throw new Error(subsRes.error.message);
     if (savedRes.error) throw new Error(savedRes.error.message);
     if (aiMonthRes.error) throw new Error(aiMonthRes.error.message);
 
+    type ManualInfo = { until: string | null; by: string | null; at: string };
+    const manualMap = new Map<string, ManualInfo>();
+    for (const g of manualRes.data ?? []) {
+      const active =
+        g.revoked_at === null &&
+        (g.manual_premium_until === null || g.manual_premium_until > nowISO);
+      if (active) {
+        manualMap.set(g.user_id, {
+          until: g.manual_premium_until,
+          by: g.granted_by_email,
+          at: g.granted_at,
+        });
+      }
+    }
+
+    const stripeEnd = new Map<string, string | null>();
     const premiumSet = new Set<string>();
     for (const s of subsRes.data ?? []) {
       const active = (s.status === "active" || s.status === "trialing") &&
         (s.plan === "premium_monthly" || s.plan === "premium_yearly") &&
         s.current_period_end !== null && s.current_period_end > nowISO;
-      if (active) premiumSet.add(s.user_id);
+      if (active) {
+        premiumSet.add(s.user_id);
+        stripeEnd.set(s.user_id, s.current_period_end);
+      }
     }
 
     const watchdogCount = new Map<string, number>();
@@ -109,15 +137,24 @@ export const getAdminDashboard = createServerFn({ method: "GET" })
       aiMonthCount.set(a.user_id, (aiMonthCount.get(a.user_id) ?? 0) + 1);
     }
 
-    const userRows: AdminUserRow[] = users.map((u) => ({
+    const userRows: AdminUserRow[] = users.map((u) => {
+      const manual = manualMap.get(u.id);
+      const stripe = premiumSet.has(u.id);
+      const source: AdminUserRow["premium_source"] = stripe ? "stripe" : manual ? "manual" : null;
+      return {
       id: u.id,
       email: u.email,
       created_at: u.created_at,
       last_sign_in_at: u.last_sign_in_at,
-      plan: premiumSet.has(u.id) ? "premium" : "free",
+      plan: stripe || manual ? "premium" : "free",
+      premium_source: source,
+      premium_until: stripe ? (stripeEnd.get(u.id) ?? null) : (manual?.until ?? null),
+      granted_by_email: manual?.by ?? null,
+      granted_at: manual?.at ?? null,
       watchdogs: watchdogCount.get(u.id) ?? 0,
       ai_analyses_month: aiMonthCount.get(u.id) ?? 0,
-    }));
+      };
+    });
 
     const total = userRows.length;
     const premium = userRows.filter((u) => u.plan === "premium").length;
@@ -138,4 +175,77 @@ export const getAdminDashboard = createServerFn({ method: "GET" })
       },
       users: userRows,
     };
+  });
+
+/** Verify the caller is an admin; returns the caller's id and email. */
+async function requireAdmin(context: {
+  supabase: { rpc: (fn: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: { message: string } | null }> };
+  userId: string;
+  claims: Record<string, unknown>;
+}): Promise<{ userId: string; email: string | null }> {
+  const { data: isAdmin, error } = await context.supabase.rpc("has_role", {
+    _user_id: context.userId,
+    _role: "admin",
+  });
+  if (error) throw new Error(error.message);
+  if (!isAdmin) throw new Error("Forbidden");
+  const email = typeof context.claims?.["email"] === "string" ? (context.claims["email"] as string) : null;
+  return { userId: context.userId, email };
+}
+
+export type GrantMonths = 1 | 3 | 12 | null;
+
+/** Admin-only: grant Premium manually (no Stripe involved). months=null → unlimited. */
+export const grantManualPremium = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { user_id: string; months: GrantMonths; note?: string }) => {
+    if (!input?.user_id || typeof input.user_id !== "string") throw new Error("user_id required");
+    if (input.months !== null && ![1, 3, 12].includes(input.months as number)) {
+      throw new Error("months must be 1, 3, 12 or null");
+    }
+    return input;
+  })
+  .handler(async ({ data, context }) => {
+    const admin = await requireAdmin(context as never);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    let until: string | null = null;
+    if (data.months !== null) {
+      const d = new Date();
+      d.setUTCMonth(d.getUTCMonth() + data.months);
+      until = d.toISOString();
+    }
+
+    const { error } = await supabaseAdmin.from("manual_premium_grants").upsert(
+      {
+        user_id: data.user_id,
+        manual_premium_until: until,
+        granted_by: admin.userId,
+        granted_by_email: admin.email,
+        granted_at: new Date().toISOString(),
+        revoked_at: null,
+        note: data.note ?? null,
+      },
+      { onConflict: "user_id" },
+    );
+    if (error) throw new Error(error.message);
+    return { ok: true, manual_premium_until: until };
+  });
+
+/** Admin-only: revoke a manual Premium grant (keeps the audit row). */
+export const revokeManualPremium = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { user_id: string }) => {
+    if (!input?.user_id) throw new Error("user_id required");
+    return input;
+  })
+  .handler(async ({ data, context }) => {
+    await requireAdmin(context as never);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin
+      .from("manual_premium_grants")
+      .update({ revoked_at: new Date().toISOString() })
+      .eq("user_id", data.user_id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
   });
