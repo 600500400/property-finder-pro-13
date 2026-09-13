@@ -96,6 +96,8 @@ export interface CsuHouseCompare {
   municipality_match: "matched" | "ambiguous" | "unmatched";
   avg_house_size_m2?: number;
   area_warning: boolean;
+  /** ČSÚ flagged this band price as based on a small number of transfers. */
+  benchmark_low_sample: boolean;
   /** Bazoš publishes no structured area field at all — flag it in the UI. */
   area_low_confidence: boolean;
   area_type?: string;
