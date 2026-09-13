@@ -84,7 +84,7 @@ export function FilterSidebar({ filters, setFilters, view, setView, onExport, ca
 
 
   return (
-    <aside className="flex h-full flex-col gap-5 overflow-y-auto border-r border-border bg-[var(--color-surface)] p-5 pb-32 md:pb-5">
+    <aside className="flex flex-col gap-5 border-r border-border bg-[var(--color-surface)] p-5 pb-32 md:pb-5">
       <Section label="Typ nemovitosti">
         <div className="grid grid-cols-3 gap-1.5">
           {([
