@@ -49,7 +49,7 @@ export function UpgradeModal({ open, onClose, reason }: Props) {
             "Inzeráty v reálném čase (bez 24h zpoždění)",
             "Neomezený počet výsledků",
             "Neomezeně hlídacích psů + okamžitá upozornění",
-            "CSV export výsledků",
+            "Export výsledků do XLS",
             "Prioritní podpora",
           ].map((f) => (
             <li key={f} className="flex items-start gap-1.5">
