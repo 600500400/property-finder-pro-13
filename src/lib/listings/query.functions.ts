@@ -144,10 +144,22 @@ export const queryListings = createServerFn({ method: "POST" })
       populationData.push(...(chunk as PopulationRow[]));
       if (chunk.length < PAGE) break;
     }
-    const csuIndexes = buildCsuIndexes((okresData ?? []) as CsuOkresRow[], (krajData ?? []) as CsuKrajRow[], populationData);
-    const askingPremiumPct = calibrationData?.median_ratio != null
-      ? Math.round((Number(calibrationData.median_ratio) - 1) * 100)
-      : undefined;
+    const { data: bandCal } = await supabaseAdmin
+      .from("csu_house_calibration_band")
+      .select("size_band, median_ratio, factor, typical_area_m2, sample_count");
+    const csuIndexes = buildCsuIndexes(
+      (okresData ?? []) as CsuOkresRow[],
+      (krajData ?? []) as CsuKrajRow[],
+      populationData,
+      (bandCal ?? []).map(r => ({
+        size_band: r.size_band as SizeBand,
+        median_ratio: Number(r.median_ratio),
+        factor: Number(r.factor),
+        typical_area_m2: r.typical_area_m2 == null ? null : Number(r.typical_area_m2),
+        sample_count: r.sample_count,
+      })),
+    );
+
 
     const bench = await getBenchmark();
 
