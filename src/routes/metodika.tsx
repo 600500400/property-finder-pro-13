@@ -1,11 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
 import { Footer } from "@/components/Footer";
-import { useQuery } from "@tanstack/react-query";
-import { useServerFn } from "@tanstack/react-start";
 import { getCsuCalibration } from "@/lib/listings/csu-public.functions";
 
 export const Route = createFileRoute("/metodika")({
+  loader: () => getCsuCalibration(),
   head: () => ({
     meta: [
       { title: "Metodika výpočtu výnosu — RealityScanner" },
@@ -20,8 +19,7 @@ export const Route = createFileRoute("/metodika")({
 });
 
 function Metodika() {
-  const loadCalibration = useServerFn(getCsuCalibration);
-  const { data: calibration } = useQuery({ queryKey: ["csu-calibration"], queryFn: () => loadCalibration() });
+  const calibration = Route.useLoaderData();
   return (
     <div className="min-h-screen bg-background text-foreground">
       <header className="border-b border-border bg-[var(--color-surface)]">
@@ -206,7 +204,7 @@ function Metodika() {
             <strong>Zásadní rozdíl:</strong> ČSÚ uvádí ceny, za které se domy skutečně prodaly,
             zatímco inzeráty ukazují nabídkové ceny, které bývají systematicky vyšší. Kladná
             odchylka od ČSÚ proto sama o sobě neznamená, že je nemovitost předražená.
-            {calibration && <span className="mt-2 block font-semibold">Typická nabídka je o {calibration.premiumPct} % nad realizovanou cenou (medián z {calibration.sampleCount.toLocaleString("cs-CZ")} domů).</span>}
+            {calibration && <span className="mt-2 block font-semibold">Typická nabídka je o {Math.abs(calibration.premiumPct)} % {calibration.premiumPct >= 0 ? "nad" : "pod"} realizovanou cenou (medián z {calibration.sampleCount.toLocaleString("cs-CZ")} domů).</span>}
           </div>
           <p className="mt-3">
             Primární srovnání domů vychází z realizovaných kupních cen ČSÚ. Nejprve hledáme

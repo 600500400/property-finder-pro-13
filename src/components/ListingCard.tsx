@@ -221,7 +221,9 @@ function PriceCompareHero({ pc }: { pc?: Listing["price_compare"] }) {
 }
 
 function csuTooltip(csu: NonNullable<Listing["csu_compare"]>): string {
-  const premium = csu.asking_premium_pct == null ? "" : ` Typická nabídka je nyní o ${csu.asking_premium_pct} % nad realizovanou cenou.`;
+  const premium = csu.asking_premium_pct == null ? "" : csu.asking_premium_pct >= 0
+    ? ` Typická nabídka je nyní o ${csu.asking_premium_pct} % nad realizovanou cenou.`
+    : ` Typická nabídka je nyní o ${Math.abs(csu.asking_premium_pct)} % pod realizovanou cenou.`;
   const area = csu.area_warning ? ` Plocha nabídky se liší o více než 50 % od průměrného domu ČSÚ (${csu.avg_house_size_m2} m²).` : "";
   return `${CSU_CAVEAT}${premium}${area}`;
 }
@@ -233,11 +235,11 @@ function CsuCompareHero({ csu, listingPc }: { csu?: Listing["csu_compare"]; list
     <div className={`flex flex-col gap-2 ${weak ? "text-muted-foreground" : ""}`} title={csuTooltip(csu)}>
       <div className="flex items-end justify-between gap-2">
         <div className="flex flex-col leading-none">
-          <span className={`inline-flex items-center gap-1.5 font-mono text-3xl font-bold ${weak ? "text-muted-foreground" : PC_TEXT[csu.band]}`}>
+          <span className={`inline-flex items-center gap-1.5 font-mono text-2xl font-bold ${weak ? "text-muted-foreground" : PC_TEXT[csu.band]}`}>
             {weak && <AlertTriangle className="h-4 w-4 shrink-0" aria-label="Orientační srovnání" />}
             {pcDiff(csu.diff_pct)}
           </span>
-          <span className="mt-1 text-[10px] uppercase tracking-wider text-muted-foreground">cena/m² vs. realizované ceny ČSÚ</span>
+          <span className="mt-1 text-[10px] uppercase tracking-wider text-muted-foreground">vs. realizované ceny ČSÚ</span>
         </div>
         <span className={`text-[11px] font-semibold ${weak ? "text-muted-foreground" : PC_TEXT[csu.band]}`}>{csu.scope_label}</span>
       </div>
