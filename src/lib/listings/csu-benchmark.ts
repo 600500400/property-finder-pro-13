@@ -279,6 +279,7 @@ export function computeCsuHouseCompare(args: {
     municipality_match: ambiguous ? "ambiguous" : matched ? "matched" : "unmatched",
     avg_house_size_m2: avgSize ?? undefined,
     area_warning: areaWarning,
+    benchmark_low_sample: benchmarkLowSample,
     area_low_confidence: args.source === "bazos" || args.areaType === "zastavena",
     area_type: args.areaType ?? undefined,
   };
