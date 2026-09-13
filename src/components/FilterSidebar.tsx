@@ -269,7 +269,7 @@ export function FilterSidebar({ filters, setFilters, view, setView, onExport, ca
           disabled={!canExport}
           className="flex items-center justify-center gap-2 rounded-xl border border-primary/60 bg-transparent px-4 py-2.5 text-sm font-semibold text-primary transition hover:bg-primary/10 disabled:cursor-not-allowed disabled:border-border disabled:text-muted-foreground"
         >
-          <Download className="h-4 w-4" /> Export CSV
+          <Download className="h-4 w-4" /> Export do XLS
         </button>
       </div>
 

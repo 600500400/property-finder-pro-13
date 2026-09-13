@@ -211,6 +211,7 @@ export const queryListings = createServerFn({ method: "POST" })
         source_key: sourceKey,
         name: r.title ?? "",
         locality: r.city ?? "",
+        kraj: r.kraj ?? undefined,
         price,
         price_text: priceText,
         url: r.url,

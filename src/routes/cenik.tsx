@@ -12,7 +12,7 @@ export const Route = createFileRoute("/cenik")({
   head: () => ({
     meta: [
       { title: "Ceník — RealityScanner" },
-      { name: "description", content: "Free zdarma nebo Premium za 349 Kč měsíčně. Inzeráty v reálném čase, neomezení hlídací psi, CSV export." },
+      { name: "description", content: "Free zdarma nebo Premium za 349 Kč měsíčně. Inzeráty v reálném čase, neomezení hlídací psi, XLS export." },
     ],
   }),
   component: Pricing,
@@ -155,7 +155,7 @@ function Pricing() {
               <Bullet>Až 500 výsledků na dotaz</Bullet>
               <Bullet>Neomezeně hlídacích psů (okamžitá upozornění e-mailem)</Bullet>
               <Bullet>AI analýza investice — 50× měsíčně</Bullet>
-              <Bullet>CSV export</Bullet>
+              <Bullet>XLS export</Bullet>
               <Bullet>Prioritní podpora</Bullet>
             </ul>
             {!plan?.is_premium && (

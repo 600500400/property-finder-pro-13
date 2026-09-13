@@ -14,6 +14,7 @@ import { UpgradeBanner } from "@/components/UpgradeBanner";
 import { UpgradeModal } from "@/components/UpgradeModal";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Footer } from "@/components/Footer";
+import { toast } from "sonner";
 import { Radar, SlidersHorizontal, LayoutGrid, Rows3, List, Download, Crown } from "lucide-react";
 
 export const Route = createFileRoute("/")({
@@ -45,20 +46,6 @@ interface ViewOptions { dedupe: boolean; density: Density; [k: string]: unknown 
 const DEFAULT_VIEW: ViewOptions = { dedupe: true, density: "card" };
 const LAST_FILTERS_KEY = "realityscanner.lastFilters";
 const LAST_VIEW_KEY = "realityscanner.lastView";
-
-function toCsv(results: Listing[]): string {
-  const headers = ["source", "name", "locality", "area", "price_text", "price", "url", "gross_yield", "net_yield", "payback_years", "stars", "verdict"];
-  const escape = (v: unknown) => {
-    const s = v == null ? "" : String(v);
-    return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
-  };
-  const rows = results.map(r => [
-    r.source, r.name, r.locality, r.area, r.price_text, r.price, r.url,
-    r.invest?.gross_yield ?? "", r.invest?.net_yield ?? "",
-    r.invest?.payback_years ?? "", r.invest?.stars ?? "", r.invest?.verdict ?? "",
-  ].map(escape).join(","));
-  return "\ufeff" + [headers.join(","), ...rows].join("\n");
-}
 
 function gridClass(density: Density): string {
   if (density === "list") return "flex flex-col";
@@ -112,20 +99,36 @@ function Index() {
   const resultCap = data?.meta?.result_cap ?? 20;
   const freeCapped = data?.meta?.free_capped ?? false;
 
-  const handleExport = () => {
+  const [exporting, setExporting] = useState(false);
+
+  const handleExport = async () => {
     if (!isPremium) {
-      setUpgradeReason("CSV export je součástí Premia.");
+      setUpgradeReason("Export do XLS je součástí Premia.");
       return;
     }
-    if (!listings.length) return;
-    const csv = toCsv(listings);
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `reality_scanner_${new Date().toISOString().slice(0, 10)}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+    if (!listings.length || exporting) return;
+    setExporting(true);
+    try {
+      const { buildListingsXlsx, MAX_EXPORT_ROWS } = await import("@/lib/export/xlsx-export");
+      const res = await buildListingsXlsx(listings);
+      const url = URL.createObjectURL(res.blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = res.filename;
+      a.click();
+      URL.revokeObjectURL(url);
+      if (res.truncated) {
+        toast.warning(`Export omezen na ${MAX_EXPORT_ROWS.toLocaleString("cs-CZ")} řádků`, {
+          description: `Filtr vrací ${res.totalRows.toLocaleString("cs-CZ")} inzerátů — soubor obsahuje prvních ${res.rows.toLocaleString("cs-CZ")}. Zužte filtr pro úplný export.`,
+        });
+      } else {
+        toast.success(`Exportováno ${res.rows.toLocaleString("cs-CZ")} inzerátů`);
+      }
+    } catch (e) {
+      toast.error("Export se nepovedl", { description: (e as Error).message });
+    } finally {
+      setExporting(false);
+    }
   };
 
   return (
@@ -178,7 +181,7 @@ function Index() {
         <FreshnessToggle value={filters.freshness} onChange={(v) => setFilters({ ...filters, freshness: v })} compact />
         <button onClick={handleExport} disabled={isPremium && !listings.length}
           className="ml-auto flex shrink-0 items-center gap-1 rounded-full border border-primary/50 px-3 py-1.5 text-xs font-semibold text-primary disabled:opacity-40">
-          <Download className="h-3.5 w-3.5" /> CSV {!isPremium && <Crown className="h-3 w-3 text-amber-400" />}
+          <Download className="h-3.5 w-3.5" /> XLS {!isPremium && <Crown className="h-3 w-3 text-amber-400" />}
         </button>
       </div>
 
