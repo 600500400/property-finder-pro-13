@@ -207,6 +207,7 @@ export function computeCsuHouseCompare(args: {
   let benchmark: number | null = null;
   let avgSize: number | null = null;
   let scope: CsuScope | null = null;
+  let benchmarkLowSample = false;
 
   if (kraj === "praha") {
     const row = indexes.okres.get("okres|praha|praha|50000_plus");
