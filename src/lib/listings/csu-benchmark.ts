@@ -4,6 +4,52 @@ import type { PriceBand } from "./price-compare";
 export type MunicipalityBand = "do1999" | "2000_9999" | "10000_49999" | "50000_plus";
 export type CsuScope = "okres_band" | "okres" | "kraj_band" | "kraj" | "praha";
 
+// Our floor area (užitná plocha) is roughly twice the ČSÚ average (obytná plocha,
+// median 84 m² per okres), so a single global ratio mixes an area-definition
+// mismatch with a genuine size effect. Everything is therefore calibrated inside
+// a size band, and a listing is only ever compared within its own band.
+export type SizeBand = "lt100" | "100_150" | "150_250" | "gt250";
+
+export const SIZE_BANDS: SizeBand[] = ["lt100", "100_150", "150_250", "gt250"];
+
+export function sizeBandOf(areaM2: number): SizeBand {
+  if (areaM2 < 100) return "lt100";
+  if (areaM2 < 150) return "100_150";
+  if (areaM2 < 250) return "150_250";
+  return "gt250";
+}
+
+export const SIZE_BAND_LABEL: Record<SizeBand, string> = {
+  lt100: "do 100 m²",
+  "100_150": "100–150 m²",
+  "150_250": "150–250 m²",
+  gt250: "nad 250 m²",
+};
+
+export interface BandCalibration {
+  size_band: SizeBand;
+  median_ratio: number;
+  factor: number;
+  typical_area_m2: number | null;
+  sample_count: number;
+}
+
+// Coarse verdict instead of a precise percentage: the level rests on an estimated
+// užitná→obytná conversion, so a figure like "−18 %" would imply precision we
+// do not have. Flats keep their percentage — that comparison is like-for-like.
+export type CsuVerdict = "much_cheaper" | "cheaper" | "average" | "pricier" | "much_pricier";
+
+export const CSU_VERDICT_LABEL: Record<CsuVerdict, string> = {
+  much_cheaper: "Výrazně levnější",
+  cheaper: "Levnější",
+  average: "V průměru",
+  pricier: "Dražší",
+  much_pricier: "Výrazně dražší",
+};
+
+export const OWN_UNIT_LABEL = "Kč/m² užitné plochy";
+export const CSU_UNIT_LABEL = "Kč/m² obytné plochy (ČSÚ)";
+
 export interface CsuOkresRow {
   kraj: string;
   okres: string | null;
@@ -32,21 +78,32 @@ export interface PopulationRow {
 export interface CsuHouseCompare {
   own_per_m2: number;
   benchmark_per_m2: number;
-  diff_pct: number;
+  /** Benchmark after the size-band calibration factor; what own_per_m2 is judged against. */
+  expected_per_m2: number;
+  verdict: CsuVerdict;
+  verdict_label: string;
   band: PriceBand;
   scope: CsuScope;
   scope_label: string;
+  size_band: SizeBand;
+  size_band_label: string;
+  band_factor?: number;
+  band_sample_count?: number;
+  band_typical_area_m2?: number;
   municipality_band?: MunicipalityBand;
   municipality_match: "matched" | "ambiguous" | "unmatched";
   avg_house_size_m2?: number;
   area_warning: boolean;
-  asking_premium_pct?: number;
+  /** Bazoš publishes no structured area field at all — flag it in the UI. */
+  area_low_confidence: boolean;
+  area_type?: string;
 }
 
 export interface CsuIndexes {
   okres: Map<string, CsuOkresRow>;
   kraj: Map<string, CsuKrajRow>;
   population: Map<string, PopulationRow[]>;
+  calibration?: Map<SizeBand, BandCalibration>;
 }
 
 export function normalizeCzechName(value: string): string {
@@ -73,7 +130,12 @@ export function municipalityFromLocality(locality: string): string {
   return normalizeCzechName(beforeDash);
 }
 
-export function buildCsuIndexes(okresRows: CsuOkresRow[], krajRows: CsuKrajRow[], populationRows: PopulationRow[]): CsuIndexes {
+export function buildCsuIndexes(
+  okresRows: CsuOkresRow[],
+  krajRows: CsuKrajRow[],
+  populationRows: PopulationRow[],
+  calibrationRows: BandCalibration[] = [],
+): CsuIndexes {
   const okres = new Map<string, CsuOkresRow>();
   for (const row of okresRows) okres.set(`${row.level}|${row.kraj}|${row.okres ?? ""}|${row.band ?? ""}`, row);
   const kraj = new Map<string, CsuKrajRow>();
@@ -85,7 +147,9 @@ export function buildCsuIndexes(okresRows: CsuOkresRow[], krajRows: CsuKrajRow[]
     values.push(row);
     population.set(key, values);
   }
-  return { okres, kraj, population };
+  const calibration = new Map<SizeBand, BandCalibration>();
+  for (const row of calibrationRows) calibration.set(row.size_band, row);
+  return { okres, kraj, population, calibration: calibration.size ? calibration : undefined };
 }
 
 function priceBand(diff: number): PriceBand {
@@ -94,13 +158,29 @@ function priceBand(diff: number): PriceBand {
   return "avg";
 }
 
+function verdictOf(diff: number): CsuVerdict {
+  if (diff <= -25) return "much_cheaper";
+  if (diff <= -10) return "cheaper";
+  if (diff < 10) return "average";
+  if (diff < 25) return "pricier";
+  return "much_pricier";
+}
+
+/**
+ * The area warning now measures deviation from the TYPICAL SIZE OF THE LISTING'S
+ * OWN BAND, not from the ČSÚ average of ~85 m² — the old threshold fired on 69 %
+ * of houses purely because the two sides measure different areas.
+ */
+const AREA_WARNING_TOLERANCE = 0.6;
+
 export function computeCsuHouseCompare(args: {
   kraj: string | null;
   locality: string | null;
   areaM2: number | null;
   price: number | null;
   indexes: CsuIndexes;
-  askingPremiumPct?: number;
+  source?: string | null;
+  areaType?: string | null;
 }): CsuHouseCompare | null {
   const { kraj, locality, areaM2, price, indexes } = args;
   if (!kraj || !locality || !areaM2 || !price) return null;
@@ -148,8 +228,21 @@ export function computeCsuHouseCompare(args: {
   }
 
   if (!benchmark || !scope) return null;
-  const diff = Math.round(((own - benchmark) / benchmark) * 100);
-  const areaWarning = !!avgSize && (areaM2 < avgSize * 0.5 || areaM2 > avgSize * 1.5);
+
+  const sb = sizeBandOf(areaM2);
+  const cal = indexes.calibration?.get(sb);
+  // factor converts a ČSÚ obytná-plocha price into the level our užitná-plocha
+  // prices sit at for houses of this size; without calibration we fall back to 1
+  // and the comparison stays raw.
+  const factor = cal?.factor && cal.factor > 0 ? cal.factor : 1;
+  const expected = Math.round(benchmark / factor);
+  const diff = Math.round(((own - expected) / expected) * 100);
+
+  const typical = cal?.typical_area_m2 ?? null;
+  const areaWarning = !!typical && (
+    areaM2 < typical * (1 - AREA_WARNING_TOLERANCE) || areaM2 > typical * (1 + AREA_WARNING_TOLERANCE)
+  );
+
   const labels: Record<CsuScope, string> = {
     okres_band: "ČSÚ · okres a velikost obce",
     okres: ambiguous ? "ČSÚ · okres (obec nejednoznačná)" : "ČSÚ · okres",
@@ -157,12 +250,26 @@ export function computeCsuHouseCompare(args: {
     kraj: "ČSÚ · kraj",
     praha: "ČSÚ · Praha",
   };
+  const verdict = verdictOf(diff);
   return {
-    own_per_m2: Math.round(own), benchmark_per_m2: benchmark, diff_pct: diff,
-    band: priceBand(diff), scope, scope_label: labels[scope],
+    own_per_m2: Math.round(own),
+    benchmark_per_m2: benchmark,
+    expected_per_m2: expected,
+    verdict,
+    verdict_label: CSU_VERDICT_LABEL[verdict],
+    band: priceBand(diff),
+    scope,
+    scope_label: labels[scope],
+    size_band: sb,
+    size_band_label: SIZE_BAND_LABEL[sb],
+    band_factor: cal?.factor,
+    band_sample_count: cal?.sample_count,
+    band_typical_area_m2: typical ?? undefined,
     municipality_band: sizeBand,
     municipality_match: ambiguous ? "ambiguous" : matched ? "matched" : "unmatched",
-    avg_house_size_m2: avgSize ?? undefined, area_warning: areaWarning,
-    asking_premium_pct: args.askingPremiumPct,
+    avg_house_size_m2: avgSize ?? undefined,
+    area_warning: areaWarning,
+    area_low_confidence: args.source === "bazos" || args.areaType === "zastavena",
+    area_type: args.areaType ?? undefined,
   };
 }
