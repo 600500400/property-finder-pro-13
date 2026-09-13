@@ -87,6 +87,21 @@ function pricePerM2(l: Listing): number | null {
   return Math.round(l.price / l.area_m2);
 }
 
+/** Source localities arrive as "Neumannova, Stráž nad Nisou, okres Liberec" or "Praha – Bohnice". */
+export function splitLocality(raw: string | undefined): { obec: string | null; part: string | null } {
+  if (!raw) return { obec: null, part: null };
+  const decoded = raw.replace(/&#x([0-9a-f]+);/gi, (_, h) => String.fromCharCode(parseInt(h, 16)))
+    .replace(/&#(\d+);/g, (_, d) => String.fromCharCode(Number(d)));
+  const parts = decoded.split(",").map((p) => p.trim()).filter(Boolean)
+    .filter((p) => !/^okres\b/i.test(p) && !/\bkraj$/i.test(p));
+  const last = parts[parts.length - 1];
+  if (!last) return { obec: null, part: null };
+  const segs = last.split(/\s+[–—-]\s+/).map((p) => p.trim()).filter(Boolean);
+  const obec = segs[0] ?? null;
+  const part = segs[1] && segs[1] !== obec ? segs[1] : null;
+  return { obec, part };
+}
+
 function okresLabel(l: Listing): string | null {
   const slug = okresFromLocality(l.locality);
   if (!slug) return null;
@@ -108,7 +123,8 @@ const BASE_COLUMNS: Column[] = [
   { header: "Zdroj", width: 14, value: (l) => l.source || null },
   { header: "Typ nemovitosti", width: 15, value: (l) => PROPERTY_LABEL[l.property_type ?? ""] ?? null },
   { header: "Název", width: 46, value: (l) => l.name || null },
-  { header: "Obec", width: 22, value: (l) => l.locality || null },
+  { header: "Obec", width: 22, value: (l) => splitLocality(l.locality).obec },
+  { header: "Část obce", width: 22, value: (l) => splitLocality(l.locality).part },
   { header: "Okres", width: 20, value: okresLabel },
   { header: "Kraj", width: 22, value: (l) => (l.kraj ? KRAJ_LABEL[l.kraj] ?? l.kraj : null) },
   { header: "Cena", width: 16, numFmt: '#,##0 "Kč"', value: (l) => l.price || null },
