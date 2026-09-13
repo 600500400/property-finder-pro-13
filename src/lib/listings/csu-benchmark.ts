@@ -218,6 +218,7 @@ export function computeCsuHouseCompare(args: {
     const bandRow = sizeBand ? indexes.okres.get(`okres|${kraj}|${okres}|${sizeBand}`) : undefined;
     if (bandRow?.band_price_uplifted && plausibleBandPrice(bandRow.band_price_uplifted, total?.price_2025 ?? null)) {
       benchmark = bandRow.band_price_uplifted;
+      benchmarkLowSample = !!bandRow.low_sample;
       scope = "okres_band";
     } else if (total?.price_2025) {
       benchmark = total.price_2025;
