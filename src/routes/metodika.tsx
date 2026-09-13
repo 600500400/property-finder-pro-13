@@ -3,6 +3,13 @@ import { ArrowLeft } from "lucide-react";
 import { Footer } from "@/components/Footer";
 import { getCsuCalibration } from "@/lib/listings/csu-public.functions";
 
+const BAND_LABEL: Record<string, string> = {
+  lt100: "do 100 m²",
+  "100_150": "100–150 m²",
+  "150_250": "150–250 m²",
+  gt250: "nad 250 m²",
+};
+
 export const Route = createFileRoute("/metodika")({
   loader: () => getCsuCalibration(),
   head: () => ({
