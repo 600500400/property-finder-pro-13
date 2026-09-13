@@ -37,10 +37,25 @@ describe("ČSÚ house benchmark", () => {
     expect(result?.benchmark_per_m2).toBe(85552);
   });
 
-  it("marks a floor area deviation greater than 50 percent", () => {
+  it("marks a floor area far off the typical size of its own band", () => {
     const okres: CsuOkresRow[] = [{ kraj: "praha", okres: "praha", level: "okres", avg_size_m2: 98, price_2025: 119239, band: "50000_plus", band_price_uplifted: 119239 }];
-    const result = computeCsuHouseCompare({ kraj: "praha", locality: "Praha – Záběhlice", areaM2: 148, price: 17_645_000, indexes: buildCsuIndexes(okres, [], []) });
+    const calibration = [{ size_band: "100_150" as const, median_ratio: 1, factor: 1, typical_area_m2: 90, sample_count: 100 }];
+    const result = computeCsuHouseCompare({ kraj: "praha", locality: "Praha – Záběhlice", areaM2: 148, price: 17_645_000, indexes: buildCsuIndexes(okres, [], [], calibration) });
     expect(result?.area_warning).toBe(true);
+  });
+
+  it("weakens a benchmark that ČSÚ marked as low-sample", () => {
+    const okres: CsuOkresRow[] = [
+      { kraj: "jihocesky", okres: "pisek", level: "okres", avg_size_m2: 81, price_2025: 43222, band: "do1999", band_price_uplifted: null },
+      { kraj: "jihocesky", okres: "pisek", level: "okres", avg_size_m2: 81, price_2025: 43222, band: "2000_9999", band_price_uplifted: 35466, low_sample: true },
+    ];
+    const population: PopulationRow[] = [
+      { kraj: "jihocesky", name: "Mirovice", name_norm: "mirovice", population: 5000, is_ambiguous_in_kraj: false },
+    ];
+    const result = computeCsuHouseCompare({ kraj: "jihocesky", locality: "Mirovice", areaM2: 120, price: 4_500_000, indexes: buildCsuIndexes(okres, [], population) });
+    expect(result?.scope).toBe("okres_band");
+    expect(result?.benchmark_per_m2).toBe(35466);
+    expect(result?.benchmark_low_sample).toBe(true);
   });
 });
 
