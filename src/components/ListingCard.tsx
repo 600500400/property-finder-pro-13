@@ -565,10 +565,11 @@ function ListingCompact({ listing }: { listing: Listing }) {
         >
           {listing.csu_compare ? (
             <>
-              <span className={`inline-flex items-center gap-1 font-mono font-semibold ${listing.csu_compare.area_warning ? "text-muted-foreground" : PC_TEXT[listing.csu_compare.band]}`}>
-                {listing.csu_compare.area_warning && <AlertTriangle className="h-3 w-3 shrink-0" aria-label="Orientační srovnání" />}
-                {pcDiff(listing.csu_compare.diff_pct)} vs. ČSÚ
+              <span className={`inline-flex items-center gap-1 font-semibold ${listing.csu_compare.area_warning || listing.csu_compare.area_low_confidence ? "text-muted-foreground" : PC_TEXT[listing.csu_compare.band]}`}>
+                {(listing.csu_compare.area_warning || listing.csu_compare.area_low_confidence) && <AlertTriangle className="h-3 w-3 shrink-0" aria-label="Orientační srovnání" />}
+                {listing.csu_compare.verdict_label} vs. ČSÚ
               </span>
+
               <span className="text-muted-foreground">{listing.csu_compare.scope_label}</span>
             </>
           ) : (
@@ -642,11 +643,12 @@ function ListingRow({ listing }: { listing: Listing }) {
         {listing.property_type === "domy" ? (
           listing.csu_compare && (
             <span
-              className={`inline-flex items-center gap-1 font-mono text-[10px] font-semibold ${listing.csu_compare.area_warning ? "text-muted-foreground" : PC_TEXT[listing.csu_compare.band]}`}
+              className={`inline-flex items-center gap-1 text-[10px] font-semibold ${listing.csu_compare.area_warning || listing.csu_compare.area_low_confidence ? "text-muted-foreground" : PC_TEXT[listing.csu_compare.band]}`}
               title={csuTooltip(listing.csu_compare)}
             >
-              {listing.csu_compare.area_warning && <AlertTriangle className="h-3 w-3 shrink-0" aria-label="Orientační srovnání" />}
-              {pcDiff(listing.csu_compare.diff_pct)} vs. ČSÚ
+              {(listing.csu_compare.area_warning || listing.csu_compare.area_low_confidence) && <AlertTriangle className="h-3 w-3 shrink-0" aria-label="Orientační srovnání" />}
+              {listing.csu_compare.verdict_label} vs. ČSÚ
+
             </span>
           )
         ) : inv ? (
