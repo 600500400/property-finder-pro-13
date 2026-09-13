@@ -58,6 +58,8 @@ export interface CsuOkresRow {
   price_2025: number | null;
   band: string | null;
   band_price_uplifted: number | null;
+  /** ČSÚ footnote "malý počet údajů k dispozici" on this band cell. */
+  low_sample?: boolean | null;
 }
 
 export interface CsuKrajRow {
