@@ -50,6 +50,13 @@
       "when": 1789294841729,
       "tag": "0006_area_type_and_band_calibration",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1789296009431,
+      "tag": "0007_csu_okres_low_sample_flag",
+      "breakpoints": true
     }
   ]
 }
