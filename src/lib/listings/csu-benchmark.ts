@@ -156,9 +156,10 @@ export function buildCsuIndexes(
   return { okres, kraj, population, calibration: calibration.size ? calibration : undefined };
 }
 
-// A handful of ČSÚ band rows carry a corrupt value — a per-dwelling price where a
-// per-m² price belongs (e.g. okres Písek: 617 806 "Kč/m²"). Reject any band price
-// more than 3x off the okres/kraj per-m² price and fall back to that instead.
+// Last-resort net. The 14 corrupt band prices (okres Písek: 617 806 "Kč/m²") came
+// from footnote markers folded into the number at import time — that is fixed in
+// csu-cell.ts and in the data, so this guard should no longer trigger; it stays to
+// keep a future bad import from reaching the comparison.
 function plausibleBandPrice(bandPrice: number, reference: number | null): boolean {
   if (!reference) return bandPrice > 3_000 && bandPrice < 400_000;
   return bandPrice >= reference / 3 && bandPrice <= reference * 3;
