@@ -52,7 +52,7 @@ describe("ČSÚ house benchmark", () => {
     const population: PopulationRow[] = [
       { kraj: "jihocesky", name: "Mirovice", name_norm: "mirovice", population: 5000, is_ambiguous_in_kraj: false },
     ];
-    const result = computeCsuHouseCompare({ kraj: "jihocesky", locality: "Mirovice", areaM2: 120, price: 4_500_000, indexes: buildCsuIndexes(okres, [], population) });
+    const result = computeCsuHouseCompare({ kraj: "jihocesky", locality: "Mirovice, okres Písek", areaM2: 120, price: 4_500_000, indexes: buildCsuIndexes(okres, [], population) });
     expect(result?.scope).toBe("okres_band");
     expect(result?.benchmark_per_m2).toBe(35466);
     expect(result?.benchmark_low_sample).toBe(true);
