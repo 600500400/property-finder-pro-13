@@ -228,6 +228,7 @@ function csuTooltip(csu: NonNullable<Listing["csu_compare"]>): string {
     ? ` Plocha domu se výrazně liší od typické velikosti v tomto pásmu (${Math.round(csu.band_typical_area_m2)} m²).`
     : "";
   const lowConf = csu.area_low_confidence ? " Plocha u tohoto inzerátu má nízkou důvěryhodnost (není strukturovaný údaj)." : "";
+  const lowSample = csu.benchmark_low_sample ? " ČSÚ tuto hodnotu uvádí jako údaj z malého počtu převodů — srovnání je proto jen orientační." : "";
   return `${CSU_CAVEAT}${units}${band}${estimate}${area}${lowConf}`;
 }
 
