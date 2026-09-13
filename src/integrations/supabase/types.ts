@@ -88,6 +88,33 @@ export type Database = {
         }
         Relationships: []
       }
+      csu_house_calibration_bands: {
+        Row: {
+          computed_at: string
+          factor: number
+          median_ratio: number
+          sample_count: number
+          size_band: string
+          typical_area_m2: number | null
+        }
+        Insert: {
+          computed_at?: string
+          factor: number
+          median_ratio: number
+          sample_count: number
+          size_band: string
+          typical_area_m2?: number | null
+        }
+        Update: {
+          computed_at?: string
+          factor?: number
+          median_ratio?: number
+          sample_count?: number
+          size_band?: string
+          typical_area_m2?: number | null
+        }
+        Relationships: []
+      }
       csu_house_prices_kraj: {
         Row: {
           avg_size_m2: number | null
@@ -208,6 +235,7 @@ export type Database = {
       listings: {
         Row: {
           area_m2: number | null
+          area_type: string | null
           city: string | null
           deal_type: string | null
           description_snippet: string | null
@@ -233,6 +261,7 @@ export type Database = {
         }
         Insert: {
           area_m2?: number | null
+          area_type?: string | null
           city?: string | null
           deal_type?: string | null
           description_snippet?: string | null
@@ -258,6 +287,7 @@ export type Database = {
         }
         Update: {
           area_m2?: number | null
+          area_type?: string | null
           city?: string | null
           deal_type?: string | null
           description_snippet?: string | null

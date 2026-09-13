@@ -36,6 +36,13 @@
       "when": 1789293243658,
       "tag": "0004_create_csu_house_benchmarks",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1789294696178,
+      "tag": "0005_csu_calibration_bands_and_area_type",
+      "breakpoints": true
     }
   ]
 }
