@@ -1,14 +1,20 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import { getAdminDashboard, type AdminUserRow } from "@/lib/admin/admin.functions";
+import {
+  getAdminDashboard,
+  grantManualPremium,
+  revokeManualPremium,
+  type AdminUserRow,
+  type GrantMonths,
+} from "@/lib/admin/admin.functions";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   component: AdminPage,
 });
 
-type SortKey = "email" | "created_at" | "last_sign_in_at" | "plan" | "watchdogs" | "ai_analyses_month";
+type SortKey = "email" | "created_at" | "last_sign_in_at" | "plan" | "premium_source" | "watchdogs" | "ai_analyses_month";
 type SortDir = "asc" | "desc";
 
 const PAGE_SIZE = 25;
@@ -18,9 +24,20 @@ function fmt(iso: string | null): string {
   return new Date(iso).toLocaleString("cs-CZ");
 }
 
+function fmtDate(iso: string | null): string {
+  if (!iso) return "—";
+  return new Date(iso).toLocaleDateString("cs-CZ");
+}
+
 function AdminPage() {
   const fetchFn = useServerFn(getAdminDashboard);
+  const grantFn = useServerFn(grantManualPremium);
+  const revokeFn = useServerFn(revokeManualPremium);
+  const queryClient = useQueryClient();
   const router = useRouter();
+  const [busyUser, setBusyUser] = useState<string | null>(null);
+  const [grantFor, setGrantFor] = useState<AdminUserRow | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
   const { data, isLoading, error, refetch, isFetching } = useQuery({
     queryKey: ["admin-dashboard"],
     queryFn: () => fetchFn(),
@@ -52,6 +69,33 @@ function AdminPage() {
   const totalPages = Math.max(1, Math.ceil(sortedUsers.length / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages - 1);
   const pageUsers = sortedUsers.slice(currentPage * PAGE_SIZE, (currentPage + 1) * PAGE_SIZE);
+
+  async function doGrant(userId: string, months: GrantMonths) {
+    setActionError(null);
+    setBusyUser(userId);
+    try {
+      await grantFn({ data: { user_id: userId, months } });
+      await queryClient.invalidateQueries({ queryKey: ["admin-dashboard"] });
+      setGrantFor(null);
+    } catch (e) {
+      setActionError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setBusyUser(null);
+    }
+  }
+
+  async function doRevoke(userId: string) {
+    setActionError(null);
+    setBusyUser(userId);
+    try {
+      await revokeFn({ data: { user_id: userId } });
+      await queryClient.invalidateQueries({ queryKey: ["admin-dashboard"] });
+    } catch (e) {
+      setActionError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setBusyUser(null);
+    }
+  }
 
   function toggleSort(k: SortKey) {
     if (k === sortKey) setSortDir(sortDir === "asc" ? "desc" : "asc");
@@ -122,6 +166,11 @@ function AdminPage() {
       </section>
 
       <section>
+        {actionError && (
+          <div className="mb-3 rounded-md border border-[var(--color-danger,#ef4444)]/40 bg-[var(--color-danger,#ef4444)]/10 px-3 py-2 text-sm text-[var(--color-danger,#ef4444)]">
+            {actionError}
+          </div>
+        )}
         <div className="mb-3 flex items-center justify-between gap-3">
           <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
             Uživatelé ({sortedUsers.length.toLocaleString("cs-CZ")})
@@ -146,17 +195,25 @@ function AdminPage() {
                 <Th label="Registrace" k="created_at" sortKey={sortKey} sortDir={sortDir} onClick={toggleSort} />
                 <Th label="Poslední přihlášení" k="last_sign_in_at" sortKey={sortKey} sortDir={sortDir} onClick={toggleSort} />
                 <Th label="Plán" k="plan" sortKey={sortKey} sortDir={sortDir} onClick={toggleSort} />
+                <Th label="Zdroj Premium" k="premium_source" sortKey={sortKey} sortDir={sortDir} onClick={toggleSort} />
                 <Th label="Hlídací psi" k="watchdogs" sortKey={sortKey} sortDir={sortDir} onClick={toggleSort} align="right" />
                 <Th label="AI analýz (měsíc)" k="ai_analyses_month" sortKey={sortKey} sortDir={sortDir} onClick={toggleSort} align="right" />
+                <th className="px-3 py-2 text-right">Akce</th>
               </tr>
             </thead>
             <tbody>
               {pageUsers.map((u) => (
-                <UserRow key={u.id} u={u} />
+                <UserRow
+                  key={u.id}
+                  u={u}
+                  busy={busyUser === u.id}
+                  onGrant={() => setGrantFor(u)}
+                  onRevoke={() => doRevoke(u.id)}
+                />
               ))}
               {pageUsers.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-3 py-6 text-center text-muted-foreground">
+                  <td colSpan={8} className="px-3 py-6 text-center text-muted-foreground">
                     Žádní uživatelé
                   </td>
                 </tr>
@@ -187,6 +244,74 @@ function AdminPage() {
           </div>
         </div>
       </section>
+
+      {grantFor && (
+        <GrantDialog
+          user={grantFor}
+          busy={busyUser === grantFor.id}
+          onClose={() => setGrantFor(null)}
+          onConfirm={(months) => doGrant(grantFor.id, months)}
+        />
+      )}
+    </div>
+  );
+}
+
+function GrantDialog({
+  user,
+  busy,
+  onClose,
+  onConfirm,
+}: {
+  user: AdminUserRow;
+  busy: boolean;
+  onClose: () => void;
+  onConfirm: (months: GrantMonths) => void;
+}) {
+  const [months, setMonths] = useState<GrantMonths>(3);
+  const options: Array<{ label: string; value: GrantMonths }> = [
+    { label: "1 měsíc", value: 1 },
+    { label: "3 měsíce", value: 3 },
+    { label: "12 měsíců", value: 12 },
+    { label: "Neomezeně", value: null },
+  ];
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+      <div className="w-full max-w-sm rounded-lg border border-border bg-[var(--color-surface)] p-5">
+        <h3 className="text-base font-semibold">Udělit Premium</h3>
+        <p className="mt-1 text-sm text-muted-foreground">
+          {user.email || user.id} — bez platby, nezávisle na Stripe.
+        </p>
+        <div className="mt-4 space-y-2">
+          {options.map((o) => (
+            <label key={String(o.value)} className="flex cursor-pointer items-center gap-2 text-sm">
+              <input
+                type="radio"
+                name="grant-duration"
+                checked={months === o.value}
+                onChange={() => setMonths(o.value)}
+              />
+              {o.label}
+            </label>
+          ))}
+        </div>
+        <div className="mt-5 flex justify-end gap-2">
+          <button
+            className="rounded-md border border-border px-3 py-1.5 text-sm"
+            onClick={onClose}
+            disabled={busy}
+          >
+            Zrušit
+          </button>
+          <button
+            className="rounded-md bg-[var(--color-accent,#5fd6ad)] px-3 py-1.5 text-sm font-medium text-black disabled:opacity-50"
+            onClick={() => onConfirm(months)}
+            disabled={busy}
+          >
+            {busy ? "…" : "Udělit"}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
@@ -234,7 +359,18 @@ function Th({
   );
 }
 
-function UserRow({ u }: { u: AdminUserRow }) {
+function UserRow({
+  u,
+  busy,
+  onGrant,
+  onRevoke,
+}: {
+  u: AdminUserRow;
+  busy: boolean;
+  onGrant: () => void;
+  onRevoke: () => void;
+}) {
+  const isManual = u.premium_source === "manual";
   return (
     <tr className="border-t border-border align-top">
       <td className="px-3 py-2 font-medium">{u.email || "—"}</td>
@@ -251,8 +387,45 @@ function UserRow({ u }: { u: AdminUserRow }) {
           </span>
         )}
       </td>
+      <td className="px-3 py-2 text-xs">
+        {u.premium_source === null ? (
+          <span className="text-muted-foreground">—</span>
+        ) : (
+          <div className="space-y-0.5">
+            <div className="font-medium">{isManual ? "Ručně" : "Stripe"}</div>
+            <div className="text-muted-foreground">
+              {u.premium_until ? `do ${fmtDate(u.premium_until)}` : isManual ? "bez omezení" : "—"}
+            </div>
+            {isManual && (
+              <div className="text-muted-foreground">
+                udělil {u.granted_by_email ?? "—"}, {fmtDate(u.granted_at)}
+              </div>
+            )}
+          </div>
+        )}
+      </td>
       <td className="px-3 py-2 text-right font-mono">{u.watchdogs}</td>
       <td className="px-3 py-2 text-right font-mono">{u.ai_analyses_month}</td>
+      <td className="px-3 py-2 text-right">
+        {isManual ? (
+          <button
+            className="rounded-md border border-border px-2 py-1 text-xs hover:bg-[var(--color-surface-2)] disabled:opacity-40"
+            onClick={onRevoke}
+            disabled={busy}
+          >
+            {busy ? "…" : "Odebrat Premium"}
+          </button>
+        ) : (
+          <button
+            className="rounded-md border border-border px-2 py-1 text-xs hover:bg-[var(--color-surface-2)] disabled:opacity-40"
+            onClick={onGrant}
+            disabled={busy || u.premium_source === "stripe"}
+            title={u.premium_source === "stripe" ? "Uživatel má aktivní Stripe předplatné" : undefined}
+          >
+            {busy ? "…" : "Udělit Premium"}
+          </button>
+        )}
+      </td>
     </tr>
   );
 }
