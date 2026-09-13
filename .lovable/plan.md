@@ -47,10 +47,17 @@ Podle počtu obyvatel se nabídce přiřadí pásmo do 1999 / 2000–9999 / 1000
 - **Domy:** hlavní srovnání je ČSÚ. Srovnání z inzerátů zůstane jako druhá, tlumená řádka a jen když je vzorek alespoň 10.
 - **Byty:** nic se nemění, primární zůstává medián z inzerátů, ČSÚ se nepoužije.
 - **Nižší důvěryhodnost:** když se plocha domu liší od průměrné velikosti domu v daném okrese o více než 50 %, srovnání se označí varovnou ikonou a tlumeným stylem (stejně jako dnes u slabých vzorků).
+- **Tooltip u ČSÚ hodnoty:** výrazně upozorní, že ČSÚ uvádí skutečně realizované kupní ceny, zatímco inzerát uvádí nabídkovou cenu, která bývá systematicky vyšší. Kladná odchylka proto sama o sobě neznamená, že je dům předražený. Zobrazí také aktuálně vypočtenou typickou přirážku nabídkových cen vůči ČSÚ.
 
 ### 5. Metodika
 
-Do stránky metodiky doplním odstavec: ceny pocházejí z ČSÚ za období 2023–2025, hodnota pro velikostní pásmo obce je průměr za toto období přepočtený na úroveň roku 2025 pomocí trendu celého okresu; u krajské zálohy se používá přímo rok 2025.
+Do stránky metodiky doplním výraznou část o srovnání cen domů:
+- ČSÚ uvádí ceny, za které se domy **skutečně prodaly**, zatímco nabídky ukazují **nabídkové ceny**, které bývají systematicky vyšší. Kladná odchylka od ČSÚ proto sama o sobě neznamená předražení.
+- Dynamicky zobrazím medián poměru `nabídková Kč/m² / ČSÚ Kč/m²` přes všechny aktivní domy, které mají obě hodnoty, převedený na větu typu „Typická nabídka je o 28 % nad realizovanou cenou.“ Hodnota nebude natvrdo a bude se pravidelně přepočítávat.
+- Ceny pocházejí z období 2023–2025 a mají přibližně roční zpoždění. Okresní velikostní pásmo je průměr za toto období přepočtený na úroveň roku 2025 trendem celého okresu; u krajské zálohy se používá přímo rok 2025.
+- ČSÚ data pokrývají starší rodinné domy, nikoli novostavby. Uvnitř jednoho pásma se dále nerozlišuje velikost domu; průměrný dům ČSÚ má přibližně 80–95 m².
+- Cena za m² podlahové plochy nezohledňuje velikost ani hodnotu pozemku.
+- Do metodiky uvedu i ověření přepočtu proti krajské tabulce: průměrná absolutní chyba 2,3 %, medián 2,1 %, maximum 7,0 %, bez směrového zkreslení.
 
 ## Technické detaily
 
@@ -60,4 +67,5 @@ Do stránky metodiky doplním odstavec: ceny pocházejí z ČSÚ za období 2023
 - `ListingCard.tsx`: u domů `csu_compare` jako primární metrika, `price_compare` (n ≥ 10) sekundárně; existující tlumený styl a `AlertTriangle` se použijí i pro odchylku plochy > 50 %.
 - Testy: parsování „x" a „78 541  1)", forward-fill kraje, přepočtový koeficient, výběr úrovně okres → kraj, hranice odchylky 50 %.
 - Tabulka `obce_population` (kraj, name, name_norm, population, is_ambiguous_in_kraj) + index na `(kraj, name_norm)`; mapa městských částí na matku je v kódu, ne v datech.
-- Report po importu: počet kombinací okres × pásmo, kolik domů získá srovnání ČSÚ místo „nedostatek dat", 5 příkladů; a k obcím kolik nabídek má pásmo, kolik spadlo na okres kvůli nejednoznačnému názvu, kolik se nespárovalo vůbec, plus 20 nejčastějších nespárovaných lokalit.
+- Kalibrace se bude ukládat s časem posledního výpočtu a obnovovat jednou denně z aktivních domů s platnou nabídkovou Kč/m² a přiřazeným ČSÚ benchmarkem. Stejná hodnota se načte do metodiky i tooltipů.
+- Report po importu: počet kombinací okres × pásmo, kolik domů získá srovnání ČSÚ místo „nedostatek dat", 5 příkladů; kolik nabídek má pásmo, kolik spadlo na okres kvůli nejednoznačnému názvu, kolik se nespárovalo vůbec, 20 nejčastějších nespárovaných lokalit; a vypočtený medián přirážky nabídkových cen vůči realizovaným cenám ČSÚ.
