@@ -1,0 +1,672 @@
+[
+  {
+    "kraj": "praha",
+    "band": "50000_plus",
+    "price_2023": 111087,
+    "price_2024": 106753,
+    "price_2025": 119239,
+    "price_avg": 112593,
+    "transfers": 765,
+    "avg_size_m2": 98
+  },
+  {
+    "kraj": "stredocesky",
+    "band": "do1999",
+    "price_2023": 57259,
+    "price_2024": 64039,
+    "price_2025": 66039,
+    "price_avg": 63093,
+    "transfers": 1702,
+    "avg_size_m2": 89
+  },
+  {
+    "kraj": "stredocesky",
+    "band": "2000_9999",
+    "price_2023": 75606,
+    "price_2024": 77976,
+    "price_2025": 85552,
+    "price_avg": 80423,
+    "transfers": 1089,
+    "avg_size_m2": 95
+  },
+  {
+    "kraj": "stredocesky",
+    "band": "10000_49999",
+    "price_2023": 61351,
+    "price_2024": 64827,
+    "price_2025": 74198,
+    "price_avg": 67763,
+    "transfers": 511,
+    "avg_size_m2": 89
+  },
+  {
+    "kraj": "stredocesky",
+    "band": "50000_plus",
+    "price_2023": 61151,
+    "price_2024": 70657,
+    "price_2025": 71500,
+    "price_avg": 68384,
+    "transfers": 148,
+    "avg_size_m2": 79
+  },
+  {
+    "kraj": "stredocesky",
+    "band": null,
+    "price_2023": 63843,
+    "price_2024": 68704,
+    "price_2025": 73814,
+    "price_avg": 69482,
+    "transfers": 3450,
+    "avg_size_m2": 90
+  },
+  {
+    "kraj": "jihocesky",
+    "band": "do1999",
+    "price_2023": 40793,
+    "price_2024": 45350,
+    "price_2025": 47705,
+    "price_avg": 44914,
+    "transfers": 393,
+    "avg_size_m2": 91
+  },
+  {
+    "kraj": "jihocesky",
+    "band": "2000_9999",
+    "price_2023": 44995,
+    "price_2024": 44798,
+    "price_2025": 51407,
+    "price_avg": 47711,
+    "transfers": 270,
+    "avg_size_m2": 89
+  },
+  {
+    "kraj": "jihocesky",
+    "band": "10000_49999",
+    "price_2023": 49832,
+    "price_2024": 51828,
+    "price_2025": 53425,
+    "price_avg": 51995,
+    "transfers": 110,
+    "avg_size_m2": 96
+  },
+  {
+    "kraj": "jihocesky",
+    "band": "50000_plus",
+    "price_2023": 79355,
+    "price_2024": 78940,
+    "price_2025": 79134,
+    "price_avg": 79120,
+    "transfers": 47,
+    "avg_size_m2": 82
+  },
+  {
+    "kraj": "jihocesky",
+    "band": null,
+    "price_2023": 45168,
+    "price_2024": 48006,
+    "price_2025": 51771,
+    "price_avg": 48745,
+    "transfers": 820,
+    "avg_size_m2": 91
+  },
+  {
+    "kraj": "plzensky",
+    "band": "do1999",
+    "price_2023": 40283,
+    "price_2024": 39173,
+    "price_2025": 45059,
+    "price_avg": 41737,
+    "transfers": 743,
+    "avg_size_m2": 76
+  },
+  {
+    "kraj": "plzensky",
+    "band": "2000_9999",
+    "price_2023": 42232,
+    "price_2024": 47091,
+    "price_2025": 48513,
+    "price_avg": 46465,
+    "transfers": 449,
+    "avg_size_m2": 82
+  },
+  {
+    "kraj": "plzensky",
+    "band": "10000_49999",
+    "price_2023": 42218,
+    "price_2024": 51828,
+    "price_2025": 50962,
+    "price_avg": 48449,
+    "transfers": 85,
+    "avg_size_m2": 94
+  },
+  {
+    "kraj": "plzensky",
+    "band": "50000_plus",
+    "price_2023": 70500,
+    "price_2024": 67342,
+    "price_2025": 81610,
+    "price_avg": 74309,
+    "transfers": 174,
+    "avg_size_m2": 92
+  },
+  {
+    "kraj": "plzensky",
+    "band": null,
+    "price_2023": 43998,
+    "price_2024": 45745,
+    "price_2025": 51449,
+    "price_avg": 47499,
+    "transfers": 1451,
+    "avg_size_m2": 81
+  },
+  {
+    "kraj": "karlovarsky",
+    "band": "do1999",
+    "price_2023": 35520,
+    "price_2024": 37989,
+    "price_2025": 42869,
+    "price_avg": 39493,
+    "transfers": 252,
+    "avg_size_m2": 83
+  },
+  {
+    "kraj": "karlovarsky",
+    "band": "2000_9999",
+    "price_2023": 35593,
+    "price_2024": 35776,
+    "price_2025": 41552,
+    "price_avg": 38244,
+    "transfers": 133,
+    "avg_size_m2": 89
+  },
+  {
+    "kraj": "karlovarsky",
+    "band": "10000_49999",
+    "price_2023": 40554,
+    "price_2024": 44659,
+    "price_2025": 45102,
+    "price_avg": 43951,
+    "transfers": 146,
+    "avg_size_m2": 91
+  },
+  {
+    "kraj": "karlovarsky",
+    "band": "50000_plus",
+    "price_2023": null,
+    "price_2024": null,
+    "price_2025": null,
+    "price_avg": null,
+    "transfers": null,
+    "avg_size_m2": null
+  },
+  {
+    "kraj": "karlovarsky",
+    "band": null,
+    "price_2023": 36780,
+    "price_2024": 39724,
+    "price_2025": 43071,
+    "price_avg": 40406,
+    "transfers": 531,
+    "avg_size_m2": 87
+  },
+  {
+    "kraj": "ustecky",
+    "band": "do1999",
+    "price_2023": 36829,
+    "price_2024": 40069,
+    "price_2025": 43238,
+    "price_avg": 40666,
+    "transfers": 820,
+    "avg_size_m2": 80
+  },
+  {
+    "kraj": "ustecky",
+    "band": "2000_9999",
+    "price_2023": 34732,
+    "price_2024": 39797,
+    "price_2025": 41658,
+    "price_avg": 39087,
+    "transfers": 288,
+    "avg_size_m2": 81
+  },
+  {
+    "kraj": "ustecky",
+    "band": "10000_49999",
+    "price_2023": 40185,
+    "price_2024": 41844,
+    "price_2025": 49440,
+    "price_avg": 44524,
+    "transfers": 336,
+    "avg_size_m2": 92
+  },
+  {
+    "kraj": "ustecky",
+    "band": "50000_plus",
+    "price_2023": 53122,
+    "price_2024": 66777,
+    "price_2025": 64732,
+    "price_avg": 62950,
+    "transfers": 84,
+    "avg_size_m2": 93
+  },
+  {
+    "kraj": "ustecky",
+    "band": null,
+    "price_2023": 37968,
+    "price_2024": 41870,
+    "price_2025": 45623,
+    "price_avg": 42442,
+    "transfers": 1528,
+    "avg_size_m2": 83
+  },
+  {
+    "kraj": "liberecky",
+    "band": "do1999",
+    "price_2023": 36239,
+    "price_2024": 41655,
+    "price_2025": 44126,
+    "price_avg": 41156,
+    "transfers": 290,
+    "avg_size_m2": 93
+  },
+  {
+    "kraj": "liberecky",
+    "band": "2000_9999",
+    "price_2023": 42787,
+    "price_2024": 43943,
+    "price_2025": 46964,
+    "price_avg": 44595,
+    "transfers": 220,
+    "avg_size_m2": 87
+  },
+  {
+    "kraj": "liberecky",
+    "band": "10000_49999",
+    "price_2023": 45451,
+    "price_2024": 47199,
+    "price_2025": 56776,
+    "price_avg": 50808,
+    "transfers": 102,
+    "avg_size_m2": 99
+  },
+  {
+    "kraj": "liberecky",
+    "band": "50000_plus",
+    "price_2023": 68438,
+    "price_2024": 78868,
+    "price_2025": 78956,
+    "price_avg": 75760,
+    "transfers": 156,
+    "avg_size_m2": 93
+  },
+  {
+    "kraj": "liberecky",
+    "band": null,
+    "price_2023": 46440,
+    "price_2024": 49514,
+    "price_2025": 54328,
+    "price_avg": 50452,
+    "transfers": 768,
+    "avg_size_m2": 92
+  },
+  {
+    "kraj": "kralovehradecky",
+    "band": "do1999",
+    "price_2023": 41872,
+    "price_2024": 44837,
+    "price_2025": 46640,
+    "price_avg": 44679,
+    "transfers": 377,
+    "avg_size_m2": 82
+  },
+  {
+    "kraj": "kralovehradecky",
+    "band": "2000_9999",
+    "price_2023": 40588,
+    "price_2024": 39481,
+    "price_2025": 47028,
+    "price_avg": 42753,
+    "transfers": 283,
+    "avg_size_m2": 83
+  },
+  {
+    "kraj": "kralovehradecky",
+    "band": "10000_49999",
+    "price_2023": 43288,
+    "price_2024": 47971,
+    "price_2025": 50126,
+    "price_avg": 47905,
+    "transfers": 170,
+    "avg_size_m2": 92
+  },
+  {
+    "kraj": "kralovehradecky",
+    "band": "50000_plus",
+    "price_2023": 73972,
+    "price_2024": 77186,
+    "price_2025": 81970,
+    "price_avg": 78407,
+    "transfers": 143,
+    "avg_size_m2": 94
+  },
+  {
+    "kraj": "kralovehradecky",
+    "band": null,
+    "price_2023": 46338,
+    "price_2024": 48242,
+    "price_2025": 53122,
+    "price_avg": 49639,
+    "transfers": 973,
+    "avg_size_m2": 86
+  },
+  {
+    "kraj": "pardubicky",
+    "band": "do1999",
+    "price_2023": 36284,
+    "price_2024": 40861,
+    "price_2025": 45438,
+    "price_avg": 41370,
+    "transfers": 539,
+    "avg_size_m2": 78
+  },
+  {
+    "kraj": "pardubicky",
+    "band": "2000_9999",
+    "price_2023": 40156,
+    "price_2024": 42883,
+    "price_2025": 47036,
+    "price_avg": 43897,
+    "transfers": 294,
+    "avg_size_m2": 85
+  },
+  {
+    "kraj": "pardubicky",
+    "band": "10000_49999",
+    "price_2023": 41763,
+    "price_2024": 47241,
+    "price_2025": 50871,
+    "price_avg": 46726,
+    "transfers": 155,
+    "avg_size_m2": 77
+  },
+  {
+    "kraj": "pardubicky",
+    "band": "50000_plus",
+    "price_2023": 78809,
+    "price_2024": 68532,
+    "price_2025": 96327,
+    "price_avg": 81932,
+    "transfers": 46,
+    "avg_size_m2": 83
+  },
+  {
+    "kraj": "pardubicky",
+    "band": null,
+    "price_2023": 40380,
+    "price_2024": 43453,
+    "price_2025": 48854,
+    "price_avg": 44696,
+    "transfers": 1034,
+    "avg_size_m2": 80
+  },
+  {
+    "kraj": "vysocina",
+    "band": "do1999",
+    "price_2023": 38138,
+    "price_2024": 43322,
+    "price_2025": 43827,
+    "price_avg": 42069,
+    "transfers": 508,
+    "avg_size_m2": 78
+  },
+  {
+    "kraj": "vysocina",
+    "band": "2000_9999",
+    "price_2023": 39632,
+    "price_2024": 44643,
+    "price_2025": 43735,
+    "price_avg": 42834,
+    "transfers": 250,
+    "avg_size_m2": 83
+  },
+  {
+    "kraj": "vysocina",
+    "band": "10000_49999",
+    "price_2023": 42858,
+    "price_2024": 51333,
+    "price_2025": 55721,
+    "price_avg": 51101,
+    "transfers": 146,
+    "avg_size_m2": 86
+  },
+  {
+    "kraj": "vysocina",
+    "band": "50000_plus",
+    "price_2023": 59232,
+    "price_2024": 69856,
+    "price_2025": 66010,
+    "price_avg": 64953,
+    "transfers": 60,
+    "avg_size_m2": 93
+  },
+  {
+    "kraj": "vysocina",
+    "band": null,
+    "price_2023": 40623,
+    "price_2024": 46400,
+    "price_2025": 47125,
+    "price_avg": 45060,
+    "transfers": 964,
+    "avg_size_m2": 81
+  },
+  {
+    "kraj": "jihomoravsky",
+    "band": "do1999",
+    "price_2023": 41324,
+    "price_2024": 42969,
+    "price_2025": 50564,
+    "price_avg": 45226,
+    "transfers": 964,
+    "avg_size_m2": 82
+  },
+  {
+    "kraj": "jihomoravsky",
+    "band": "2000_9999",
+    "price_2023": 43279,
+    "price_2024": 47040,
+    "price_2025": 49190,
+    "price_avg": 46874,
+    "transfers": 645,
+    "avg_size_m2": 85
+  },
+  {
+    "kraj": "jihomoravsky",
+    "band": "10000_49999",
+    "price_2023": 47358,
+    "price_2024": 53850,
+    "price_2025": 51593,
+    "price_avg": 51043,
+    "transfers": 171,
+    "avg_size_m2": 85
+  },
+  {
+    "kraj": "jihomoravsky",
+    "band": "50000_plus",
+    "price_2023": 78210,
+    "price_2024": 83771,
+    "price_2025": 88459,
+    "price_avg": 83660,
+    "transfers": 391,
+    "avg_size_m2": 95
+  },
+  {
+    "kraj": "jihomoravsky",
+    "band": null,
+    "price_2023": 49393,
+    "price_2024": 52671,
+    "price_2025": 56400,
+    "price_avg": 53096,
+    "transfers": 2171,
+    "avg_size_m2": 86
+  },
+  {
+    "kraj": "olomoucky",
+    "band": "do1999",
+    "price_2023": 35116,
+    "price_2024": 36994,
+    "price_2025": 41858,
+    "price_avg": 38305,
+    "transfers": 873,
+    "avg_size_m2": 77
+  },
+  {
+    "kraj": "olomoucky",
+    "band": "2000_9999",
+    "price_2023": 38412,
+    "price_2024": 39111,
+    "price_2025": 44480,
+    "price_avg": 41167,
+    "transfers": 297,
+    "avg_size_m2": 81
+  },
+  {
+    "kraj": "olomoucky",
+    "band": "10000_49999",
+    "price_2023": 41379,
+    "price_2024": 44944,
+    "price_2025": 45020,
+    "price_avg": 44088,
+    "transfers": 314,
+    "avg_size_m2": 89
+  },
+  {
+    "kraj": "olomoucky",
+    "band": "50000_plus",
+    "price_2023": 78184,
+    "price_2024": 65854,
+    "price_2025": 72186,
+    "price_avg": 72241,
+    "transfers": 36,
+    "avg_size_m2": 91
+  },
+  {
+    "kraj": "olomoucky",
+    "band": null,
+    "price_2023": 38247,
+    "price_2024": 39838,
+    "price_2025": 43630,
+    "price_avg": 40862,
+    "transfers": 1520,
+    "avg_size_m2": 81
+  },
+  {
+    "kraj": "zlinsky",
+    "band": "do1999",
+    "price_2023": 33989,
+    "price_2024": 36963,
+    "price_2025": 39279,
+    "price_avg": 36991,
+    "transfers": 620,
+    "avg_size_m2": 77
+  },
+  {
+    "kraj": "zlinsky",
+    "band": "2000_9999",
+    "price_2023": 34451,
+    "price_2024": 37382,
+    "price_2025": 42307,
+    "price_avg": 38687,
+    "transfers": 382,
+    "avg_size_m2": 80
+  },
+  {
+    "kraj": "zlinsky",
+    "band": "10000_49999",
+    "price_2023": 39195,
+    "price_2024": 45697,
+    "price_2025": 47811,
+    "price_avg": 44860,
+    "transfers": 273,
+    "avg_size_m2": 80
+  },
+  {
+    "kraj": "zlinsky",
+    "band": "50000_plus",
+    "price_2023": 59869,
+    "price_2024": 67528,
+    "price_2025": 70135,
+    "price_avg": 66926,
+    "transfers": 131,
+    "avg_size_m2": 77
+  },
+  {
+    "kraj": "zlinsky",
+    "band": null,
+    "price_2023": 37117,
+    "price_2024": 41927,
+    "price_2025": 44717,
+    "price_avg": 41769,
+    "transfers": 1406,
+    "avg_size_m2": 78
+  },
+  {
+    "kraj": "moravskoslezsky",
+    "band": "do1999",
+    "price_2023": 35082,
+    "price_2024": 38016,
+    "price_2025": 41620,
+    "price_avg": 38725,
+    "transfers": 668,
+    "avg_size_m2": 84
+  },
+  {
+    "kraj": "moravskoslezsky",
+    "band": "2000_9999",
+    "price_2023": 40139,
+    "price_2024": 40611,
+    "price_2025": 45255,
+    "price_avg": 42286,
+    "transfers": 932,
+    "avg_size_m2": 85
+  },
+  {
+    "kraj": "moravskoslezsky",
+    "band": "10000_49999",
+    "price_2023": 39984,
+    "price_2024": 42669,
+    "price_2025": 43882,
+    "price_avg": 42227,
+    "transfers": 412,
+    "avg_size_m2": 87
+  },
+  {
+    "kraj": "moravskoslezsky",
+    "band": "50000_plus",
+    "price_2023": 56644,
+    "price_2024": 61107,
+    "price_2025": 63148,
+    "price_avg": 60650,
+    "transfers": 331,
+    "avg_size_m2": 84
+  },
+  {
+    "kraj": "moravskoslezsky",
+    "band": null,
+    "price_2023": 41197,
+    "price_2024": 43041,
+    "price_2025": 46496,
+    "price_avg": 43855,
+    "transfers": 2343,
+    "avg_size_m2": 85
+  },
+  {
+    "kraj": "cr",
+    "band": null,
+    "price_2023": 48320,
+    "price_2024": 51867,
+    "price_2025": 56066,
+    "price_avg": 52556,
+    "transfers": 19724,
+    "avg_size_m2": 85
+  }
+]
