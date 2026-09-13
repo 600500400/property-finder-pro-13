@@ -88,6 +88,33 @@ export type Database = {
         }
         Relationships: []
       }
+      csu_house_calibration_band: {
+        Row: {
+          computed_at: string
+          factor: number
+          median_ratio: number
+          sample_count: number
+          size_band: string
+          typical_area_m2: number | null
+        }
+        Insert: {
+          computed_at?: string
+          factor: number
+          median_ratio: number
+          sample_count?: number
+          size_band: string
+          typical_area_m2?: number | null
+        }
+        Update: {
+          computed_at?: string
+          factor?: number
+          median_ratio?: number
+          sample_count?: number
+          size_band?: string
+          typical_area_m2?: number | null
+        }
+        Relationships: []
+      }
       csu_house_calibration_bands: {
         Row: {
           computed_at: string
