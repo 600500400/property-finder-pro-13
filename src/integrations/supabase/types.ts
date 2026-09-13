@@ -67,6 +67,114 @@ export type Database = {
           },
         ]
       }
+      csu_house_calibration: {
+        Row: {
+          computed_at: string
+          median_ratio: number
+          sample_count: number
+          singleton: boolean
+        }
+        Insert: {
+          computed_at?: string
+          median_ratio: number
+          sample_count: number
+          singleton?: boolean
+        }
+        Update: {
+          computed_at?: string
+          median_ratio?: number
+          sample_count?: number
+          singleton?: boolean
+        }
+        Relationships: []
+      }
+      csu_house_prices_kraj: {
+        Row: {
+          avg_size_m2: number | null
+          band: string | null
+          id: number
+          kraj: string
+          price_2023: number | null
+          price_2024: number | null
+          price_2025: number | null
+          price_avg: number | null
+          transfers: number | null
+        }
+        Insert: {
+          avg_size_m2?: number | null
+          band?: string | null
+          id?: number
+          kraj: string
+          price_2023?: number | null
+          price_2024?: number | null
+          price_2025?: number | null
+          price_avg?: number | null
+          transfers?: number | null
+        }
+        Update: {
+          avg_size_m2?: number | null
+          band?: string | null
+          id?: number
+          kraj?: string
+          price_2023?: number | null
+          price_2024?: number | null
+          price_2025?: number | null
+          price_avg?: number | null
+          transfers?: number | null
+        }
+        Relationships: []
+      }
+      csu_house_prices_okres: {
+        Row: {
+          avg_size_m2: number | null
+          band: string | null
+          band_price_raw: number | null
+          band_price_uplifted: number | null
+          id: number
+          kraj: string
+          level: string
+          okres: string | null
+          price_2023: number | null
+          price_2023_2025: number | null
+          price_2024: number | null
+          price_2025: number | null
+          transfers: number | null
+          uplift_factor: number | null
+        }
+        Insert: {
+          avg_size_m2?: number | null
+          band?: string | null
+          band_price_raw?: number | null
+          band_price_uplifted?: number | null
+          id?: number
+          kraj: string
+          level: string
+          okres?: string | null
+          price_2023?: number | null
+          price_2023_2025?: number | null
+          price_2024?: number | null
+          price_2025?: number | null
+          transfers?: number | null
+          uplift_factor?: number | null
+        }
+        Update: {
+          avg_size_m2?: number | null
+          band?: string | null
+          band_price_raw?: number | null
+          band_price_uplifted?: number | null
+          id?: number
+          kraj?: string
+          level?: string
+          okres?: string | null
+          price_2023?: number | null
+          price_2023_2025?: number | null
+          price_2024?: number | null
+          price_2025?: number | null
+          transfers?: number | null
+          uplift_factor?: number | null
+        }
+        Relationships: []
+      }
       email_log: {
         Row: {
           created_at: string
@@ -202,6 +310,33 @@ export type Database = {
           note?: string | null
           revoked_at?: string | null
           user_id?: string
+        }
+        Relationships: []
+      }
+      obce_population: {
+        Row: {
+          id: number
+          is_ambiguous_in_kraj: boolean
+          kraj: string
+          name: string
+          name_norm: string
+          population: number
+        }
+        Insert: {
+          id?: number
+          is_ambiguous_in_kraj?: boolean
+          kraj: string
+          name: string
+          name_norm: string
+          population: number
+        }
+        Update: {
+          id?: number
+          is_ambiguous_in_kraj?: boolean
+          kraj?: string
+          name?: string
+          name_norm?: string
+          population?: number
         }
         Relationships: []
       }
