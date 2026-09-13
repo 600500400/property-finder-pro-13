@@ -228,12 +228,13 @@ function csuTooltip(csu: NonNullable<Listing["csu_compare"]>): string {
     ? ` Plocha domu se výrazně liší od typické velikosti v tomto pásmu (${Math.round(csu.band_typical_area_m2)} m²).`
     : "";
   const lowConf = csu.area_low_confidence ? " Plocha u tohoto inzerátu má nízkou důvěryhodnost (není strukturovaný údaj)." : "";
-  return `${CSU_CAVEAT}${units}${band}${estimate}${area}${lowConf}`;
+  const lowSample = csu.benchmark_low_sample ? " ČSÚ tuto hodnotu uvádí jako údaj z malého počtu převodů — srovnání je proto jen orientační." : "";
+  return `${CSU_CAVEAT}${units}${band}${estimate}${area}${lowConf}${lowSample}`;
 }
 
 function CsuCompareHero({ csu, listingPc }: { csu?: Listing["csu_compare"]; listingPc?: Listing["price_compare"] }) {
   if (!csu) return <PriceCompareHero />;
-  const weak = csu.area_warning || csu.area_low_confidence;
+  const weak = csu.area_warning || csu.area_low_confidence || csu.benchmark_low_sample;
   return (
     <div className={`flex flex-col gap-2 ${weak ? "text-muted-foreground" : ""}`} title={csuTooltip(csu)}>
       <div className="flex items-end justify-between gap-2">
@@ -565,8 +566,8 @@ function ListingCompact({ listing }: { listing: Listing }) {
         >
           {listing.csu_compare ? (
             <>
-              <span className={`inline-flex items-center gap-1 font-semibold ${listing.csu_compare.area_warning || listing.csu_compare.area_low_confidence ? "text-muted-foreground" : PC_TEXT[listing.csu_compare.band]}`}>
-                {(listing.csu_compare.area_warning || listing.csu_compare.area_low_confidence) && <AlertTriangle className="h-3 w-3 shrink-0" aria-label="Orientační srovnání" />}
+              <span className={`inline-flex items-center gap-1 font-semibold ${listing.csu_compare.area_warning || listing.csu_compare.area_low_confidence || listing.csu_compare.benchmark_low_sample ? "text-muted-foreground" : PC_TEXT[listing.csu_compare.band]}`}>
+                {(listing.csu_compare.area_warning || listing.csu_compare.area_low_confidence || listing.csu_compare.benchmark_low_sample) && <AlertTriangle className="h-3 w-3 shrink-0" aria-label="Orientační srovnání" />}
                 {listing.csu_compare.verdict_label} vs. ČSÚ
               </span>
 
@@ -643,10 +644,10 @@ function ListingRow({ listing }: { listing: Listing }) {
         {listing.property_type === "domy" ? (
           listing.csu_compare && (
             <span
-              className={`inline-flex items-center gap-1 text-[10px] font-semibold ${listing.csu_compare.area_warning || listing.csu_compare.area_low_confidence ? "text-muted-foreground" : PC_TEXT[listing.csu_compare.band]}`}
+              className={`inline-flex items-center gap-1 text-[10px] font-semibold ${listing.csu_compare.area_warning || listing.csu_compare.area_low_confidence || listing.csu_compare.benchmark_low_sample ? "text-muted-foreground" : PC_TEXT[listing.csu_compare.band]}`}
               title={csuTooltip(listing.csu_compare)}
             >
-              {(listing.csu_compare.area_warning || listing.csu_compare.area_low_confidence) && <AlertTriangle className="h-3 w-3 shrink-0" aria-label="Orientační srovnání" />}
+              {(listing.csu_compare.area_warning || listing.csu_compare.area_low_confidence || listing.csu_compare.benchmark_low_sample) && <AlertTriangle className="h-3 w-3 shrink-0" aria-label="Orientační srovnání" />}
               {listing.csu_compare.verdict_label} vs. ČSÚ
 
             </span>

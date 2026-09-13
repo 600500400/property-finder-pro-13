@@ -131,7 +131,7 @@ export const queryListings = createServerFn({ method: "POST" })
     const priceIndex = indexPriceComps(compRows);
 
     const [{ data: okresData }, { data: krajData }] = await Promise.all([
-      supabaseAdmin.from("csu_house_prices_okres").select("kraj, okres, level, avg_size_m2, price_2025, band, band_price_uplifted"),
+      supabaseAdmin.from("csu_house_prices_okres").select("kraj, okres, level, avg_size_m2, price_2025, band, band_price_uplifted, low_sample"),
       supabaseAdmin.from("csu_house_prices_kraj").select("kraj, band, price_2025, avg_size_m2"),
     ]);
     const populationData: PopulationRow[] = [];

@@ -187,6 +187,7 @@ export type Database = {
           id: number
           kraj: string
           level: string
+          low_sample: boolean
           okres: string | null
           price_2023: number | null
           price_2023_2025: number | null
@@ -203,6 +204,7 @@ export type Database = {
           id?: number
           kraj: string
           level: string
+          low_sample?: boolean
           okres?: string | null
           price_2023?: number | null
           price_2023_2025?: number | null
@@ -219,6 +221,7 @@ export type Database = {
           id?: number
           kraj?: string
           level?: string
+          low_sample?: boolean
           okres?: string | null
           price_2023?: number | null
           price_2023_2025?: number | null

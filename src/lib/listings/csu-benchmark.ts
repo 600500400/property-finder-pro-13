@@ -58,6 +58,8 @@ export interface CsuOkresRow {
   price_2025: number | null;
   band: string | null;
   band_price_uplifted: number | null;
+  /** ČSÚ footnote "malý počet údajů k dispozici" on this band cell. */
+  low_sample?: boolean | null;
 }
 
 export interface CsuKrajRow {
@@ -94,6 +96,8 @@ export interface CsuHouseCompare {
   municipality_match: "matched" | "ambiguous" | "unmatched";
   avg_house_size_m2?: number;
   area_warning: boolean;
+  /** ČSÚ flagged this band price as based on a small number of transfers. */
+  benchmark_low_sample: boolean;
   /** Bazoš publishes no structured area field at all — flag it in the UI. */
   area_low_confidence: boolean;
   area_type?: string;
@@ -152,9 +156,10 @@ export function buildCsuIndexes(
   return { okres, kraj, population, calibration: calibration.size ? calibration : undefined };
 }
 
-// A handful of ČSÚ band rows carry a corrupt value — a per-dwelling price where a
-// per-m² price belongs (e.g. okres Písek: 617 806 "Kč/m²"). Reject any band price
-// more than 3x off the okres/kraj per-m² price and fall back to that instead.
+// Last-resort net. The 14 corrupt band prices (okres Písek: 617 806 "Kč/m²") came
+// from footnote markers folded into the number at import time — that is fixed in
+// csu-cell.ts and in the data, so this guard should no longer trigger; it stays to
+// keep a future bad import from reaching the comparison.
 function plausibleBandPrice(bandPrice: number, reference: number | null): boolean {
   if (!reference) return bandPrice > 3_000 && bandPrice < 400_000;
   return bandPrice >= reference / 3 && bandPrice <= reference * 3;
@@ -205,10 +210,12 @@ export function computeCsuHouseCompare(args: {
   let benchmark: number | null = null;
   let avgSize: number | null = null;
   let scope: CsuScope | null = null;
+  let benchmarkLowSample = false;
 
   if (kraj === "praha") {
     const row = indexes.okres.get("okres|praha|praha|50000_plus");
     benchmark = row?.band_price_uplifted ?? row?.price_2025 ?? null;
+    benchmarkLowSample = !!row?.band_price_uplifted && !!row.low_sample;
     avgSize = row?.avg_size_m2 ?? null;
     scope = benchmark ? "praha" : null;
   } else if (okres) {
@@ -216,6 +223,7 @@ export function computeCsuHouseCompare(args: {
     const bandRow = sizeBand ? indexes.okres.get(`okres|${kraj}|${okres}|${sizeBand}`) : undefined;
     if (bandRow?.band_price_uplifted && plausibleBandPrice(bandRow.band_price_uplifted, total?.price_2025 ?? null)) {
       benchmark = bandRow.band_price_uplifted;
+      benchmarkLowSample = !!bandRow.low_sample;
       scope = "okres_band";
     } else if (total?.price_2025) {
       benchmark = total.price_2025;
@@ -277,6 +285,7 @@ export function computeCsuHouseCompare(args: {
     municipality_match: ambiguous ? "ambiguous" : matched ? "matched" : "unmatched",
     avg_house_size_m2: avgSize ?? undefined,
     area_warning: areaWarning,
+    benchmark_low_sample: benchmarkLowSample,
     area_low_confidence: args.source === "bazos" || args.areaType === "zastavena",
     area_type: args.areaType ?? undefined,
   };
