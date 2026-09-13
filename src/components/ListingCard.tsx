@@ -229,7 +229,7 @@ function csuTooltip(csu: NonNullable<Listing["csu_compare"]>): string {
     : "";
   const lowConf = csu.area_low_confidence ? " Plocha u tohoto inzerátu má nízkou důvěryhodnost (není strukturovaný údaj)." : "";
   const lowSample = csu.benchmark_low_sample ? " ČSÚ tuto hodnotu uvádí jako údaj z malého počtu převodů — srovnání je proto jen orientační." : "";
-  return `${CSU_CAVEAT}${units}${band}${estimate}${area}${lowConf}`;
+  return `${CSU_CAVEAT}${units}${band}${estimate}${area}${lowConf}${lowSample}`;
 }
 
 function CsuCompareHero({ csu, listingPc }: { csu?: Listing["csu_compare"]; listingPc?: Listing["price_compare"] }) {
