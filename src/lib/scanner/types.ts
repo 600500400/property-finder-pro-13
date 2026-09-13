@@ -112,6 +112,8 @@ export interface Listing {
   house_subtype?: import("./house-subtype").HouseSubtype;
   /** Asking Kč/m² vs. median of comparable listings (same type, area ±25 %). */
   price_compare?: import("@/lib/listings/price-compare").PriceCompare;
+  /** Asking house Kč/m² vs. realised ČSÚ house-price benchmark. */
+  csu_compare?: import("@/lib/listings/csu-benchmark").CsuHouseCompare;
   badges?: string[];
   flags?: Flag[];
 }
@@ -138,6 +140,7 @@ export interface ScanMeta {
   tier?: "anonymous" | "free" | "premium";
   result_cap?: number;
   free_capped?: boolean;
+  csu_asking_premium_pct?: number;
 }
 
 

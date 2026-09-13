@@ -1,18 +1,25 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
 import { Footer } from "@/components/Footer";
+import { getCsuCalibration } from "@/lib/listings/csu-public.functions";
 
 export const Route = createFileRoute("/metodika")({
+  loader: () => getCsuCalibration(),
   head: () => ({
     meta: [
       { title: "Metodika výpočtu výnosu — RealityScanner" },
       { name: "description", content: "Jak počítáme hrubý a čistý výnos z pronájmu, návratnost a hodnocení investice. Transparentní vzorce a zdroje dat." },
+      { property: "og:title", content: "Metodika výpočtu výnosu — RealityScanner" },
+      { property: "og:description", content: "Jak počítáme výnosy a srovnáváme ceny nemovitostí s realizovanými cenami ČSÚ." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: Metodika,
 });
 
 function Metodika() {
+  const calibration = Route.useLoaderData();
   return (
     <div className="min-h-screen bg-background text-foreground">
       <header className="border-b border-border bg-[var(--color-surface)]">
@@ -192,7 +199,32 @@ function Metodika() {
           </ul>
         </Section>
 
-        <Section title="7. Cena za m² vs. průměr srovnatelných">
+        <Section title="7. Cena domů za m² vs. realizované ceny ČSÚ">
+          <div className="rounded-md border border-amber-500/40 bg-amber-500/5 p-4 text-amber-200">
+            <strong>Zásadní rozdíl:</strong> ČSÚ uvádí ceny, za které se domy skutečně prodaly,
+            zatímco inzeráty ukazují nabídkové ceny, které bývají systematicky vyšší. Kladná
+            odchylka od ČSÚ proto sama o sobě neznamená, že je nemovitost předražená.
+            {calibration && <span className="mt-2 block font-semibold">Typická nabídka je o {Math.abs(calibration.premiumPct)} % {calibration.premiumPct >= 0 ? "nad" : "pod"} realizovanou cenou (medián z {calibration.sampleCount.toLocaleString("cs-CZ")} domů).</span>}
+          </div>
+          <p className="mt-3">
+            Primární srovnání domů vychází z realizovaných kupních cen ČSÚ. Nejprve hledáme
+            okres a velikost obce; utajená nebo chybějící hodnota pásma přechází na okresní
+            cenu roku 2025. Bez známého okresu použijeme krajské pásmo, případně celý kraj.
+          </p>
+          <p className="mt-2">
+            Okresní pásma jsou průměrem let 2023–2025 přepočteným na úroveň roku 2025 trendem
+            celého okresu. Přepočet jsme ověřili proti krajským hodnotám roku 2025; aktuální
+            kontrola musí mít průměrnou absolutní chybu pod 4 %.
+          </p>
+          <ul className="mt-3 list-disc space-y-1.5 pl-5 text-muted-foreground">
+            <li>Data jsou roční průměr s přibližně ročním zpožděním.</li>
+            <li>ČSÚ sleduje starší rodinné domy, nikoli novostavby.</li>
+            <li>V jednom pásmu se nerozlišuje velikost; průměrný dům má přibližně 80–95 m².</li>
+            <li>Cena za m² podlahové plochy nezohledňuje velikost ani hodnotu pozemku.</li>
+          </ul>
+        </Section>
+
+        <Section title="8. Cena bytů za m² vs. nabídkový medián">
           <p>
             U každého inzerátu porovnáváme jeho nabídkovou cenu za m² s <strong>mediánem
             srovnatelných aktivních inzerátů</strong> v naší databázi. Srovnatelný znamená:
@@ -213,7 +245,7 @@ function Metodika() {
           </p>
         </Section>
 
-        <Section title="8. Proč u domů nepočítáme nájemní výnos">
+        <Section title="9. Proč u domů nepočítáme nájemní výnos">
           <p>
             Pro rodinné domy neexistují spolehlivá srovnatelná data o nájmech — trh s
             pronájmy domů je řádově menší a velmi nesourodý. Aplikovat na dům sazby
