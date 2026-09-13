@@ -181,8 +181,10 @@ export async function runSourceScrape(
         kraj,
         city: l.locality || null,
         area_m2,
+        area_type,
         land_area_m2,
         house_subtype,
+
         // price_per_m2 is a generated column — do not set
         ownership: own.ownership,
         ownership_confidence: own.ownership_confidence,
