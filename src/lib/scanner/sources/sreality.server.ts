@@ -100,23 +100,44 @@ function dispSlug(name: string): string {
   return m ? m[1].toLowerCase() : "";
 }
 
+function slugify(s: string): string {
+  return s
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+/** Fallback sub-segment per main category — Sreality 404s a detail URL without it. */
+const SUB_FALLBACK: Record<number, string> = {
+  1: "1+kk", 2: "rodinny", 3: "pozemek", 4: "komercni", 5: "ostatni",
+};
+
+/**
+ * Canonical Sreality detail URL has exactly six segments:
+ *   /detail/{prodej|pronajem}/{byt|dum|…}/{subtype}/{locality-slug}/{hash_id}
+ * A missing subtype segment 404s; a non-canonical subtype/locality slug 301s to
+ * the canonical one, so any non-empty value is safe. Never fall back to
+ * /hledani/… — that is a search page and does not open the listing.
+ */
 function detailUrl(e: any, typeS: string, mainCb: number, name: string): string {
   const hashId = e.hash_id || "";
-  const loc = locSlug(e);
-
-  if (mainCb === 5) {
-    const low = name.toLowerCase();
-    if (low.includes("stání") || low.includes("stani"))
-      return `https://www.sreality.cz/detail/${typeS}/ostatni/garazove-stani/${loc}/${hashId}`;
-    if (low.includes("garáž") || low.includes("garaz"))
-      return `https://www.sreality.cz/detail/${typeS}/ostatni/garaz/${loc}/${hashId}`;
-    return `https://www.sreality.cz/detail/${typeS}/ostatni/${loc}/${hashId}`;
-  }
+  const loc = locSlug(e) || "lokalita";
   const mainS = MAIN_SLUG[mainCb] || "ostatni";
-  const disp = (mainCb === 1 || mainCb === 2) ? dispSlug(name) : "";
-  if (disp) return `https://www.sreality.cz/detail/${typeS}/${mainS}/${disp}/${loc}/${hashId}`;
-  if (hashId) return `https://www.sreality.cz/hledani/${typeS}/${mainS}?id=${hashId}`;
-  return `https://www.sreality.cz/detail/${typeS}/${mainS}/${loc}/${hashId}`;
+
+  const subName = typeof e.category_sub_cb === "object" ? e.category_sub_cb?.name : e.category_sub_cb;
+  let sub = typeof subName === "string" ? slugify(subName) : "";
+
+  if (!sub && (mainCb === 1 || mainCb === 2)) sub = dispSlug(name);
+  if (!sub && mainCb === 5) {
+    const low = name.toLowerCase();
+    if (low.includes("stání") || low.includes("stani")) sub = "garazove-stani";
+    else if (low.includes("garáž") || low.includes("garaz")) sub = "garaz";
+  }
+  if (!sub) sub = SUB_FALLBACK[mainCb] || "ostatni";
+
+  return `https://www.sreality.cz/detail/${typeS}/${mainS}/${sub}/${loc}/${hashId}`;
 }
 
 /** Sreality titles spell out the plot: "Prodej rodinného domu 116 m², pozemek 612 m²". */
