@@ -3,7 +3,7 @@ import { z } from "zod";
 import type { Listing, ScanFilters, ScanResult, SourceKey } from "@/lib/scanner/types";
 import type { RentComp } from "./yield.server";
 import { indexPriceComps, computePriceCompare, type PriceCompRow } from "./price-compare";
-import { buildCsuIndexes, computeCsuHouseCompare, type CsuKrajRow, type CsuOkresRow, type PopulationRow } from "./csu-benchmark";
+import { buildCsuIndexes, computeCsuHouseCompare, type CsuKrajRow, type CsuOkresRow, type PopulationRow, type SizeBand } from "./csu-benchmark";
 
 
 const SOURCE_LABEL: Record<SourceKey, string> = {
@@ -60,7 +60,7 @@ export const queryListings = createServerFn({ method: "POST" })
     // ----- main query -----
     let q = supabaseAdmin
       .from("listings")
-      .select("source, external_id, title, price, deal_type, property_type, house_subtype, kraj, city, area_m2, land_area_m2, price_per_m2, ownership, ownership_confidence, url, image_url, description_snippet, first_seen_at, last_seen_at, raw_data, flags")
+      .select("source, external_id, title, price, deal_type, property_type, house_subtype, kraj, city, area_m2, area_type, land_area_m2, price_per_m2, ownership, ownership_confidence, url, image_url, description_snippet, first_seen_at, last_seen_at, raw_data, flags")
       .eq("is_active", true)
       .eq("deal_type", filters.deal_type)
       .in("property_type", propertyTypes);
@@ -130,10 +130,9 @@ export const queryListings = createServerFn({ method: "POST" })
     }
     const priceIndex = indexPriceComps(compRows);
 
-    const [{ data: okresData }, { data: krajData }, { data: calibrationData }] = await Promise.all([
+    const [{ data: okresData }, { data: krajData }] = await Promise.all([
       supabaseAdmin.from("csu_house_prices_okres").select("kraj, okres, level, avg_size_m2, price_2025, band, band_price_uplifted"),
       supabaseAdmin.from("csu_house_prices_kraj").select("kraj, band, price_2025, avg_size_m2"),
-      supabaseAdmin.from("csu_house_calibration").select("median_ratio").eq("singleton", true).maybeSingle(),
     ]);
     const populationData: PopulationRow[] = [];
     for (let from = 0; from < 10000; from += PAGE) {
@@ -203,7 +202,8 @@ export const queryListings = createServerFn({ method: "POST" })
         areaM2,
         price: r.price,
         indexes: csuIndexes,
-        askingPremiumPct,
+        source: r.source,
+        areaType: r.area_type,
       }) ?? undefined : undefined;
 
       return {
@@ -252,7 +252,6 @@ export const queryListings = createServerFn({ method: "POST" })
         tier,
         result_cap: RESULT_CAP,
         free_capped: !isPremium && results.length >= RESULT_CAP,
-        csu_asking_premium_pct: askingPremiumPct,
       },
     };
   });
