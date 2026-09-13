@@ -183,7 +183,7 @@ function Index() {
       </div>
 
       <div className="grid flex-1 overflow-hidden md:grid-cols-[300px_1fr]">
-        <div className="hidden md:block">
+        <div className="hidden h-full md:block">
           <FilterSidebar
             filters={filters}
             setFilters={(f) => setFilters({ ...filters, ...f })}
