@@ -1,15 +1,16 @@
 import { Link } from "@tanstack/react-router";
 
 export function Footer() {
+  // TEMPORARY: Obchodní podmínky and Ochrana osobních údajů (Soukromí) links
+  // are hidden from the footer. The pages remain in the codebase and reachable
+  // by direct URL. These links MUST be restored before taking real payments.
   return (
     <footer className="border-t border-border bg-[var(--color-surface)] px-5 py-4 text-xs text-muted-foreground">
       <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-2">
         <div>© {new Date().getFullYear()} RealityScanner</div>
         <nav className="flex flex-wrap items-center gap-4">
           <Link to="/cenik" className="hover:text-foreground">Ceník</Link>
-          <Link to="/metodika" className="hover:text-foreground">Metodika výpočtu</Link>
-          <Link to="/obchodni-podminky" className="hover:text-foreground">Obchodní podmínky</Link>
-          <Link to="/ochrana-osobnich-udaju" className="hover:text-foreground">Ochrana osobních údajů</Link>
+          <Link to="/metodika" className="hover:text-foreground">Metodika</Link>
         </nav>
       </div>
     </footer>
