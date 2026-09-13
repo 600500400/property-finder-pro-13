@@ -221,41 +221,45 @@ function PriceCompareHero({ pc }: { pc?: Listing["price_compare"] }) {
 }
 
 function csuTooltip(csu: NonNullable<Listing["csu_compare"]>): string {
-  const premium = csu.asking_premium_pct == null ? "" : csu.asking_premium_pct >= 0
-    ? ` Typická nabídka je nyní o ${csu.asking_premium_pct} % nad realizovanou cenou.`
-    : ` Typická nabídka je nyní o ${Math.abs(csu.asking_premium_pct)} % pod realizovanou cenou.`;
-  const area = csu.area_warning ? ` Plocha nabídky se liší o více než 50 % od průměrného domu ČSÚ (${csu.avg_house_size_m2} m²).` : "";
-  return `${CSU_CAVEAT}${premium}${area}`;
+  const units = ` Naše hodnota je ${csu.own_per_m2.toLocaleString("cs-CZ")} Kč/m² užitné plochy, ČSÚ uvádí ${csu.benchmark_per_m2.toLocaleString("cs-CZ")} Kč/m² obytné plochy — nejde o stejnou jednotku.`;
+  const band = ` Srovnáváme jen v pásmu ${csu.size_band_label}${csu.band_factor ? `, přepočtový koeficient ${csu.band_factor.toFixed(2)}` : ""}${csu.band_sample_count ? ` (z ${csu.band_sample_count} domů)` : ""}; očekávaná úroveň pro toto pásmo je ${csu.expected_per_m2.toLocaleString("cs-CZ")} Kč/m².`;
+  const estimate = " Koeficient je odvozen z našich vlastních nabídkových cen, výsledná úroveň je proto odhad, ne měření.";
+  const area = csu.area_warning && csu.band_typical_area_m2
+    ? ` Plocha domu se výrazně liší od typické velikosti v tomto pásmu (${Math.round(csu.band_typical_area_m2)} m²).`
+    : "";
+  const lowConf = csu.area_low_confidence ? " Plocha u tohoto inzerátu má nízkou důvěryhodnost (není strukturovaný údaj)." : "";
+  return `${CSU_CAVEAT}${units}${band}${estimate}${area}${lowConf}`;
 }
 
 function CsuCompareHero({ csu, listingPc }: { csu?: Listing["csu_compare"]; listingPc?: Listing["price_compare"] }) {
   if (!csu) return <PriceCompareHero />;
-  const weak = csu.area_warning;
+  const weak = csu.area_warning || csu.area_low_confidence;
   return (
     <div className={`flex flex-col gap-2 ${weak ? "text-muted-foreground" : ""}`} title={csuTooltip(csu)}>
       <div className="flex items-end justify-between gap-2">
         <div className="flex flex-col leading-none">
-          <span className={`inline-flex items-center gap-1.5 font-mono text-2xl font-bold ${weak ? "text-muted-foreground" : PC_TEXT[csu.band]}`}>
+          <span className={`inline-flex items-center gap-1.5 text-xl font-bold ${weak ? "text-muted-foreground" : PC_TEXT[csu.band]}`}>
             {weak && <AlertTriangle className="h-4 w-4 shrink-0" aria-label="Orientační srovnání" />}
-            {pcDiff(csu.diff_pct)}
+            {csu.verdict_label}
           </span>
-          <span className="mt-1 text-[10px] uppercase tracking-wider text-muted-foreground">vs. realizované ceny ČSÚ</span>
+          <span className="mt-1 text-[10px] uppercase tracking-wider text-muted-foreground">vs. realizované ceny ČSÚ · {csu.size_band_label}</span>
         </div>
         <span className={`text-[11px] font-semibold ${weak ? "text-muted-foreground" : PC_TEXT[csu.band]}`}>{csu.scope_label}</span>
       </div>
       <div className="grid grid-cols-2 gap-2 border-t border-border/40 pt-2">
-        <Metric label="Tato nabídka" value={`${csu.own_per_m2.toLocaleString("cs-CZ")} Kč/m²`} />
-        <Metric label="ČSÚ 2025" value={`${csu.benchmark_per_m2.toLocaleString("cs-CZ")} Kč/m²`} />
+        <Metric label="Tato nabídka" value={`${csu.own_per_m2.toLocaleString("cs-CZ")} Kč/m² užitné`} />
+        <Metric label="ČSÚ 2025" value={`${csu.benchmark_per_m2.toLocaleString("cs-CZ")} Kč/m² obytné`} />
       </div>
       {listingPc && listingPc.samples >= 10 && (
         <div className="text-[10px] text-muted-foreground">
           Nabídkový medián: {listingPc.median_per_m2.toLocaleString("cs-CZ")} Kč/m² ({pcScope(listingPc.scope)}, n={listingPc.samples})
         </div>
       )}
-      <div className="text-[10px] text-muted-foreground">Realizované ceny · {csu.scope_label}</div>
+      <div className="text-[10px] text-muted-foreground">Realizované ceny · {csu.scope_label} · odhad, ne přesné procento</div>
     </div>
   );
 }
+
 
 function PriceCompareBadge({ pc }: { pc?: Listing["price_compare"] }) {
   if (!pc) {
@@ -561,10 +565,11 @@ function ListingCompact({ listing }: { listing: Listing }) {
         >
           {listing.csu_compare ? (
             <>
-              <span className={`inline-flex items-center gap-1 font-mono font-semibold ${listing.csu_compare.area_warning ? "text-muted-foreground" : PC_TEXT[listing.csu_compare.band]}`}>
-                {listing.csu_compare.area_warning && <AlertTriangle className="h-3 w-3 shrink-0" aria-label="Orientační srovnání" />}
-                {pcDiff(listing.csu_compare.diff_pct)} vs. ČSÚ
+              <span className={`inline-flex items-center gap-1 font-semibold ${listing.csu_compare.area_warning || listing.csu_compare.area_low_confidence ? "text-muted-foreground" : PC_TEXT[listing.csu_compare.band]}`}>
+                {(listing.csu_compare.area_warning || listing.csu_compare.area_low_confidence) && <AlertTriangle className="h-3 w-3 shrink-0" aria-label="Orientační srovnání" />}
+                {listing.csu_compare.verdict_label} vs. ČSÚ
               </span>
+
               <span className="text-muted-foreground">{listing.csu_compare.scope_label}</span>
             </>
           ) : (
@@ -638,11 +643,12 @@ function ListingRow({ listing }: { listing: Listing }) {
         {listing.property_type === "domy" ? (
           listing.csu_compare && (
             <span
-              className={`inline-flex items-center gap-1 font-mono text-[10px] font-semibold ${listing.csu_compare.area_warning ? "text-muted-foreground" : PC_TEXT[listing.csu_compare.band]}`}
+              className={`inline-flex items-center gap-1 text-[10px] font-semibold ${listing.csu_compare.area_warning || listing.csu_compare.area_low_confidence ? "text-muted-foreground" : PC_TEXT[listing.csu_compare.band]}`}
               title={csuTooltip(listing.csu_compare)}
             >
-              {listing.csu_compare.area_warning && <AlertTriangle className="h-3 w-3 shrink-0" aria-label="Orientační srovnání" />}
-              {pcDiff(listing.csu_compare.diff_pct)} vs. ČSÚ
+              {(listing.csu_compare.area_warning || listing.csu_compare.area_low_confidence) && <AlertTriangle className="h-3 w-3 shrink-0" aria-label="Orientační srovnání" />}
+              {listing.csu_compare.verdict_label} vs. ČSÚ
+
             </span>
           )
         ) : inv ? (

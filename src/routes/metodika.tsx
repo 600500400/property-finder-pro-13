@@ -3,6 +3,13 @@ import { ArrowLeft } from "lucide-react";
 import { Footer } from "@/components/Footer";
 import { getCsuCalibration } from "@/lib/listings/csu-public.functions";
 
+const BAND_LABEL: Record<string, string> = {
+  lt100: "do 100 m²",
+  "100_150": "100–150 m²",
+  "150_250": "150–250 m²",
+  gt250: "nad 250 m²",
+};
+
 export const Route = createFileRoute("/metodika")({
   loader: () => getCsuCalibration(),
   head: () => ({
@@ -201,11 +208,44 @@ function Metodika() {
 
         <Section title="7. Cena domů za m² vs. realizované ceny ČSÚ">
           <div className="rounded-md border border-amber-500/40 bg-amber-500/5 p-4 text-amber-200">
-            <strong>Zásadní rozdíl:</strong> ČSÚ uvádí ceny, za které se domy skutečně prodaly,
-            zatímco inzeráty ukazují nabídkové ceny, které bývají systematicky vyšší. Kladná
-            odchylka od ČSÚ proto sama o sobě neznamená, že je nemovitost předražená.
-            {calibration && <span className="mt-2 block font-semibold">Typická nabídka je o {Math.abs(calibration.premiumPct)} % {calibration.premiumPct >= 0 ? "nad" : "pod"} realizovanou cenou (medián z {calibration.sampleCount.toLocaleString("cs-CZ")} domů).</span>}
+            <strong>Dvě různé jednotky:</strong> ČSÚ počítá cenu na m² <em>obytné</em> plochy,
+            zatímco inzeráty uvádějí zpravidla <em>užitnou</em> plochu, která je u domů řádově
+            dvojnásobná. Nejde tedy o srovnání stejné věci a rozdíl nelze brát jako procento
+            předraženosti. K tomu ČSÚ uvádí ceny skutečně realizované, kdežto inzerát nabídkovou
+            cenu, která bývá systematicky vyšší.
           </div>
+          <p className="mt-3">
+            Proto neuvádíme u domů přesné procento, ale slovní hodnocení (výrazně levnější,
+            levnější, v průměru, dražší, výrazně dražší). Srovnává se vždy jen v rámci
+            velikostního pásma domu (do 100 m², 100–150 m², 150–250 m², nad 250 m²) a krajská
+            úroveň ČSÚ se do naší jednotky přepočítává koeficientem odvozeným z mediánu našich
+            vlastních nabídek v tomtéž pásmu. Výsledek je <strong>odhad</strong>, nikoli měření.
+          </p>
+          {calibration && (
+            <div className="mt-3 overflow-x-auto">
+              <table className="w-full text-left text-sm">
+                <thead className="text-muted-foreground">
+                  <tr><th className="py-1 pr-4">Pásmo</th><th className="py-1 pr-4">Koeficient</th><th className="py-1 pr-4">Typická plocha</th><th className="py-1">Počet domů</th></tr>
+                </thead>
+                <tbody>
+                  {calibration.bands.map(band => (
+                    <tr key={band.sizeBand} className="border-t border-border/40">
+                      <td className="py-1 pr-4">{BAND_LABEL[band.sizeBand] ?? band.sizeBand}</td>
+                      <td className="py-1 pr-4">{band.factor.toFixed(2)}×</td>
+                      <td className="py-1 pr-4">{band.typicalAreaM2 ? `${Math.round(band.typicalAreaM2)} m²` : "—"}</td>
+                      <td className="py-1">{band.sampleCount.toLocaleString("cs-CZ")}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+          <p className="mt-2">
+            Do výpočtu koeficientu nevstupují inzeráty, kde je uvedena jen zastavěná plocha,
+            ani zdroje bez strukturovaného údaje o ploše (Bazoš) — u těch srovnání zobrazujeme
+            zeslabeně a s upozorněním na nízkou důvěryhodnost plochy.
+          </p>
+
           <p className="mt-3">
             Primární srovnání domů vychází z realizovaných kupních cen ČSÚ. Nejprve hledáme
             okres a velikost obce; utajená nebo chybějící hodnota pásma přechází na okresní

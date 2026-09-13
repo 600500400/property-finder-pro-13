@@ -6,7 +6,7 @@ import { regionFromLocality, sanitizeAreaM2 } from "./kraj-mapping";
 import { detectFlags } from "./flags";
 import { deriveHouseSubtype } from "./house-subtype";
 import { parseLandArea } from "./land-area";
-import { parseFloorArea } from "./floor-area";
+import { areaTypeFromText, parseFloorAreaDetailed } from "./floor-area";
 
 import { fetchSreality } from "./sources/sreality.server";
 import { fetchBezrealitky } from "./sources/bezrealitky.server";
@@ -137,11 +137,20 @@ export async function runSourceScrape(
       const existing = existingIds.has(external_id);
 
       // Houses often carry the floor area only in free text (Bazoš, iDnes).
-      // Recover it so the listing both gets and contributes to a Kč/m² median.
-      const rawArea = l.area_m2 ?? (propertyType === "domy"
-        ? (parseFloorArea(l.name) ?? parseFloorArea(l.description_snippet) ?? null)
-        : null);
+      // Recover it so the listing both gets and contributes to a Kč/m² median,
+      // and record WHICH area label the number carried (užitná / obytná /
+      // zastavěná) so incomparable measures can be excluded downstream.
+      const parsedArea = propertyType === "domy"
+        ? (parseFloorAreaDetailed(l.name) ?? parseFloorAreaDetailed(l.description_snippet))
+        : undefined;
+      const rawArea = l.area_m2 ?? (parsedArea?.value ?? null);
       const area_m2 = sanitizeAreaM2(rawArea);
+      const area_type = propertyType === "domy"
+        ? (l.area_m2 != null
+            ? areaTypeFromText(`${l.name ?? ""} ${l.description_snippet ?? ""}`)
+            : (parsedArea?.areaType ?? null))
+        : null;
+
       const kraj = regionFromLocality(l.locality);
       const price = l.price || null;
       const flags = detectFlags({
@@ -172,8 +181,10 @@ export async function runSourceScrape(
         kraj,
         city: l.locality || null,
         area_m2,
+        area_type,
         land_area_m2,
         house_subtype,
+
         // price_per_m2 is a generated column — do not set
         ownership: own.ownership,
         ownership_confidence: own.ownership_confidence,

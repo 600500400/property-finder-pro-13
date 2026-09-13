@@ -15,12 +15,20 @@ export const getCsuCalibration = createServerFn({ method: "GET" }).handler(async
       return fetch(input, { ...init, headers });
     } },
   });
-  const { data } = await supabasePublic.from("csu_house_calibration")
-    .select("median_ratio, sample_count, computed_at").eq("singleton", true).maybeSingle();
-  if (!data) return null;
+  const { data } = await supabasePublic.from("csu_house_calibration_band")
+    .select("size_band, factor, typical_area_m2, sample_count, computed_at");
+  if (!data?.length) return null;
+  const order = ["lt100", "100_150", "150_250", "gt250"];
   return {
-    premiumPct: Math.round((Number(data.median_ratio) - 1) * 100),
-    sampleCount: data.sample_count,
-    computedAt: data.computed_at,
+    bands: [...data]
+      .sort((a, b) => order.indexOf(a.size_band) - order.indexOf(b.size_band))
+      .map(row => ({
+        sizeBand: row.size_band,
+        factor: Number(row.factor),
+        typicalAreaM2: row.typical_area_m2 == null ? null : Number(row.typical_area_m2),
+        sampleCount: row.sample_count,
+      })),
+    computedAt: data[0].computed_at,
+    sampleCount: data.reduce((sum, row) => sum + row.sample_count, 0),
   };
 });
