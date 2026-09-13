@@ -31,7 +31,16 @@ Postup v tomto pořadí:
 3. kraj (rok 2025), když nelze určit okres,
 4. Praha má jediný řádek bez pásem, použije se přímo.
 
-Velikost obce potřebuje seznam obcí s počtem obyvatel — ten dodáte jako další soubor. Do jeho nahrání běží srovnání na úrovni celého okresu; po nahrání připojím pásma bez další změny logiky.
+### 3b. Import obcí a určení velikostního pásma
+
+Nahraný soubor obsahuje 6 258 obcí s počtem obyvatel k 1. 1. 2025. Kraj je uveden jako hlavička sekce a doplní se dolů na všechny obce pod ní; Praha je zároveň hlavička i jediná obec. Úvodní popisné řádky i závěrečné řádky s časem generování se přeskočí.
+
+Soubor neobsahuje okres, proto:
+- Obce se párují na kombinaci **název obce + kraj**, vždy jen přesnou shodou po normalizaci (malá písmena, bez diakritiky, sjednocené mezery a spojovníky). Žádná shoda podle začátku slova ani přibližná — „Mikulov" se nikdy nespáruje s „Mikulovice".
+- Když název obce v daném kraji odpovídá více řádkům (165 takových případů, např. Bukovany, Hradištko, Dlouhá Lhota ve Středočeském kraji), pásmo se **neuhaduje**. Nabídka se srovná s celookresním údajem a označí se poznámkou, že obec nelze jednoznačně určit.
+- Městské části se sčítají pod matku: „Praha – Záběhlice" → Praha, „Brno-Žabovřesky" → Brno, stejně pro Ostravu, Plzeň, Ústí nad Labem, Liberec, Olomouc a Pardubice.
+
+Podle počtu obyvatel se nabídce přiřadí pásmo do 1999 / 2000–9999 / 10000–49999 / 50000 a více.
 
 ### 4. Zobrazení
 
