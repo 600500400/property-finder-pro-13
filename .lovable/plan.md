@@ -1,67 +1,89 @@
-# Srovnání s ČSÚ: nesoulad definice plochy — zjištění a návrh
+# Srovnání s ČSÚ: nesoulad definice plochy — zjištění a plán opravy
 
-Nic v textech jsem neměnil a hodnotu −9 % nikde nezveřejnil. Níže jsou zjištění a návrh, jak obě strany srovnat.
+Nic v textech jsem neměnil a hodnotu −9 % nikde nezveřejnil.
 
 ## 1. Jakou plochu ČSÚ používá
 
-**Obytnou plochu rodinného domu.** V metodických vysvětlivkách k publikaci „Ceny nemovitostí 2023–2025“ stojí přímo:
+**Obytnou plochu rodinného domu.** Metodické vysvětlivky k publikaci „Ceny nemovitostí 2023–2025“ říkají přímo:
 
 > „Jednotkovou cenou u rodinných domů je cena za 1 m² obytné plochy rodinného domu (v předchozích publikacích se jednalo o cenu za 1 m³ obestavěného prostoru).“
 
-Zdroj: metodické vysvětlivky ke [Ceny nemovitostí](https://csu.gov.cz/produkty/ceny-nemovitosti) a [Metodika statistiky cen nemovitostí](https://csu.gov.cz/metodika-statistiky-za-oblast-cen-nemovitosti). Plocha se doplňuje z registrů budov (RSO / RÚIAN), ne z inzerce. Starší publikace (do ~2015) stavěly na daňových přiznáních a cenu domů uváděly za m³ obestavěného prostoru — proto je řada nesrovnatelná se starými čísly.
-
-Obytná plocha = jen obytné místnosti. Nepatří do ní chodby, technické místnosti, sklep, garáž, ani (typicky) podkroví bez obytného využití.
+Zdroj: [Ceny nemovitostí](https://csu.gov.cz/produkty/ceny-nemovitosti), [Metodika statistiky cen nemovitostí](https://csu.gov.cz/metodika-statistiky-za-oblast-cen-nemovitosti). Plocha se doplňuje z registrů budov (RSO / RÚIAN), ne z inzerce. Obytná plocha = jen obytné místnosti; bez chodeb, technických místností, sklepa a garáže.
 
 ## 2. Co uvádějí naše čtyři zdroje
 
-| Zdroj | Definice pole plochy | Medián plochy domu | Průměr |
+| Zdroj | Definice pole plochy | Medián | Průměr |
 |---|---|---|---|
-| Sreality | **Užitná plocha** — součet ploch všech místností, bez balkonu, terasy a garážového stání; sklep jen jako samostatná místnost ([nápověda](https://o-seznam.cz/napoveda/sreality/pojmy/)) | 155 m² | 196 m² |
-| Bezrealitky | žádná zveřejněná definice pole | 160,5 m² | 198 m² |
-| Bazoš | vůbec žádné strukturované pole — plocha je jen ve volném textu inzerenta | 155 m² | 227 m² |
-| iDnes / RealityMix | žádná zveřejněná definice pole | 190 m² | 256 m² |
+| Sreality | **Užitná plocha** — všechny místnosti, bez balkonu, terasy a garážového stání ([nápověda](https://o-seznam.cz/napoveda/sreality/pojmy/)) | 155 m² | 196 m² |
+| Bezrealitky | žádná zveřejněná definice | 160,5 m² | 198 m² |
+| Bazoš | žádné strukturované pole — plocha jen ve volném textu inzerenta | 155 m² | 227 m² |
+| iDnes / RealityMix | žádná zveřejněná definice | 190 m² | 256 m² |
 
-Naše hodnoty: **medián 160 m², průměr 205 m².** ČSÚ: průměrná velikost RD v okresech má medián **84 m²** (77 okresů v rozsahu 73–103 m²). Naše plocha je tedy zhruba **dvojnásobná** — a to je jiná definice, ne jiný trh.
-
-Náš vlastní parser navíc bere „užitná“, „obytná“ i „zastavěná“ plocha jako jedno a totéž, takže i uvnitř našich dat je definice nekonzistentní.
+Naše hodnoty celkem: medián **160 m²**, průměr **205 m²**. ČSÚ: průměrná velikost RD v okresech má medián **84 m²** (77 okresů, rozsah 73–103 m²). Naše plocha je zhruba dvojnásobná — jiná definice, ne jiný trh.
 
 ## 3. Poměr nabídka : ČSÚ podle velikostního pásma
 
-| Naše plocha | Počet | Medián plochy | Medián poměru nabídka/ČSÚ |
-|---|---|---|---|
-| < 100 m² | 167 | 75 m² | **1,125** |
-| 100–150 m² | 247 | 120 m² | **1,145** |
-| 150–250 m² | 337 | 186 m² | **0,893** |
-| > 250 m² | 234 | 345 m² | **0,601** |
+Bez Bazoše (viz bod 6):
 
-Poměr klesá monotónně s naší plochou. U domů blízkých velikosti ČSÚ (75–120 m²) jsou nabídky o **12–15 % NAD** realizovanými cenami — přesně jak se čeká. Klesání pod 1 nastává až tam, kde je naše plocha 2–4× větší než u ČSÚ. **To potvrzuje nesoulad definice, ne nález o trhu.** Celkové −9 % je artefakt složení vzorku.
+| Naše plocha | Počet | Typická plocha | Medián poměru | Koeficient |
+|---|---|---|---|---|
+| < 100 m² | 133 | 74 m² | 1,142 | 0,876 |
+| 100–150 m² | 167 | 120 m² | 1,266 | 0,790 |
+| 150–250 m² | 251 | 186 m² | 0,942 | 1,062 |
+| > 250 m² | 176 | 337 m² | 0,698 | 1,432 |
 
-Rozdíl je i mezi portály: Sreality 0,964, Bezrealitky 0,979, iDnes 0,916, **Bazoš 0,678** — Bazoš je nejhorší, což odpovídá tomu, že u něj je plocha jen volný text.
+Poměr klesá monotónně s naší plochou. U domů blízkých velikosti ČSÚ jsou nabídky o **14–27 % NAD** realizovanými cenami — přesně jak se čeká. Celkové −9 % (resp. −4 % bez Bazoše) je artefakt složení vzorku, ne nález o trhu.
 
-## 4. Varování o odchylce plochy
+## 4. Co se udělá
 
-Dnes by se zobrazilo u **681 z 985** domů se srovnáním, tedy u **69 %**. Jako varování je to bezcenné — porovnává se totiž s průměrem jiné definice.
+### A. Srovnání a kalibrace po velikostních pásmech
+Pásma < 100 / 100–150 / 150–250 / > 250 m². Kalibrace se počítá zvlášť pro každé pásmo a nabídka se porovnává s očekávanou hodnotou svého pásma — velký dům se už neporovnává s 84m² průměrem ČSÚ.
 
-## 5. Návrh, jak obě strany srovnat
+### B. Přepočet uváděné plochy na obytnou
+Koeficient z tabulky výše se ukládá a přepočítává denně (ne natvrdo v kódu) a aplikuje se na všechny zdroje.
 
-Doporučuji kombinaci A + B; C je záložní varianta.
+### 1. Žádné přesné procento u domů
+Na kartě domu se místo čísla zobrazí jedna z pěti kategorií: **výrazně levnější / levnější / v průměru / dražší / výrazně dražší**. Konkrétní čísla (naše Kč/m², ČSÚ Kč/m², pásmo, koeficient, počet vzorků) zůstanou v bublině. **Byty se nemění** — jejich srovnání je stejná jednotka proti stejné jednotce, procento u nich zůstává.
 
-**A. Srovnávat jen v podobném velikostním pásmu (jádro opravy).**
-Kalibrace a srovnání se počítají zvlášť pro pásma plochy < 100 / 100–150 / 150–250 / > 250 m². Nabídka se porovnává s očekávanou hodnotou pro své pásmo, takže velký dům se už neporovnává s 84m² průměrem ČSÚ.
+### 2. Jednotky pojmenované všude
+Naše hodnota vždy jako **„Kč/m² užitné plochy“**, ČSÚ jako **„Kč/m² obytné plochy (ČSÚ)“** — v bublině karty, v metodice i v hlavičkách sloupců exportu XLSX. Nikdy jako jedna jednotka.
 
-**B. Odhad obytné plochy z uváděné plochy.**
-Z dat odvodit přepočtový koeficient (užitná → obytná) tak, aby medián poměru u domů blízkých velikosti ČSÚ vycházel na společnou úroveň, a použít ho u všech zdrojů. Koeficient bude uložený a přepočítávaný, ne natvrdo v kódu.
+### 3. Přiznaná cirkularita v metodice
+Do metodiky doplním, že koeficient pro každé pásmo je odvozen z **našich vlastních nabídkových cen** ukotvených o ČSÚ. Opravuje tedy současně nesoulad definice plochy i skutečný vliv velikosti domu a nelze je od sebe oddělit. Výsledná úroveň je proto **odhad, ne měření**.
 
-**C. Srovnání celkové ceny místo Kč/m².**
-U domů zobrazit „typická realizovaná cena domu v této oblasti“ (ČSÚ Kč/m² × průměrná obytná plocha okresu) proti celkové ceně nabídky. Odstraní to jednotky úplně, ale ztratí se srovnání podle velikosti.
+### 4. Bazoš: nízká důvěryhodnost plochy
+Bazoš má poměr 0,678 proti ~0,96 u ostatních a plochu jen ve volném textu. Vyřadím ho z výpočtu kalibrace (čísla v tabulce výše už jsou bez něj) a u domů z Bazoše označím plochu v UI jako údaj s nízkou důvěryhodností.
 
-**Varování o ploše** se převáže na pásmo z bodu A (odchylka od typické velikosti v daném pásmu, ne od 84 m²), s prahem nastaveným tak, aby se zobrazovalo u řádově 5–10 % nabídek, ne u 69 %.
+### 5. Kontrola celého importu ČSÚ, ne jen smazání 4 řádků
+Nalezené vadné řádky: kraj `plzensky` a `pardubicky`, `okres = 'nazev-okresu'`, `avg_size_m2 = 2023` — do číselného sloupce spadla hlavička s rokem. Projdu **celý import znovu** a vyhledám všechny řádky, kde do číselného sloupce prosákla hlavička nebo rok. Přidám kontrolu, která import **zastaví** místo uložení nesmyslu:
+- `avg_size_m2` musí být 40–200
+- ceny musí být 5 000–400 000 Kč/m²
+- `okres` nesmí odpovídat textu hlavičky
 
-**Texty v metodice a v bublinách** upravím teprve po zavedení A/B, a to na skutečně naměřenou přirážku u srovnatelných domů (dnes 12–15 %), nikoli na −9 %.
+### 6. Zaznamenání typu plochy
+`floor-area.ts` bude ukládat, jaký popisek u čísla stál: `uzitna` / `obytna` / `zastavena` / `unlabelled`. Předběžný odhad podle výskytu slova v názvu a popisu (ne podle toho, co parser skutečně použil):
+
+| Zdroj | užitná | obytná | zastavěná | bez popisku |
+|---|---|---|---|---|
+| Sreality | 123 | 83 | **28** | 1 043 |
+| Bezrealitky | 89 | 70 | **43** | 130 |
+| Bazoš | 101 | 41 | **20** | 108 |
+| iDnes | 0 | 0 | 0 | 163 |
+
+Zastavěná plocha se objevuje u 4–13 % nabídek — samostatné zkreslení, které dnes nikde neřešíme. Po zavedení pole se rozdělení přeměří přesně a nabídky se zastavěnou plochou se z kalibrace vyloučí.
+
+### 7. Přeladění varování o ploše
+Dnes by se zobrazilo u **681 z 985** domů se srovnáním (**69 %**) — čirý šum, protože se porovnává s průměrem jiné definice. Nově se bude počítat odchylka od typické velikosti **daného pásma** (74 / 120 / 186 / 337 m²) a práh se naladí na cílových **5–10 %** nabídek; skutečnou míru spuštění po naladění změřím a nahlásím.
+
+Texty v metodice a v bublinách upravím teprve po zavedení A + B, a to na naměřenou přirážku u srovnatelných domů, nikdy na −9 %.
 
 ## Technické detaily
 
-- V `csu_house_prices_okres` jsou 4 nepoužitelné řádky z importu (kraj `plzensky` a `pardubicky`, `okres = 'nazev-okresu'`, `avg_size_m2 = 2023`, ceny NULL). Nejsou nebezpečné (nemají cenu, takže nikdy nevyhrají), ale patří odstranit.
-- Změny by se soustředily do `src/lib/listings/csu-benchmark.ts` (pásmo plochy, přepočet, práh varování), `src/routes/api/public/cron/csu-calibration.ts` (kalibrace po pásmech místo jednoho čísla) a `csu_house_calibration` (řádek na pásmo místo singletonu).
-- `src/lib/scanner/floor-area.ts` dnes sjednocuje „užitná / obytná / zastavěná“ — stálo by za to zaznamenávat, který typ plochy byl v textu nalezen, aby se dala měřit kvalita podle zdroje.
-- Testy: monotónní gradient poměru po pásmech, koeficient přepočtu, míra spuštění varování o ploše na reálném vzorku.
+- `src/lib/listings/csu-benchmark.ts`: pásmo plochy, aplikace koeficientu, kategorie místo procenta pro domy, práh varování vůči typické velikosti pásma, příznak nízké důvěryhodnosti pro Bazoš.
+- `src/routes/api/public/cron/csu-calibration.ts`: kalibrace po pásmech, vyloučení Bazoše a nabídek se zastavěnou plochou.
+- Migrace: `csu_house_calibration` dostane řádek na pásmo (`band`, `median_ratio`, `factor`, `typical_area_m2`, `sample_count`) místo jediného singletonu; zachovám i stávající řádek, dokud kód nepřejde.
+- `src/lib/scanner/floor-area.ts`: nový návratový typ `{ value, areaType }`, nová nullable kolona `area_type` v `listings`; validace importu ČSÚ jako samostatný skript s hard failem.
+- `src/components/ListingCard.tsx`: kategorie u domů, procento jen u bytů, popis jednotek v bublině.
+- Export XLSX: hlavičky „Cena Kč/m² užitné plochy“ a „ČSÚ Kč/m² obytné plochy“.
+- `src/routes/metodika.tsx`: definice ČSÚ s citací, rozdíl jednotek, přiznaná cirkularita, zpoždění dat.
+- Testy: monotónní gradient poměru po pásmech, koeficienty pásem, odmítnutí vadného importu (velikost 2023, hlavičkový okres, cena mimo rozsah), rozpoznání typu plochy, míra spuštění varování na reálném vzorku, byty si drží procento.
