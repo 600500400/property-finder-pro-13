@@ -106,6 +106,8 @@ export interface Listing {
   description_snippet?: string;
   anuity?: AnuityInfo;
   invest: Investment | null;
+  /** Kraj slug of the listing (separate from the municipality in `locality`). */
+  kraj?: string;
   /** byty / domy — drives which rating is shown. */
   property_type?: PropertyType;
   /** Internal house subtype (no UI filter) — used to compare like with like. */
