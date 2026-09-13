@@ -3,6 +3,7 @@ import { z } from "zod";
 import type { Listing, ScanFilters, ScanResult, SourceKey } from "@/lib/scanner/types";
 import type { RentComp } from "./yield.server";
 import { indexPriceComps, computePriceCompare, type PriceCompRow } from "./price-compare";
+import { buildCsuIndexes, computeCsuHouseCompare, type CsuKrajRow, type CsuOkresRow, type PopulationRow } from "./csu-benchmark";
 
 
 const SOURCE_LABEL: Record<SourceKey, string> = {
@@ -129,6 +130,25 @@ export const queryListings = createServerFn({ method: "POST" })
     }
     const priceIndex = indexPriceComps(compRows);
 
+    const [{ data: okresData }, { data: krajData }, { data: calibrationData }] = await Promise.all([
+      supabaseAdmin.from("csu_house_prices_okres").select("kraj, okres, level, avg_size_m2, price_2025, band, band_price_uplifted"),
+      supabaseAdmin.from("csu_house_prices_kraj").select("kraj, band, price_2025, avg_size_m2"),
+      supabaseAdmin.from("csu_house_calibration").select("median_ratio").eq("singleton", true).maybeSingle(),
+    ]);
+    const populationData: PopulationRow[] = [];
+    for (let from = 0; from < 10000; from += PAGE) {
+      const { data: chunk } = await supabaseAdmin.from("obce_population")
+        .select("kraj, name, name_norm, population, is_ambiguous_in_kraj")
+        .range(from, from + PAGE - 1);
+      if (!chunk?.length) break;
+      populationData.push(...(chunk as PopulationRow[]));
+      if (chunk.length < PAGE) break;
+    }
+    const csuIndexes = buildCsuIndexes((okresData ?? []) as CsuOkresRow[], (krajData ?? []) as CsuKrajRow[], populationData);
+    const askingPremiumPct = calibrationData?.median_ratio != null
+      ? Math.round((Number(calibrationData.median_ratio) - 1) * 100)
+      : undefined;
+
     const bench = await getBenchmark();
 
     // ----- map → UI Listing[] -----
@@ -165,6 +185,14 @@ export const queryListings = createServerFn({ method: "POST" })
         description: r.description_snippet,
         houseSubtype: r.house_subtype,
       }) ?? undefined;
+      const csuCompare = propertyType === "domy" ? computeCsuHouseCompare({
+        kraj: r.kraj,
+        locality: r.city,
+        areaM2,
+        price: r.price,
+        indexes: csuIndexes,
+        askingPremiumPct,
+      }) ?? undefined : undefined;
 
       return {
         source: SOURCE_LABEL[sourceKey] ?? sourceKey,
@@ -188,6 +216,7 @@ export const queryListings = createServerFn({ method: "POST" })
         property_type: propertyType,
         house_subtype: (r.house_subtype ?? undefined) as Listing["house_subtype"],
         price_compare: priceCompare,
+        csu_compare: csuCompare,
 
       };
     });
@@ -211,6 +240,7 @@ export const queryListings = createServerFn({ method: "POST" })
         tier,
         result_cap: RESULT_CAP,
         free_capped: !isPremium && results.length >= RESULT_CAP,
+        csu_asking_premium_pct: askingPremiumPct,
       },
     };
   });
