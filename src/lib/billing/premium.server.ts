@@ -1,6 +1,6 @@
 /**
  * Single source of truth for plan tier.
- * All gates (queryListings, saved_searches, saved_listings, AI, CSV) MUST go through here.
+ * All gates (queryListings, saved_searches, saved_listings, AI, XLS export) MUST go through here.
  * Three tiers:
  *   - "anonymous" : not logged in
  *   - "free"      : logged in, no active subscription
