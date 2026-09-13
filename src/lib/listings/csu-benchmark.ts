@@ -152,6 +152,14 @@ export function buildCsuIndexes(
   return { okres, kraj, population, calibration: calibration.size ? calibration : undefined };
 }
 
+// A handful of ČSÚ band rows carry a corrupt value — a per-dwelling price where a
+// per-m² price belongs (e.g. okres Písek: 617 806 "Kč/m²"). Reject any band price
+// more than 3x off the okres/kraj per-m² price and fall back to that instead.
+function plausibleBandPrice(bandPrice: number, reference: number | null): boolean {
+  if (!reference) return bandPrice > 3_000 && bandPrice < 400_000;
+  return bandPrice >= reference / 3 && bandPrice <= reference * 3;
+}
+
 function priceBand(diff: number): PriceBand {
   if (diff < -10) return "below";
   if (diff > 10) return "above";
@@ -206,7 +214,7 @@ export function computeCsuHouseCompare(args: {
   } else if (okres) {
     const total = indexes.okres.get(`okres|${kraj}|${okres}|do1999`);
     const bandRow = sizeBand ? indexes.okres.get(`okres|${kraj}|${okres}|${sizeBand}`) : undefined;
-    if (bandRow?.band_price_uplifted) {
+    if (bandRow?.band_price_uplifted && plausibleBandPrice(bandRow.band_price_uplifted, total?.price_2025 ?? null)) {
       benchmark = bandRow.band_price_uplifted;
       scope = "okres_band";
     } else if (total?.price_2025) {
@@ -217,7 +225,7 @@ export function computeCsuHouseCompare(args: {
   } else {
     const bandRow = sizeBand ? indexes.kraj.get(`${kraj}|${sizeBand}`) : undefined;
     const total = indexes.kraj.get(`${kraj}|`);
-    if (bandRow?.price_2025) {
+    if (bandRow?.price_2025 && plausibleBandPrice(bandRow.price_2025, total?.price_2025 ?? null)) {
       benchmark = bandRow.price_2025;
       scope = "kraj_band";
     } else if (total?.price_2025) {
