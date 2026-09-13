@@ -59,4 +59,5 @@ Do stránky metodiky doplním odstavec: ceny pocházejí z ČSÚ za období 2023
 - Nový modul `src/lib/listings/csu-benchmark.ts`: resolver okres/pásmo (staví na `okresFromLocality` z `src/lib/scanner/okresy.ts`), výpočet odchylky ceny a příznaku nízké důvěryhodnosti; okresní/krajská data se načtou v `query.functions.ts` a přiloží k nabídkám jako `csu_compare`.
 - `ListingCard.tsx`: u domů `csu_compare` jako primární metrika, `price_compare` (n ≥ 10) sekundárně; existující tlumený styl a `AlertTriangle` se použijí i pro odchylku plochy > 50 %.
 - Testy: parsování „x" a „78 541  1)", forward-fill kraje, přepočtový koeficient, výběr úrovně okres → kraj, hranice odchylky 50 %.
-- Report po importu: počet kombinací okres × pásmo, kolik domů získá srovnání ČSÚ místo „nedostatek dat", a 5 příkladů.
+- Tabulka `obce_population` (kraj, name, name_norm, population, is_ambiguous_in_kraj) + index na `(kraj, name_norm)`; mapa městských částí na matku je v kódu, ne v datech.
+- Report po importu: počet kombinací okres × pásmo, kolik domů získá srovnání ČSÚ místo „nedostatek dat", 5 příkladů; a k obcím kolik nabídek má pásmo, kolik spadlo na okres kvůli nejednoznačnému názvu, kolik se nespárovalo vůbec, plus 20 nejčastějších nespárovaných lokalit.
