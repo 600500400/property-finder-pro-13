@@ -297,23 +297,17 @@ Vrať JSON dle schématu.`;
       summary_cs: typeof parsed.summary_cs === "string" ? parsed.summary_cs : "",
     };
 
-    // 8) Persist cache + usage
+    // 7) Persist cache (usage was already reserved atomically above)
     await supabaseAdmin.from("ai_analyses").upsert({
       url_hash: cacheKey,
       url: data.url,
       payload: result as unknown as never,
       model: MODEL,
     });
-    await supabaseAdmin.from("ai_analysis_usage").insert({
-      user_id: userId,
-      listing_id: data.listing_id ?? null,
-    });
 
     return {
       ok: true,
       ...result,
-      usage: isPremium
-        ? { used: used + 1, limit: AI_MONTHLY_LIMIT }
-        : { used: 1, limit: 1 },
+      usage: { used, limit: quotaLimit },
     };
   });
