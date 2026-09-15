@@ -73,6 +73,7 @@ function Dialog({ listing, onClose }: { listing: Listing; onClose: () => void })
       try {
         const res = await analyze({
           data: {
+            listing_id: listing.id,
             source: listing.source,
             name: listing.name,
             locality: listing.locality,

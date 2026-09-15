@@ -3,7 +3,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
 
 const MODEL = "google/gemini-2.5-flash";
-const AI_MONTHLY_LIMIT = 50;
+// Quota limits live in the DB function public.reserve_ai_analysis (premium 50/month, free 1 lifetime).
 const TTL_DAYS = 30;
 
 const Flag = z.object({
