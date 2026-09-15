@@ -133,33 +133,13 @@ export const analyzeListing = createServerFn({ method: "POST" })
       _user_id: userId,
       _listing_id: data.listing_id,
     });
-    if (reserveErr) {
-      return { ok: false, error: "ai_failed", message: "Nepodařilo se ověřit limit AI analýz." };
-    }
-    const res = Array.isArray(reservation) ? reservation[0] : reservation;
-    if (!res) {
-      return { ok: false, error: "ai_failed", message: "Nepodařilo se ověřit limit AI analýz." };
-    }
 
-    const used = Number(res.used ?? 0);
-    const quotaLimit = Number(res.quota_limit ?? 1);
-    const isPremium = quotaLimit > 1;
+    const { mapReservation } = await import("./quota");
+    const outcome = mapReservation(reservation as never, reserveErr);
+    if (!outcome.ok) return outcome.error;
 
-    if (!res.allowed) {
-      if (!isPremium) {
-        return {
-          ok: false,
-          error: "free_sample_used",
-          message: "Vyčerpal jsi svou jednu ukázkovou AI analýzu. Premium = 50 analýz měsíčně.",
-          used, limit: quotaLimit,
-        };
-      }
-      return {
-        ok: false, error: "monthly_limit_reached",
-        message: `Měsíční limit AI analýz vyčerpán (${used}/${quotaLimit}). Reset 1. dne v měsíci.`,
-        used, limit: quotaLimit,
-      };
-    }
+    const used = outcome.used;
+    const quotaLimit = outcome.limit;
 
     // 3) Comparables (same kraj + property_type + deal_type + area ±20%)
     let comparables: Comparable[] = [];
