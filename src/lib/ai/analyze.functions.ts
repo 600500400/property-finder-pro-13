@@ -161,7 +161,7 @@ export const analyzeListing = createServerFn({ method: "POST" })
       };
     }
 
-    // 4) Comparables (same kraj + property_type + deal_type + area ±20%)
+    // 3) Comparables (same kraj + property_type + deal_type + area ±20%)
     let comparables: Comparable[] = [];
     let medianPpm: number | null = null;
     if (data.kraj && data.property_type && data.deal_type && data.area_m2 && data.area_m2 > 0) {
