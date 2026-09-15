@@ -64,6 +64,13 @@
       "when": 1789457109959,
       "tag": "0008_server_only_listings_and_ai_quota_reservation",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1789507716503,
+      "tag": "0009_ai_analyses_server_only",
+      "breakpoints": true
     }
   ]
 }

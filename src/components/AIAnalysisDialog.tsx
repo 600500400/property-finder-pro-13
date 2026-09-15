@@ -85,23 +85,8 @@ function Dialog({ listing, onClose }: { listing: Listing; onClose: () => void })
     let cancelled = false;
     (async () => {
       try {
-        const res = await analyze({
-          data: {
-            listing_id: listing.id,
-            source: listing.source,
-            name: listing.name,
-            locality: listing.locality,
-            url: listing.url,
-            price: listing.price,
-            area_m2: listing.area_m2,
-            ownership: listing.ownership,
-            description_snippet: listing.description_snippet,
-            flags: listing.flags,
-            rent_basis_label: listing.invest?.rent_basis_label,
-            net_yield: listing.invest?.net_yield,
-            gross_yield: listing.invest?.gross_yield,
-          },
-        });
+        // Only the listing id travels to the server; every fact is loaded there.
+        const res = await analyze({ data: { listing_id: listing.id! } });
         if (!cancelled) {
           setData(res);
           // Refresh plan so the "free sample used" flag flips immediately for free users
@@ -229,6 +214,26 @@ function Verdict({ data }: { data: Extract<AIAnalysisResult, { ok: true }> }) {
           </ul>
         </div>
       )}
+
+      {data.uncertainties.length > 0 && (
+        <div>
+          <h4 className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Nejistoty</h4>
+          <ul className="ml-4 list-disc space-y-0.5 text-xs">
+            {data.uncertainties.map((r, i) => <li key={i}>{r}</li>)}
+          </ul>
+        </div>
+      )}
+
+      {data.broker_questions.length > 0 && (
+        <div>
+          <h4 className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Otázky na makléře</h4>
+          <ul className="ml-4 list-disc space-y-0.5 text-xs">
+            {data.broker_questions.map((r, i) => <li key={i}>{r}</li>)}
+          </ul>
+        </div>
+      )}
+
+
 
       {data.user_rule_violations.length > 0 && (
         <div className="rounded-md border border-red-500/40 bg-red-500/5 p-2.5">
