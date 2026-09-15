@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { verifyCronSecret } from "@/lib/scanner/cron-auth.server";
 import type { ScanFilters } from "@/lib/scanner/types";
 
 // Cron endpoint volaný z pg_cron. Vybere scheduled_scans které mají běžet
@@ -7,7 +8,9 @@ import type { ScanFilters } from "@/lib/scanner/types";
 export const Route = createFileRoute("/api/public/hooks/run-schedules")({
   server: {
     handlers: {
-      POST: async () => {
+      POST: async ({ request }) => {
+        // Musí být první krok: bez platného CRON_SECRET se nic nenačítá ani nespouští.
+        if (!verifyCronSecret(request)) return new Response("Unauthorized", { status: 401 });
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
         const { executeScan } = await import("@/lib/scanner/scan-internal.server");
         const now = new Date();
