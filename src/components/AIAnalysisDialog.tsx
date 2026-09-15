@@ -215,6 +215,26 @@ function Verdict({ data }: { data: Extract<AIAnalysisResult, { ok: true }> }) {
         </div>
       )}
 
+      {data.uncertainties.length > 0 && (
+        <div>
+          <h4 className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Nejistoty</h4>
+          <ul className="ml-4 list-disc space-y-0.5 text-xs">
+            {data.uncertainties.map((r, i) => <li key={i}>{r}</li>)}
+          </ul>
+        </div>
+      )}
+
+      {data.broker_questions.length > 0 && (
+        <div>
+          <h4 className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Otázky na makléře</h4>
+          <ul className="ml-4 list-disc space-y-0.5 text-xs">
+            {data.broker_questions.map((r, i) => <li key={i}>{r}</li>)}
+          </ul>
+        </div>
+      )}
+
+
+
       {data.user_rule_violations.length > 0 && (
         <div className="rounded-md border border-red-500/40 bg-red-500/5 p-2.5">
           <h4 className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-red-300">Porušuje tvá pravidla</h4>
