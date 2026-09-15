@@ -57,6 +57,13 @@
       "when": 1789296009431,
       "tag": "0007_csu_okres_low_sample_flag",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1789457109959,
+      "tag": "0008_server_only_listings_and_ai_quota_reservation",
+      "breakpoints": true
     }
   ]
 }

@@ -759,6 +759,15 @@ export type Database = {
         Returns: boolean
       }
       is_premium: { Args: { _user_id: string }; Returns: boolean }
+      reserve_ai_analysis: {
+        Args: { _listing_id: string; _user_id: string }
+        Returns: {
+          allowed: boolean
+          quota_limit: number
+          reservation_id: string
+          used: number
+        }[]
+      }
     }
     Enums: {
       app_role: "admin" | "user"
