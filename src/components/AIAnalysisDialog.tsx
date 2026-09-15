@@ -85,23 +85,8 @@ function Dialog({ listing, onClose }: { listing: Listing; onClose: () => void })
     let cancelled = false;
     (async () => {
       try {
-        const res = await analyze({
-          data: {
-            listing_id: listing.id,
-            source: listing.source,
-            name: listing.name,
-            locality: listing.locality,
-            url: listing.url,
-            price: listing.price,
-            area_m2: listing.area_m2,
-            ownership: listing.ownership,
-            description_snippet: listing.description_snippet,
-            flags: listing.flags,
-            rent_basis_label: listing.invest?.rent_basis_label,
-            net_yield: listing.invest?.net_yield,
-            gross_yield: listing.invest?.gross_yield,
-          },
-        });
+        // Only the listing id travels to the server; every fact is loaded there.
+        const res = await analyze({ data: { listing_id: listing.id! } });
         if (!cancelled) {
           setData(res);
           // Refresh plan so the "free sample used" flag flips immediately for free users
