@@ -1,48 +1,49 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
+import { factsCacheKey, type FactFlag, type ListingFacts } from "./facts";
+import { buildComparables, type ComparableSummary } from "./comparables";
 
 const MODEL = "google/gemini-2.5-flash";
 // Quota limits live in the DB function public.reserve_ai_analysis (premium 50/month, free 1 lifetime).
 const TTL_DAYS = 30;
 
-const Flag = z.object({
-  code: z.string(),
-  category: z.string(),
-  label: z.string(),
-  snippet: z.string().optional(),
-});
-
-const ListingInput = z.object({
-  listing_id: z.string().uuid().optional(),
-  source: z.string(),
-  name: z.string(),
-  locality: z.string(),
-  url: z.string().url(),
-  price: z.number(),
-  area_m2: z.number().optional(),
-  kraj: z.string().optional(),
-  property_type: z.string().optional(),
-  deal_type: z.string().optional(),
-  ownership: z.string().optional(),
-  description_snippet: z.string().optional(),
-  flags: z.array(Flag).optional(),
-  rent_basis_label: z.string().optional(),
-  net_yield: z.number().optional(),
-  gross_yield: z.number().optional(),
+/** The client may only name the listing. Every fact is loaded server-side. */
+const AnalyzeInput = z.object({
+  listing_id: z.string().uuid(),
 });
 
 export type AIVerdict = "zvazit" | "opatrne" | "vyhnout";
 
-export interface AIAnalysisOk {
-  ok: true;
+/** Impersonal, shareable part of an analysis — this is what the shared cache stores. */
+export interface AIFactualPayload {
   verdict: AIVerdict;
-  price_position: { pct_vs_median: number; label: string } | null;
   true_cost_estimate?: number;
   yield_check: string;
   risks: string[];
-  user_rule_violations: string[];
+  uncertainties: string[];
+  broker_questions: string[];
   summary_cs: string;
+}
+
+export interface AIMetrics {
+  own_ppm: number | null;
+  median_ppm: number | null;
+  pct_vs_median: number | null;
+  sample_count: number;
+  net_yield: number | null;
+  gross_yield: number | null;
+  rent_basis_label: string | null;
+}
+
+export interface AIAnalysisOk extends AIFactualPayload {
+  ok: true;
+  /** Deterministic, app-computed numbers — never taken from the model. */
+  metrics: AIMetrics;
+  price_position: { pct_vs_median: number; label: string } | null;
+  /** Per-user, computed deterministically on the server; never cached shared. */
+  user_rule_violations: string[];
+  personal_notice: string | null;
   cached?: boolean;
   cached_at?: string;
   usage?: { used: number; limit: number };
@@ -58,57 +59,185 @@ export interface AIAnalysisErr {
 
 export type AIAnalysisResult = AIAnalysisOk | AIAnalysisErr;
 
-async function sha256Hex(input: string): Promise<string> {
-  const buf = new TextEncoder().encode(input);
-  const hash = await crypto.subtle.digest("SHA-256", buf);
-  return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, "0")).join("");
-}
-
 const SYSTEM = `Jsi expert na české realitní investice. Buď stručný, věcný, žádná vata.
-Odpovídej výhradně česky. Veškerý text ve výstupu (verdikt, rizika, doporučení) musí být v češtině, nikdy anglicky.
-Vyhodnoť konkrétní nemovitost jako investici. K dispozici máš strukturovaná data, výňatek popisu, automaticky detekované varovné flagy a srovnatelné inzeráty (medián ceny/m²) ze stejného kraje a typu.
-Posuď: férovost ceny vs. srovnání, odhad skutečné akviziční ceny vč. textem detekovaných nákladů (anuita, doplatek, provize, DPH), realističnost nájemního výnosu, hlavní rizika, a porušení pravidel uživatele (vyloučené lokality, min. výnos, max. cena, požadavek na osobní vlastnictví).
+Odpovídej výhradně česky. Veškerý text ve výstupu musí být v češtině, nikdy anglicky.
 
-Vrať PŘESNĚ tento JSON (žádný markdown, žádný komentář). Všechny textové hodnoty MUSÍ být v češtině:
+Tvým úkolem je INTERPRETACE: příležitost, rizika, nejistoty a otázky na makléře.
+Všechna čísla (medián Kč/m², Kč/m² nabídky, odchylka od mediánu, počet vzorků, výnos) jsou už spočítaná serverem a dostáváš je jako FAKTA.
+NIKDY nepočítej vlastní medián, nepřepisuj dodané hodnoty a nevymýšlej falešně přesná čísla. Pokud data chybí, řekni to.
+Nedostáváš žádná pravidla konkrétního uživatele — nepiš personalizovaná doporučení ani co „porušuje tvá pravidla".
+
+Vrať PŘESNĚ tento JSON (žádný markdown, žádný komentář), vše česky:
 {
   "verdict": "zvazit" | "opatrne" | "vyhnout",
-  "price_position": { "pct_vs_median": číslo (záporné=pod mediánem, kladné=nad), "label": "krátká česká věta" } | null,
   "true_cost_estimate": číslo v Kč | null,
-  "yield_check": "1 česká věta zda výnos sedí",
-  "risks": ["max 5 položek, česky"],
-  "user_rule_violations": ["česky, pouze pokud opravdu porušuje uživatelská pravidla, jinak prázdné"],
-  "summary_cs": "2-3 české věty celkového doporučení"
+  "yield_check": "1 věta, zda dodaný výnos vypadá realisticky",
+  "risks": ["max 5 položek"],
+  "uncertainties": ["max 4 položky — co z inzerátu nelze zjistit"],
+  "broker_questions": ["max 5 konkrétních otázek na makléře"],
+  "summary_cs": "2-3 věty obecného shrnutí bez personalizace"
 }`;
 
-interface Comparable {
-  price: number;
-  area_m2: number;
-  city: string | null;
-  pricePerM2: number;
+function priceLabel(pct: number | null): { pct_vs_median: number; label: string } | null {
+  if (pct == null) return null;
+  return { pct_vs_median: pct, label: `${pct > 0 ? "+" : ""}${pct}% vs. medián srovnatelných nabídek` };
 }
 
-function median(xs: number[]): number | null {
-  if (xs.length === 0) return null;
-  const sorted = [...xs].sort((a, b) => a - b);
-  const m = Math.floor(sorted.length / 2);
-  return sorted.length % 2 ? sorted[m] : Math.round((sorted[m - 1] + sorted[m]) / 2);
+function buildPrompt(f: ListingFacts, comps: ComparableSummary, m: AIMetrics): string {
+  return `INZERÁT (autoritativní serverová data)
+- Zdroj: ${f.source}
+- Název: ${f.title}
+- Lokalita: ${f.city ?? "?"} (kraj: ${f.kraj ?? "?"})
+- Typ: ${f.property_type ?? "?"} / ${f.deal_type ?? "?"}${f.house_subtype ? ` / ${f.house_subtype}` : ""}
+- Cena: ${f.price.toLocaleString("cs-CZ")} Kč
+- Plocha: ${f.area_m2 ?? "?"} m²${f.land_area_m2 ? `; pozemek ${f.land_area_m2} m²` : ""}
+- Vlastnictví: ${f.ownership ?? "neuvedeno"}
+- URL: ${f.url}
+
+TEXT (snippet): ${f.description_snippet ?? "(žádný)"}
+
+DETEKOVANÉ FLAGY: ${
+    f.flags.length === 0
+      ? "(žádné)"
+      : f.flags.map(x => `[${x.category}:${x.code}] ${x.label}${x.snippet ? ` — ${x.snippet}` : ""}`).join("; ")
+  }
+
+SERVEREM SPOČÍTANÁ FAKTA (nepřepočítávej je):
+- Kč/m² nabídky: ${m.own_ppm != null ? m.own_ppm.toLocaleString("cs-CZ") : "neznámé"}
+- Medián Kč/m² způsobilého vzorku: ${m.median_ppm != null ? m.median_ppm.toLocaleString("cs-CZ") : "neznámé"}
+- Odchylka od mediánu: ${m.pct_vs_median != null ? `${m.pct_vs_median > 0 ? "+" : ""}${m.pct_vs_median} %` : "neznámé"}
+- Počet způsobilých srovnatelných nabídek: ${m.sample_count}
+- Odhad výnosu: ${m.rent_basis_label ?? "neznámý základ"}; čistý ${m.net_yield ?? "?"} %, hrubý ${m.gross_yield ?? "?"} %
+
+REPREZENTATIVNÍ VÝBĚR ZE VZORKU (rovnoměrně přes cenové rozložení, ne nejlevnější):
+${comps.sample.length === 0
+  ? "(nedostatek dat)"
+  : comps.sample.map(c => `- ${c.city ?? "?"}: ${c.pricePerM2.toLocaleString("cs-CZ")} Kč/m² (${c.area_m2} m², ${c.price.toLocaleString("cs-CZ")} Kč)`).join("\n")}
+
+Vrať JSON dle schématu.`;
 }
 
 export const analyzeListing = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => ListingInput.parse(input))
+  .inputValidator((input: unknown) => AnalyzeInput.parse(input))
   .handler(async ({ data, context }): Promise<AIAnalysisResult> => {
     const userId = context.userId;
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    // 1) Cache lookup (per listing + raw fingerprint) — cached results never consume quota
-    const fpInput = JSON.stringify({
-      url: data.url, price: data.price, area: data.area_m2,
-      flags: (data.flags ?? []).map(f => f.code).sort(),
-      snippet: data.description_snippet ?? "",
-    });
-    const cacheKey = await sha256Hex(`${data.listing_id ?? data.url}|${fpInput}`);
+    // 1) Authoritative listing — every fact comes from the DB, never from the client.
+    const { data: row, error: rowErr } = await supabaseAdmin
+      .from("listings")
+      .select("id, source, title, price, deal_type, property_type, house_subtype, kraj, city, area_m2, land_area_m2, ownership, url, description_snippet, flags, is_active")
+      .eq("id", data.listing_id)
+      .maybeSingle();
 
+    if (rowErr) return { ok: false, error: "ai_failed", message: "Nepodařilo se načíst inzerát." };
+    if (!row || row.is_active !== true || !row.price) {
+      return { ok: false, error: "ai_failed", message: "Inzerát už není dostupný." };
+    }
+
+    const facts: ListingFacts = {
+      id: row.id as string,
+      source: (row.source as string) ?? "",
+      title: (row.title as string | null) ?? "",
+      city: (row.city as string | null) ?? null,
+      kraj: (row.kraj as string | null) ?? null,
+      property_type: (row.property_type as string | null) ?? null,
+      deal_type: (row.deal_type as string | null) ?? null,
+      house_subtype: (row.house_subtype as string | null) ?? null,
+      price: row.price as number,
+      area_m2: (row.area_m2 as number | null) ?? null,
+      land_area_m2: (row.land_area_m2 as number | null) ?? null,
+      ownership: (row.ownership as string | null) ?? null,
+      url: (row.url as string) ?? "",
+      description_snippet: (row.description_snippet as string | null) ?? null,
+      flags: Array.isArray(row.flags) ? (row.flags as unknown as FactFlag[]) : [],
+    };
+
+    // 2) Deterministic comparables — sample first, median from the whole sample.
+    const candidateQ = supabaseAdmin
+      .from("listings")
+      .select("id, price, area_m2, city, kraj, property_type, deal_type, is_active")
+      .eq("is_active", true)
+      .not("price", "is", null)
+      .not("area_m2", "is", null)
+      .order("id", { ascending: true })
+      .limit(2000);
+    if (facts.kraj) candidateQ.eq("kraj", facts.kraj);
+    if (facts.property_type) candidateQ.eq("property_type", facts.property_type);
+    if (facts.deal_type) candidateQ.eq("deal_type", facts.deal_type);
+    if (facts.area_m2 && facts.area_m2 > 0) {
+      candidateQ.gte("area_m2", facts.area_m2 * 0.8).lte("area_m2", facts.area_m2 * 1.2);
+    }
+    const { data: candidates } = await candidateQ;
+    const comps = buildComparables(facts, (candidates ?? []) as never, 8);
+
+    // 3) Server-computed yield (never supplied by the client).
+    let invest: { net_yield: number; gross_yield: number; rent_basis_label?: string } | null = null;
+    if (facts.deal_type === "prodej" && facts.area_m2 && facts.area_m2 > 0) {
+      const { getBenchmark } = await import("@/lib/scanner/rent-benchmark.server");
+      const { indexRentComps, computeHybridYield } = await import("@/lib/listings/yield.server");
+      const { data: rents } = await supabaseAdmin
+        .from("listings")
+        .select("kraj, property_type, area_m2, price")
+        .eq("is_active", true)
+        .eq("deal_type", "pronajem")
+        .eq("kraj", facts.kraj ?? "")
+        .eq("property_type", facts.property_type ?? "")
+        .not("area_m2", "is", null)
+        .not("price", "is", null);
+      const bench = await getBenchmark();
+      invest = computeHybridYield({
+        price: facts.price,
+        region: (facts.kraj ?? "") as never,
+        propertyType: (facts.property_type ?? "ostatni") as never,
+        areaM2: facts.area_m2,
+        name: facts.title,
+        locality: facts.city ?? "",
+        ownership: (facts.ownership ?? undefined) as never,
+        kraj: facts.kraj,
+        bench,
+        rentIndex: indexRentComps((rents ?? []) as never),
+      });
+    }
+
+    const metrics: AIMetrics = {
+      own_ppm: comps.own_ppm,
+      median_ppm: comps.median_ppm,
+      pct_vs_median: comps.pct_vs_median,
+      sample_count: comps.sample_count,
+      net_yield: invest?.net_yield ?? null,
+      gross_yield: invest?.gross_yield ?? null,
+      rent_basis_label: invest?.rent_basis_label ?? null,
+    };
+
+    // 4) Per-user rules — deterministic, no AI, never in the shared cache.
+    const { evaluateInvestorRules, EMPTY_RULES } = await import("./personalize");
+    const { data: rulesRow } = await supabaseAdmin
+      .from("user_investor_rules")
+      .select("excluded_localities, min_net_yield, max_price, require_osobni")
+      .eq("user_id", userId)
+      .maybeSingle();
+    const personal = evaluateInvestorRules(
+      {
+        city: facts.city,
+        kraj: facts.kraj,
+        price: facts.price,
+        ownership: facts.ownership,
+        net_yield: metrics.net_yield,
+      },
+      rulesRow
+        ? {
+            excluded_localities: (rulesRow.excluded_localities as string[] | null) ?? [],
+            min_net_yield: (rulesRow.min_net_yield as number | null) ?? null,
+            max_price: (rulesRow.max_price as number | null) ?? null,
+            require_osobni: !!rulesRow.require_osobni,
+          }
+        : EMPTY_RULES,
+    );
+
+    // 5) Shared impersonal cache lookup — a cache hit never consumes quota.
+    const cacheKey = await factsCacheKey(facts);
     const { data: cached } = await supabaseAdmin
       .from("ai_analyses")
       .select("payload, created_at")
@@ -118,116 +247,31 @@ export const analyzeListing = createServerFn({ method: "POST" })
     if (cached) {
       const ageDays = (Date.now() - new Date(cached.created_at as string).getTime()) / 86_400_000;
       if (ageDays < TTL_DAYS) {
-        const p = cached.payload as unknown as Omit<AIAnalysisOk, "ok" | "cached" | "cached_at">;
-        return { ok: true, ...p, cached: true, cached_at: cached.created_at as string };
+        const p = cached.payload as unknown as AIFactualPayload;
+        return {
+          ok: true,
+          ...p,
+          metrics,
+          price_position: priceLabel(metrics.pct_vs_median),
+          ...personal,
+          cached: true,
+          cached_at: cached.created_at as string,
+        };
       }
     }
 
-    // 2) Atomic quota reservation (server-only RPC). Counts attempted analyses,
-    // including uncertain provider failures — by design.
-    if (!data.listing_id) {
-      return { ok: false, error: "ai_failed", message: "Inzerát nelze analyzovat (chybí identifikátor)." };
-    }
-
+    // 6) Atomic quota reservation (unchanged from Priorita 3).
     const { data: reservation, error: reserveErr } = await supabaseAdmin.rpc("reserve_ai_analysis", {
       _user_id: userId,
-      _listing_id: data.listing_id,
+      _listing_id: facts.id,
     });
-
     const { mapReservation } = await import("./quota");
     const outcome = mapReservation(reservation as never, reserveErr);
     if (!outcome.ok) return outcome.error;
 
-    const used = outcome.used;
-    const quotaLimit = outcome.limit;
-
-    // 3) Comparables (same kraj + property_type + deal_type + area ±20%)
-    let comparables: Comparable[] = [];
-    let medianPpm: number | null = null;
-    if (data.kraj && data.property_type && data.deal_type && data.area_m2 && data.area_m2 > 0) {
-      const aMin = data.area_m2 * 0.8;
-      const aMax = data.area_m2 * 1.2;
-      const { data: comps } = await supabaseAdmin
-        .from("listings")
-        .select("price, area_m2, city")
-        .eq("is_active", true)
-        .eq("kraj", data.kraj)
-        .eq("property_type", data.property_type)
-        .eq("deal_type", data.deal_type)
-        .gte("area_m2", aMin)
-        .lte("area_m2", aMax)
-        .not("price", "is", null)
-        .not("area_m2", "is", null)
-        .neq("url", data.url)
-        .limit(50);
-      comparables = (comps ?? [])
-        .filter(c => c.price && c.area_m2 && c.area_m2 > 0)
-        .map(c => ({
-          price: c.price as number,
-          area_m2: c.area_m2 as number,
-          city: c.city as string | null,
-          pricePerM2: Math.round((c.price as number) / (c.area_m2 as number)),
-        }))
-        .sort((a, b) => a.pricePerM2 - b.pricePerM2)
-        .slice(0, 8);
-      medianPpm = median(comparables.map(c => c.pricePerM2));
-    }
-
-    // 5) User investor rules
-    const { data: rulesRow } = await supabaseAdmin
-      .from("user_investor_rules")
-      .select("excluded_localities, min_net_yield, max_price, require_osobni")
-      .eq("user_id", userId)
-      .maybeSingle();
-    const rules = {
-      excluded_localities: (rulesRow?.excluded_localities as string[] | null) ?? [],
-      min_net_yield: (rulesRow?.min_net_yield as number | null) ?? null,
-      max_price: (rulesRow?.max_price as number | null) ?? null,
-      require_osobni: !!rulesRow?.require_osobni,
-    };
-
-    // 6) Build tight prompt
-    const ownPpm = data.area_m2 && data.area_m2 > 0 ? Math.round(data.price / data.area_m2) : null;
-    const pctVsMedian = (ownPpm && medianPpm) ? Math.round(((ownPpm - medianPpm) / medianPpm) * 100) : null;
-
-    const userMsg = `INZERÁT
-- Zdroj: ${data.source}
-- Název: ${data.name}
-- Lokalita: ${data.locality} (kraj: ${data.kraj ?? "?"})
-- Typ: ${data.property_type ?? "?"} / ${data.deal_type ?? "?"}
-- Cena: ${data.price.toLocaleString("cs-CZ")} Kč${ownPpm ? ` (${ownPpm.toLocaleString("cs-CZ")} Kč/m²)` : ""}
-- Plocha: ${data.area_m2 ?? "?"} m²
-- Vlastnictví: ${data.ownership ?? "neuvedeno"}
-- Náš odhad výnosu: ${data.rent_basis_label ?? "?"}; čistý ${data.net_yield ?? "?"}%, hrubý ${data.gross_yield ?? "?"}%
-- URL: ${data.url}
-
-TEXT (snippet): ${data.description_snippet ?? "(žádný)"}
-
-DETEKOVANÉ FLAGY: ${
-      (data.flags ?? []).length === 0
-        ? "(žádné)"
-        : (data.flags ?? []).map(f => `[${f.category}:${f.code}] ${f.label}${f.snippet ? ` — ${f.snippet}` : ""}`).join("; ")
-    }
-
-SROVNÁNÍ (stejný kraj+typ+plocha±20%, ${comparables.length} ks${medianPpm ? `, medián ${medianPpm.toLocaleString("cs-CZ")} Kč/m²` : ""}):
-${comparables.length === 0
-  ? "(nedostatek dat)"
-  : comparables.map(c => `- ${c.city ?? "?"}: ${c.pricePerM2.toLocaleString("cs-CZ")} Kč/m² (${c.area_m2} m², ${c.price.toLocaleString("cs-CZ")} Kč)`).join("\n")}
-${pctVsMedian != null ? `\nTato nabídka je ${pctVsMedian > 0 ? "+" : ""}${pctVsMedian}% vs. medián.` : ""}
-
-PRAVIDLA UŽIVATELE:
-- Vyloučené lokality: ${rules.excluded_localities.length ? rules.excluded_localities.join(", ") : "(žádné)"}
-- Min. čistý výnos: ${rules.min_net_yield != null ? `${rules.min_net_yield}%` : "(neuvedeno)"}
-- Max. cena: ${rules.max_price != null ? `${rules.max_price.toLocaleString("cs-CZ")} Kč` : "(neuvedeno)"}
-- Pouze osobní vlastnictví: ${rules.require_osobni ? "ANO" : "ne"}
-
-Vrať JSON dle schématu.`;
-
-    // 7) AI call
+    // 7) Single AI call — impersonal interpretation only.
     const apiKey = process.env.LOVABLE_API_KEY;
-    if (!apiKey) {
-      return { ok: false, error: "ai_failed", message: "LOVABLE_API_KEY není nastaven" };
-    }
+    if (!apiKey) return { ok: false, error: "ai_failed", message: "LOVABLE_API_KEY není nastaven" };
 
     const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -236,7 +280,7 @@ Vrať JSON dle schématu.`;
         model: MODEL,
         messages: [
           { role: "system", content: SYSTEM },
-          { role: "user", content: userMsg },
+          { role: "user", content: buildPrompt(facts, comps, metrics) },
         ],
         response_format: { type: "json_object" },
       }),
@@ -250,10 +294,9 @@ Vrať JSON dle schématu.`;
     }
 
     const json = await resp.json() as { choices?: Array<{ message?: { content?: string } }> };
-    const content = json.choices?.[0]?.message?.content ?? "{}";
-    let parsed: Partial<AIAnalysisOk>;
+    let parsed: Partial<AIFactualPayload>;
     try {
-      parsed = JSON.parse(content);
+      parsed = JSON.parse(json.choices?.[0]?.message?.content ?? "{}");
     } catch {
       return { ok: false, error: "ai_failed", message: "AI vrátilo neplatné JSON." };
     }
@@ -262,32 +305,30 @@ Vrať JSON dle schématu.`;
       ? (parsed.verdict as AIVerdict)
       : "opatrne";
 
-    const result: Omit<AIAnalysisOk, "ok" | "cached" | "cached_at"> = {
+    const factual: AIFactualPayload = {
       verdict,
-      price_position: parsed.price_position ?? (pctVsMedian != null ? {
-        pct_vs_median: pctVsMedian,
-        label: `${pctVsMedian > 0 ? "+" : ""}${pctVsMedian}% vs. medián srovnatelných`,
-      } : null),
-      true_cost_estimate: parsed.true_cost_estimate ?? undefined,
+      true_cost_estimate: typeof parsed.true_cost_estimate === "number" ? parsed.true_cost_estimate : undefined,
       yield_check: typeof parsed.yield_check === "string" ? parsed.yield_check : "",
       risks: Array.isArray(parsed.risks) ? parsed.risks.slice(0, 5).map(String) : [],
-      user_rule_violations: Array.isArray(parsed.user_rule_violations)
-        ? parsed.user_rule_violations.slice(0, 5).map(String)
-        : [],
+      uncertainties: Array.isArray(parsed.uncertainties) ? parsed.uncertainties.slice(0, 4).map(String) : [],
+      broker_questions: Array.isArray(parsed.broker_questions) ? parsed.broker_questions.slice(0, 5).map(String) : [],
       summary_cs: typeof parsed.summary_cs === "string" ? parsed.summary_cs : "",
     };
 
-    // 7) Persist cache (usage was already reserved atomically above)
+    // 8) Persist the shared cache — impersonal payload only.
     await supabaseAdmin.from("ai_analyses").upsert({
       url_hash: cacheKey,
-      url: data.url,
-      payload: result as unknown as never,
+      url: facts.url,
+      payload: factual as unknown as never,
       model: MODEL,
     });
 
     return {
       ok: true,
-      ...result,
-      usage: { used, limit: quotaLimit },
+      ...factual,
+      metrics,
+      price_position: priceLabel(metrics.pct_vs_median),
+      ...personal,
+      usage: { used: outcome.used, limit: outcome.limit },
     };
   });
