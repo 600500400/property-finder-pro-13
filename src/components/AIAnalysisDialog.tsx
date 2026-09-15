@@ -44,6 +44,20 @@ export function AIAnalysisButton({ listing }: { listing: Listing }) {
     );
   }
 
+  // Stored listings always carry an id; without it the quota reservation cannot run.
+  if (!listing.id) {
+    return (
+      <button
+        type="button"
+        disabled
+        title="AI analýza není pro tento inzerát dostupná"
+        className="flex cursor-not-allowed items-center gap-1 rounded-md bg-muted px-2 py-1 text-[10px] font-semibold text-muted-foreground opacity-60"
+      >
+        <Sparkles className="h-3 w-3" /> AI analýza
+      </button>
+    );
+  }
+
   // Free user with sample available, OR premium → open dialog
   return (
     <>
