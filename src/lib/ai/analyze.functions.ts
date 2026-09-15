@@ -101,26 +101,7 @@ export const analyzeListing = createServerFn({ method: "POST" })
     const userId = context.userId;
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    // 1) Tier gate: free users get ONE sample AI analysis ever; premium = monthly limit
-    const { data: premium } = await supabaseAdmin.rpc("is_premium", { _user_id: userId });
-    const isPremium = premium === true;
-
-    // Count lifetime usage (used both for the free sample gate and the monthly counter below).
-    const { count: lifetimeCount } = await supabaseAdmin
-      .from("ai_analysis_usage")
-      .select("id", { count: "exact", head: true })
-      .eq("user_id", userId);
-    const lifetimeUsed = lifetimeCount ?? 0;
-
-    if (!isPremium && lifetimeUsed >= 1) {
-      return {
-        ok: false,
-        error: "free_sample_used",
-        message: "Vyčerpal jsi svou jednu ukázkovou AI analýzu. Premium = 50 analýz měsíčně.",
-      };
-    }
-
-    // 2) Cache lookup (per listing + raw fingerprint)
+    // 1) Cache lookup (per listing + raw fingerprint) — cached results never consume quota
     const fpInput = JSON.stringify({
       url: data.url, price: data.price, area: data.area_m2,
       flags: (data.flags ?? []).map(f => f.code).sort(),
@@ -142,25 +123,42 @@ export const analyzeListing = createServerFn({ method: "POST" })
       }
     }
 
-    // 3) Premium monthly limit (free users skip — they only get the single sample above)
-    let used = 0;
-    if (isPremium) {
-      const monthStart = new Date();
-      monthStart.setUTCDate(1);
-      monthStart.setUTCHours(0, 0, 0, 0);
-      const { count } = await supabaseAdmin
-        .from("ai_analysis_usage")
-        .select("id", { count: "exact", head: true })
-        .eq("user_id", userId)
-        .gte("created_at", monthStart.toISOString());
-      used = count ?? 0;
-      if (used >= AI_MONTHLY_LIMIT) {
+    // 2) Atomic quota reservation (server-only RPC). Counts attempted analyses,
+    // including uncertain provider failures — by design.
+    if (!data.listing_id) {
+      return { ok: false, error: "ai_failed", message: "Inzerát nelze analyzovat (chybí identifikátor)." };
+    }
+
+    const { data: reservation, error: reserveErr } = await supabaseAdmin.rpc("reserve_ai_analysis", {
+      _user_id: userId,
+      _listing_id: data.listing_id,
+    });
+    if (reserveErr) {
+      return { ok: false, error: "ai_failed", message: "Nepodařilo se ověřit limit AI analýz." };
+    }
+    const res = Array.isArray(reservation) ? reservation[0] : reservation;
+    if (!res) {
+      return { ok: false, error: "ai_failed", message: "Nepodařilo se ověřit limit AI analýz." };
+    }
+
+    const used = Number(res.used ?? 0);
+    const quotaLimit = Number(res.quota_limit ?? 1);
+    const isPremium = quotaLimit > 1;
+
+    if (!res.allowed) {
+      if (!isPremium) {
         return {
-          ok: false, error: "monthly_limit_reached",
-          message: `Měsíční limit AI analýz vyčerpán (${used}/${AI_MONTHLY_LIMIT}). Reset 1. dne v měsíci.`,
-          used, limit: AI_MONTHLY_LIMIT,
+          ok: false,
+          error: "free_sample_used",
+          message: "Vyčerpal jsi svou jednu ukázkovou AI analýzu. Premium = 50 analýz měsíčně.",
+          used, limit: quotaLimit,
         };
       }
+      return {
+        ok: false, error: "monthly_limit_reached",
+        message: `Měsíční limit AI analýz vyčerpán (${used}/${quotaLimit}). Reset 1. dne v měsíci.`,
+        used, limit: quotaLimit,
+      };
     }
 
     // 4) Comparables (same kraj + property_type + deal_type + area ±20%)
