@@ -87,6 +87,8 @@ export interface Flag {
 }
 
 export interface Listing {
+  /** DB row id — present for stored listings, absent for fresh scrape results. */
+  id?: string;
   source: string;
   source_key: SourceKey;
   name: string;

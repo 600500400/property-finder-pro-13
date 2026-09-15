@@ -3,7 +3,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
 
 const MODEL = "google/gemini-2.5-flash";
-const AI_MONTHLY_LIMIT = 50;
+// Quota limits live in the DB function public.reserve_ai_analysis (premium 50/month, free 1 lifetime).
 const TTL_DAYS = 30;
 
 const Flag = z.object({
@@ -101,26 +101,7 @@ export const analyzeListing = createServerFn({ method: "POST" })
     const userId = context.userId;
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    // 1) Tier gate: free users get ONE sample AI analysis ever; premium = monthly limit
-    const { data: premium } = await supabaseAdmin.rpc("is_premium", { _user_id: userId });
-    const isPremium = premium === true;
-
-    // Count lifetime usage (used both for the free sample gate and the monthly counter below).
-    const { count: lifetimeCount } = await supabaseAdmin
-      .from("ai_analysis_usage")
-      .select("id", { count: "exact", head: true })
-      .eq("user_id", userId);
-    const lifetimeUsed = lifetimeCount ?? 0;
-
-    if (!isPremium && lifetimeUsed >= 1) {
-      return {
-        ok: false,
-        error: "free_sample_used",
-        message: "Vyčerpal jsi svou jednu ukázkovou AI analýzu. Premium = 50 analýz měsíčně.",
-      };
-    }
-
-    // 2) Cache lookup (per listing + raw fingerprint)
+    // 1) Cache lookup (per listing + raw fingerprint) — cached results never consume quota
     const fpInput = JSON.stringify({
       url: data.url, price: data.price, area: data.area_m2,
       flags: (data.flags ?? []).map(f => f.code).sort(),
@@ -142,28 +123,25 @@ export const analyzeListing = createServerFn({ method: "POST" })
       }
     }
 
-    // 3) Premium monthly limit (free users skip — they only get the single sample above)
-    let used = 0;
-    if (isPremium) {
-      const monthStart = new Date();
-      monthStart.setUTCDate(1);
-      monthStart.setUTCHours(0, 0, 0, 0);
-      const { count } = await supabaseAdmin
-        .from("ai_analysis_usage")
-        .select("id", { count: "exact", head: true })
-        .eq("user_id", userId)
-        .gte("created_at", monthStart.toISOString());
-      used = count ?? 0;
-      if (used >= AI_MONTHLY_LIMIT) {
-        return {
-          ok: false, error: "monthly_limit_reached",
-          message: `Měsíční limit AI analýz vyčerpán (${used}/${AI_MONTHLY_LIMIT}). Reset 1. dne v měsíci.`,
-          used, limit: AI_MONTHLY_LIMIT,
-        };
-      }
+    // 2) Atomic quota reservation (server-only RPC). Counts attempted analyses,
+    // including uncertain provider failures — by design.
+    if (!data.listing_id) {
+      return { ok: false, error: "ai_failed", message: "Inzerát nelze analyzovat (chybí identifikátor)." };
     }
 
-    // 4) Comparables (same kraj + property_type + deal_type + area ±20%)
+    const { data: reservation, error: reserveErr } = await supabaseAdmin.rpc("reserve_ai_analysis", {
+      _user_id: userId,
+      _listing_id: data.listing_id,
+    });
+
+    const { mapReservation } = await import("./quota");
+    const outcome = mapReservation(reservation as never, reserveErr);
+    if (!outcome.ok) return outcome.error;
+
+    const used = outcome.used;
+    const quotaLimit = outcome.limit;
+
+    // 3) Comparables (same kraj + property_type + deal_type + area ±20%)
     let comparables: Comparable[] = [];
     let medianPpm: number | null = null;
     if (data.kraj && data.property_type && data.deal_type && data.area_m2 && data.area_m2 > 0) {
@@ -299,23 +277,17 @@ Vrať JSON dle schématu.`;
       summary_cs: typeof parsed.summary_cs === "string" ? parsed.summary_cs : "",
     };
 
-    // 8) Persist cache + usage
+    // 7) Persist cache (usage was already reserved atomically above)
     await supabaseAdmin.from("ai_analyses").upsert({
       url_hash: cacheKey,
       url: data.url,
       payload: result as unknown as never,
       model: MODEL,
     });
-    await supabaseAdmin.from("ai_analysis_usage").insert({
-      user_id: userId,
-      listing_id: data.listing_id ?? null,
-    });
 
     return {
       ok: true,
       ...result,
-      usage: isPremium
-        ? { used: used + 1, limit: AI_MONTHLY_LIMIT }
-        : { used: 1, limit: 1 },
+      usage: { used, limit: quotaLimit },
     };
   });
