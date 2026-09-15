@@ -24,8 +24,9 @@ Apply the pasted migration verbatim, then adapt the app code so nothing breaks a
 ## Verification
 
 - Apply migration via the database migration tool, byte-for-byte as pasted.
-- Typecheck (`bunx tsgo --noEmit`) and `bunx vitest run --reporter=dot`.
-- Live check with Playwright on the preview: homepage results still load (proves service-role-only listings access works end to end), run one AI analysis as the test user and confirm quota decrements and a second free attempt is refused.
+- Run `node node_modules/typescript/bin/tsc --noEmit --pretty false` and `node node_modules/vitest/vitest.mjs run`.
+- New unit tests with mocks only — no live AI call, no real quota consumption: stub the Supabase admin client and the AI gateway `fetch`, then assert (a) a cache hit returns without calling the reservation RPC, (b) `allowed=false` for a non-premium user maps to `free_sample_used`, (c) `allowed=false` for premium maps to `monthly_limit_reached` with used/limit, (d) `allowed=true` proceeds and does not insert usage a second time.
+- No live AI analysis is run and the Free sample is not consumed. Live end-to-end verification (homepage results still load under service-role-only access, real quota decrement) is left to the project owner after deploy.
 
 ## Already verified (no change needed)
 
