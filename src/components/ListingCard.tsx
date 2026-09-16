@@ -1,3 +1,4 @@
+import { useState } from "react";
 import type { Listing, Flag } from "@/lib/scanner/types";
 import { MapPin, ExternalLink, AlertTriangle } from "lucide-react";
 import { AIAnalysisButton } from "./AIAnalysisDialog";
@@ -593,6 +594,23 @@ function ListingCompact({ listing }: { listing: Listing }) {
   );
 }
 
+function ListingRowThumbnail({ src, alt }: { src?: string; alt: string }) {
+  const [failed, setFailed] = useState(false);
+  if (!src || failed) {
+    return <div className="h-14 w-14 shrink-0 rounded-md bg-muted" />;
+  }
+  return (
+    <img
+      src={src}
+      alt={alt}
+      loading="lazy"
+      referrerPolicy="no-referrer"
+      onError={() => setFailed(true)}
+      className="h-14 w-14 shrink-0 rounded-md object-cover"
+    />
+  );
+}
+
 function ListingRow({ listing }: { listing: Listing }) {
   const inv = listing.invest;
   const ownershipKey = listing.ownership ?? "jine";
@@ -604,16 +622,7 @@ function ListingRow({ listing }: { listing: Listing }) {
       rel="noopener noreferrer"
       className="group flex items-center gap-3 border-b border-border bg-card px-3 py-2 transition hover:bg-muted/30"
     >
-      {listing.img ? (
-        <img
-          src={listing.img}
-          alt=""
-          loading="lazy"
-          className="h-14 w-14 shrink-0 rounded-md object-cover"
-        />
-      ) : (
-        <div className="h-14 w-14 shrink-0 rounded-md bg-muted" />
-      )}
+      <ListingRowThumbnail src={listing.img} alt={listing.name} />
       <div className="flex min-w-0 flex-1 flex-col gap-0.5">
         <div className="flex items-center gap-1.5">
           <span className="rounded-sm bg-primary/10 px-1.5 py-0 text-[9px] font-semibold uppercase tracking-wider text-primary">

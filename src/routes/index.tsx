@@ -237,9 +237,9 @@ function Index() {
           {freeCapped && (
             <div className="mb-3 rounded-md border border-amber-500/30 bg-amber-500/5 p-2 text-center text-xs text-amber-200/90">
               {tier === "anonymous" ? (
-                <>Bez přihlášení vidíš max. <strong>{resultCap} výsledků</strong> · <Link to="/auth" className="underline">registrovat zdarma pro 50</Link></>
+                <>Bez přihlášení vidíte max. <strong>{resultCap} výsledků</strong> · <Link to="/auth" className="underline">registrovat zdarma pro 50</Link></>
               ) : (
-                <>Free plán zobrazuje max. <strong>{resultCap} výsledků</strong> · <button className="underline" onClick={() => setUpgradeReason("Odemkni neomezené výsledky.")}>upgradovat na Premium</button></>
+                <>Free plán zobrazuje max. <strong>{resultCap} výsledků</strong> · <button className="underline" onClick={() => setUpgradeReason("Odemkněte neomezené výsledky.")}>upgradovat na Premium</button></>
               )}
             </div>
           )}
@@ -260,6 +260,13 @@ function Index() {
             <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border py-16 text-center">
               <div className="mb-2 text-4xl">🔍</div>
               <p className="text-sm text-muted-foreground">Žádné inzeráty neodpovídají filtrům.</p>
+              <button
+                type="button"
+                onClick={() => setFilters(DEFAULT_FILTERS)}
+                className="mt-4 inline-flex items-center gap-1.5 rounded-lg border border-primary/60 bg-primary/10 px-4 py-2 text-xs font-semibold text-primary transition hover:bg-primary/20"
+              >
+                Zrušit všechny filtry
+              </button>
             </div>
           )}
 

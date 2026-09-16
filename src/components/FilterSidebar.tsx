@@ -258,7 +258,7 @@ export function FilterSidebar({ filters, setFilters, view, setView, onExport, ca
           <Dog className="h-3.5 w-3.5" /> {isAuthed ? "Uložit hledání" : "Přihlaste se pro hlídacího psa"}
         </button>
         <p className="text-[10px] leading-relaxed text-muted-foreground">
-          Dostaneš e-mail, jakmile přibyde nový inzerát odpovídající tomuto filtru.
+          Dostanete e-mail, jakmile přibyde nový inzerát odpovídající tomuto filtru.
         </p>
       </Section>
 

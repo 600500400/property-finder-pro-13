@@ -148,7 +148,7 @@ function Pricing() {
             <div className="mt-1 flex items-baseline gap-2">
               <span className="text-3xl font-bold">349 Kč</span><span className="text-sm text-muted-foreground">/ měs</span>
             </div>
-            <div className="text-xs text-muted-foreground">nebo 3 490 Kč / rok (ušetříš 17 %)</div>
+            <div className="text-xs text-muted-foreground">nebo 3 490 Kč / rok (ušetříte 17 %)</div>
             <ul className="mt-5 space-y-2 text-sm">
               <Bullet>4 hlavní české portály (Sreality, Bazoš, Bezrealitky, iDnes)</Bullet>
               <Bullet>Inzeráty <strong>v reálném čase</strong> — bez 24h zpoždění</Bullet>
@@ -177,7 +177,7 @@ function Pricing() {
 
         {err && <p className="mt-4 text-center text-sm text-[var(--color-danger)]">{err}</p>}
         <p className="mt-8 text-center text-xs text-muted-foreground">
-          Platba přes Stripe · zrušení kdykoli · sandbox / TEST MODE
+          Bezpečná platba přes Stripe · zrušení kdykoli
         </p>
         <p className="mt-3 text-center text-xs text-muted-foreground">
           Aktivací předplatného souhlasíte s{" "}

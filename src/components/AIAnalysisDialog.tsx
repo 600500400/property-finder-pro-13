@@ -22,7 +22,7 @@ export function AIAnalysisButton({ listing }: { listing: Listing }) {
       <button
         type="button"
         onClick={(e) => { e.preventDefault(); e.stopPropagation(); navigate({ to: "/auth" }); }}
-        title="Pro AI analýzu se zaregistruj — dostaneš jednu zdarma na vyzkoušení"
+        title="Pro AI analýzu se zaregistrujte — získáte jednu zdarma na vyzkoušení"
         className="flex items-center gap-1 rounded-md border border-primary/40 bg-primary/10 px-2 py-1 text-[10px] font-semibold text-primary hover:bg-primary/20"
       >
         <Sparkles className="h-3 w-3" /> AI analýza (zdarma po registraci)
@@ -36,7 +36,7 @@ export function AIAnalysisButton({ listing }: { listing: Listing }) {
       <button
         type="button"
         onClick={(e) => { e.preventDefault(); e.stopPropagation(); navigate({ to: "/cenik" }); }}
-        title="Volnou AI analýzu jsi už vyčerpal — Premium = 50/měsíc"
+        title="Volnou AI analýzu jste již vyčerpali — Premium = 50/měsíc"
         className="flex items-center gap-1 rounded-md border border-amber-500/40 bg-amber-500/10 px-2 py-1 text-[10px] font-semibold text-amber-300 hover:bg-amber-500/20"
       >
         <Crown className="h-3 w-3" /> AI analýza (Premium)
@@ -144,7 +144,7 @@ function Dialog({ listing, onClose }: { listing: Listing; onClose: () => void })
         {data && data.ok === false && data.error === "free_sample_used" && (
           <div className="flex flex-col items-center gap-3 rounded-lg border border-amber-500/40 bg-amber-500/5 p-5 text-center">
             <Crown className="h-8 w-8 text-amber-400" />
-            <p className="text-sm font-semibold">Volnou ukázkovou AI analýzu jsi už vyčerpal.</p>
+            <p className="text-sm font-semibold">Volnou ukázkovou AI analýzu jste již vyčerpali.</p>
             <p className="text-xs text-muted-foreground">{data.message}</p>
             <Link to="/cenik" className="rounded-md bg-amber-500 px-4 py-2 text-xs font-bold text-black hover:bg-amber-400">
               Odemknout Premium · 50 analýz/měs.
@@ -237,7 +237,7 @@ function Verdict({ data }: { data: Extract<AIAnalysisResult, { ok: true }> }) {
 
       {data.user_rule_violations.length > 0 && (
         <div className="rounded-md border border-red-500/40 bg-red-500/5 p-2.5">
-          <h4 className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-red-300">Porušuje tvá pravidla</h4>
+          <h4 className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-red-300">Porušuje vaše pravidla</h4>
           <ul className="ml-4 list-disc space-y-0.5 text-xs text-red-200">
             {data.user_rule_violations.map((r, i) => <li key={i}>{r}</li>)}
           </ul>

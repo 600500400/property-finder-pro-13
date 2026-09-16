@@ -48,7 +48,7 @@ function AuthPage() {
         </div>
         <h2 className="mb-1 text-lg font-semibold">{mode === "signin" ? "Přihlášení" : "Vytvořit účet"}</h2>
         <p className="mb-4 text-xs text-muted-foreground">
-          {mode === "signin" ? "Přihlas se a spravuj uložené filtry a denní reporty." : "Vytvoř si účet a začni ukládat filtry."}
+          {mode === "signin" ? "Přihlaste se a spravujte uložené filtry a denní reporty." : "Vytvořte si účet a začněte ukládat filtry."}
         </p>
         <form onSubmit={submit} className="flex flex-col gap-3">
           <input
@@ -67,14 +67,14 @@ function AuthPage() {
             className="flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-bold text-primary-foreground transition hover:opacity-90 disabled:opacity-50"
           >
             {busy && <Loader2 className="h-4 w-4 animate-spin" />}
-            {mode === "signin" ? "Přihlásit" : "Vytvořit účet"}
+            {mode === "signin" ? "Přihlásit se" : "Vytvořit účet"}
           </button>
         </form>
         <button
           type="button" onClick={() => setMode(mode === "signin" ? "signup" : "signin")}
           className="mt-3 w-full text-center text-xs text-muted-foreground hover:text-foreground"
         >
-          {mode === "signin" ? "Nemáš účet? Vytvořit nový" : "Máš účet? Přihlásit"}
+          {mode === "signin" ? "Nemáte účet? Vytvořit nový" : "Máte již účet? Přihlásit se"}
         </button>
         <Link to="/" className="mt-4 block text-center text-xs text-muted-foreground hover:text-foreground">← Zpět na scanner</Link>
       </div>

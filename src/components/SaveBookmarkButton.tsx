@@ -71,7 +71,7 @@ export function SaveBookmarkButton({ listing }: { listing: Listing }) {
       disabled={busy}
       title={
         tier === "anonymous"
-          ? "Přihlas se pro uložení inzerátu"
+          ? "Přihlaste se pro uložení inzerátu"
           : isSaved
           ? "Odebrat z oblíbených"
           : "Uložit do oblíbených"
