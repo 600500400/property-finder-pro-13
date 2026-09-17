@@ -249,3 +249,49 @@ export const revokeManualPremium = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+/** Admin-only: trigger Sreality houses backfill by region. */
+export const triggerHousesBackfill = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { scope: "morava" | "all" | string }) => {
+    return input;
+  })
+  .handler(async ({ data, context }) => {
+    await requireAdmin(context as never);
+    const { runSourceScrape } = await import("@/lib/scanner/persist.server");
+    const MORAVA = ["jihomoravsky", "moravskoslezsky", "olomoucky", "zlinsky"];
+    const ALL = [
+      "jihomoravsky", "moravskoslezsky", "olomoucky", "zlinsky",
+      "praha", "stredocesky", "jihocesky", "plzensky", "karlovarsky",
+      "ustecky", "liberecky", "kralovehradecky", "pardubicky", "vysocina",
+    ];
+    const targets = data.scope === "morava" ? MORAVA : data.scope === "all" ? ALL : [data.scope];
+    const results = [];
+    for (const reg of targets) {
+      try {
+        const res = await runSourceScrape("sreality", "prodej", "domy", reg);
+        results.push(res);
+      } catch (err) {
+        results.push({
+          source: "sreality",
+          deal_type: "prodej",
+          property_type: "domy",
+          region: reg,
+          status: "error",
+          items_found: 0,
+          items_new: 0,
+          items_updated: 0,
+          items_deactivated: 0,
+          duration_ms: 0,
+          run_id: "",
+          error: err instanceof Error ? err.message : String(err),
+        });
+      }
+      await new Promise((r) => setTimeout(r, 200));
+    }
+    const totalFound = results.reduce((acc, r) => acc + (r.items_found || 0), 0);
+    const totalNew = results.reduce((acc, r) => acc + (r.items_new || 0), 0);
+    const totalUpdated = results.reduce((acc, r) => acc + (r.items_updated || 0), 0);
+    return { ok: true, targets, totalFound, totalNew, totalUpdated, results };
+  });
+

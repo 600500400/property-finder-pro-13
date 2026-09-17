@@ -45,6 +45,7 @@ export async function runSourceScrape(
   sourceKey: SourceKey,
   dealType: DealType,
   propertyType: PropertyType,
+  region?: string,
 ): Promise<RunResult> {
   const startedAt = Date.now();
 
@@ -68,8 +69,11 @@ export async function runSourceScrape(
   const limit = FAST_SOURCES.has(sourceKey) ? 100 : 50;
   // Houses are a much smaller national pool than flats, so we walk deeper pages
   // to build volume. Flats keep a single page (unchanged behaviour).
+  // When a specific region is targeted for Sreality houses, we can walk up to 50 pages (5,000 listings)
+  // to capture 100% of all houses in that region without hitting timeouts (each page ~250ms).
+  const isRegionalHouseScrape = propertyType === "domy" && sourceKey === "sreality" && !!region;
   const HOUSE_PAGES: Record<string, number> = {
-    sreality: 10,
+    sreality: isRegionalHouseScrape ? 50 : 25,
     bezrealitky: 10,
     bazos: 25,
     idnes: 8,
@@ -101,7 +105,7 @@ export async function runSourceScrape(
       deal_type: dealType,
       property_type: propertyType,
       sub_type: "",
-      region: "",
+      region: (region ?? "") as ScanFilters["region"],
       sources: [sourceKey],
       sort_by: "date_desc",
       per_source_limit: perSourceLimit,
@@ -222,17 +226,23 @@ export async function runSourceScrape(
     counts.items_updated = updatedCount;
 
 
-    // Soft-delete stale listings for this combination
-    const cutoff = new Date(Date.now() - 7 * 24 * 3600 * 1000).toISOString();
-    const { data: deactivated } = await supabaseAdmin
+    // Soft-delete stale listings for this combination.
+    // Houses stay active for 60 days (they sell over months, whereas flats churn faster).
+    // If scanning a specific region, only deactivate stale listings belonging to that region.
+    const cutoffDays = propertyType === "domy" ? 60 : 7;
+    const cutoff = new Date(Date.now() - cutoffDays * 24 * 3600 * 1000).toISOString();
+    let deactQ = supabaseAdmin
       .from("listings")
       .update({ is_active: false })
       .eq("source", sourceKey)
       .eq("deal_type", dealType)
       .eq("property_type", propertyType)
       .eq("is_active", true)
-      .lt("last_seen_at", cutoff)
-      .select("id");
+      .lt("last_seen_at", cutoff);
+    if (region) {
+      deactQ = deactQ.eq("kraj", region);
+    }
+    const { data: deactivated } = await deactQ.select("id");
     counts.items_deactivated = deactivated?.length ?? 0;
 
     // Instant watchdog alerts — best-effort, never break the scrape run

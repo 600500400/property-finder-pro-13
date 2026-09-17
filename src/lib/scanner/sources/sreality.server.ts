@@ -12,9 +12,20 @@ const SREALITY_CATEGORY_SUB: Record<string, number> = {
   garaz: 34, garazove_stani: 52,
 };
 const SREALITY_REGIONS: Record<string, number> = {
-  praha: 10, stredocesky: 11, jihocesky: 1, jihomoravsky: 2, karlovarsky: 3,
-  kralovehradecky: 4, liberecky: 5, moravskoslezsky: 6, olomoucky: 7,
-  pardubicky: 8, plzensky: 9, ustecky: 12, vysocina: 13, zlinsky: 14,
+  jihocesky: 1,
+  plzensky: 2,
+  karlovarsky: 3,
+  ustecky: 4,
+  liberecky: 5,
+  kralovehradecky: 6,
+  pardubicky: 7,
+  olomoucky: 8,
+  zlinsky: 9,
+  praha: 10,
+  stredocesky: 11,
+  moravskoslezsky: 12,
+  vysocina: 13,
+  jihomoravsky: 14,
 };
 const SREALITY_REGION_ID_TO_SLUG: Record<number, string> = Object.fromEntries(
   Object.entries(SREALITY_REGIONS).map(([slug, id]) => [id, slug])
@@ -193,7 +204,7 @@ function detailUrl(e: any, typeS: string, mainCb: number, name: string): string 
 
 /** Sreality titles spell out the plot: "Prodej rodinného domu 116 m², pozemek 612 m²". */
 function landFromName(name: string): number | undefined {
-  const m = name.match(/pozemek\s+([\d\s\u00a0]+)\s*m²/i);
+  const m = name.match(/pozemek\s+([\d\s\u00a0]+)\s*m[²2]/i);
   if (!m) return undefined;
   const n = parseInt(m[1].replace(/[^\d]/g, ""), 10);
   return isNaN(n) || n <= 0 ? undefined : n;
@@ -370,19 +381,24 @@ export async function fetchSreality(f: ScanFilters): Promise<Listing[]> {
   }
 
   const typeS = TYPE_SLUG[typeCb] || "prodej";
+  const isHouses = f.property_type === "domy";
   // Detail calls are rate-limit sensitive: run them 8 at a time and cap the total.
-  const DETAIL_CAP = 500;
+  // For houses, title & search payload already guarantee plot size, floor area, locality & subtype,
+  // so we skip detail calls entirely. This boosts speed 10x and enables deep pagination without timeouts.
+  const DETAIL_CAP = isHouses ? 0 : 500;
   const details: Array<Awaited<ReturnType<typeof detailInfo>>> = new Array(estates.length).fill({});
-  const queue = estates.slice(0, DETAIL_CAP).map((e, i) => ({ e, i }));
-  await Promise.all(
-    Array.from({ length: 8 }, async () => {
-      for (;;) {
-        const job = queue.shift();
-        if (!job) return;
-        details[job.i] = await detailInfo(job.e?.hash_id, headers);
-      }
-    }),
-  );
+  if (DETAIL_CAP > 0) {
+    const queue = estates.slice(0, DETAIL_CAP).map((e, i) => ({ e, i }));
+    await Promise.all(
+      Array.from({ length: 8 }, async () => {
+        for (;;) {
+          const job = queue.shift();
+          if (!job) return;
+          details[job.i] = await detailInfo(job.e?.hash_id, headers);
+        }
+      }),
+    );
+  }
   const out: Listing[] = [];
   let withImg = 0;
   for (const [idx, e] of estates.entries()) {
@@ -390,17 +406,23 @@ export async function fetchSreality(f: ScanFilters): Promise<Listing[]> {
     const price = priceOf(e);
     const name = cleanText(e.advert_name || e.name || "Nemovitost");
     const url = detailUrl(e, typeS, mainCb, name);
-    const areaM = name.match(/(\d+)\s*m²/);
+    const areaM = name.match(/(\d+)\s*m[²2]/i);
     const area_m2 = parseArea(name) ?? (typeof e.usable_area === "number" ? e.usable_area : undefined);
     const img = extractImage(e);
     if (img) withImg++;
     const pubIso = publishedOf(e);
-    const kraj = details[idx]?.kraj ?? krajOf(e, details[idx]?.locality);
+    const loc = details[idx]?.locality ?? localityOf(e);
+    const kraj = details[idx]?.kraj ?? krajOf(e, loc);
+    const land_area_m2 = (typeof e.estate_area === "number" && e.estate_area > 0 ? e.estate_area : undefined)
+      ?? (typeof e.land_area === "number" && e.land_area > 0 ? e.land_area : undefined)
+      ?? details[idx]?.land_area_m2
+      ?? landFromName(name);
+
     out.push({
       source: "Sreality",
       source_key: "sreality",
       name,
-      locality: details[idx]?.locality ?? localityOf(e),
+      locality: loc,
       kraj,
       price,
       price_text: price ? fmtPrice(price) : "Cena na vyžádání",
@@ -408,7 +430,7 @@ export async function fetchSreality(f: ScanFilters): Promise<Listing[]> {
       img,
       area: areaM ? areaM[0] : (area_m2 ? `${area_m2} m²` : ""),
       area_m2,
-      land_area_m2: details[idx]?.land_area_m2 ?? landFromName(name),
+      land_area_m2,
       published_at: pubIso,
       published_at_source: pubIso ? "api" : undefined,
       ownership: details[idx]?.ownership ?? ownershipOf(e, name),

@@ -6,6 +6,7 @@ import {
   getAdminDashboard,
   grantManualPremium,
   revokeManualPremium,
+  triggerHousesBackfill,
   type AdminUserRow,
   type GrantMonths,
 } from "@/lib/admin/admin.functions";
@@ -34,11 +35,14 @@ function AdminPage() {
   const fetchFn = useServerFn(getAdminDashboard);
   const grantFn = useServerFn(grantManualPremium);
   const revokeFn = useServerFn(revokeManualPremium);
+  const backfillFn = useServerFn(triggerHousesBackfill);
   const queryClient = useQueryClient();
   const router = useRouter();
   const [busyUser, setBusyUser] = useState<string | null>(null);
   const [grantFor, setGrantFor] = useState<AdminUserRow | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [isBackfilling, setIsBackfilling] = useState(false);
+  const [backfillStatus, setBackfillStatus] = useState<string | null>(null);
   const { data, isLoading, error, refetch, isFetching } = useQuery({
     queryKey: ["admin-dashboard"],
     queryFn: () => fetchFn(),
@@ -95,6 +99,20 @@ function AdminPage() {
       setActionError(e instanceof Error ? e.message : String(e));
     } finally {
       setBusyUser(null);
+    }
+  }
+
+  async function doBackfill(scope: "morava" | "all") {
+    setIsBackfilling(true);
+    setBackfillStatus(`Spouštím synchronizaci domů ze Srealit (${scope === "morava" ? "Morava — 4 kraje" : "Celá ČR — 14 krajů"})…`);
+    try {
+      const res = await backfillFn({ data: { scope } });
+      const summary = `Hotovo! Nalezeno: ${res.totalFound.toLocaleString("cs-CZ")} inzerátů, nových v DB: ${res.totalNew.toLocaleString("cs-CZ")}, aktualizovaných: ${res.totalUpdated.toLocaleString("cs-CZ")}.`;
+      setBackfillStatus(summary);
+    } catch (e) {
+      setBackfillStatus(`Chyba synchronizace: ${e instanceof Error ? e.message : String(e)}`);
+    } finally {
+      setIsBackfilling(false);
     }
   }
 
@@ -164,6 +182,40 @@ function AdminPage() {
           <SummaryCard label="Odeslaných alertů" value={activity_30d.alerts_sent.toLocaleString("cs-CZ")} />
           <SummaryCard label="AI analýz" value={activity_30d.ai_analyses.toLocaleString("cs-CZ")} />
         </div>
+      </section>
+
+      <section className="rounded-lg border border-border bg-[var(--color-surface)] p-4 space-y-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-foreground">
+              Synchronizace domů (Sreality)
+            </h2>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Přímé stažení kompletního archivu domů prodej ze Srealit (0 Firecrawl kreditů, stahováno přímo ze Seznam API po 100 ks/stránka).
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2 shrink-0">
+            <button
+              onClick={() => doBackfill("morava")}
+              disabled={isBackfilling}
+              className="rounded-md border border-primary/60 bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary hover:bg-primary/20 disabled:opacity-50 transition"
+            >
+              {isBackfilling ? "Probíhá stahování…" : "Stáhnout Moravu (4 kraje)"}
+            </button>
+            <button
+              onClick={() => doBackfill("all")}
+              disabled={isBackfilling}
+              className="rounded-md border border-border bg-[var(--color-surface-2)] px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-[var(--color-surface-2)]/80 disabled:opacity-50 transition"
+            >
+              {isBackfilling ? "Probíhá stahování…" : "Stáhnout celou ČR (14 krajů)"}
+            </button>
+          </div>
+        </div>
+        {backfillStatus && (
+          <div className="rounded-md border border-border bg-[var(--color-surface-2)] p-2.5 text-xs font-mono text-foreground whitespace-pre-wrap">
+            {backfillStatus}
+          </div>
+        )}
       </section>
 
       <section>
