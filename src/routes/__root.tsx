@@ -77,16 +77,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         name: "twitter:description",
         content: "Agregátor inzerátů ze Sreality, Bezrealitky a dalších portálů. Okamžitý výpočet čistého výnosu z pronájmu, srovnání cen domů s ČSÚ a automatický hlídací pes.",
       },
-      {
-        property: "og:image",
-        content:
-          "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/6133f0ff-6e79-47f3-8e98-562185092b8e/id-preview-b608d29d--46a95943-c9d6-44b9-b4b6-4d3db3fc4a74.lovable.app-1780339216560.png",
-      },
-      {
-        name: "twitter:image",
-        content:
-          "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/6133f0ff-6e79-47f3-8e98-562185092b8e/id-preview-b608d29d--46a95943-c9d6-44b9-b4b6-4d3db3fc4a74.lovable.app-1780339216560.png",
-      },
+      { property: "og:image", content: "https://www.realityscanner.cz/og-image.jpg" },
+      { property: "og:image:width", content: "1200" },
+      { property: "og:image:height", content: "630" },
+      { property: "og:image:type", content: "image/jpeg" },
+      { name: "twitter:image", content: "https://www.realityscanner.cz/og-image.jpg" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
     links: [

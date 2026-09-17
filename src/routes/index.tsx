@@ -144,14 +144,15 @@ function Index() {
     <div className="flex h-[100dvh] min-h-0 flex-col bg-background text-foreground">
       <header className="sticky top-0 z-30 flex items-center gap-3 border-b border-border bg-[var(--color-surface)] px-5 py-3">
         <Radar className="h-5 w-5 text-primary" />
-        <div className="flex flex-col leading-none">
-          <div className="text-base font-bold tracking-tight">
+        <h1 className="flex flex-col leading-none">
+          <span className="text-base font-bold tracking-tight">
             Reality<span className="text-primary">Scanner</span>
-          </div>
+          </span>
           <span className="mt-0.5 hidden text-[10px] font-medium uppercase tracking-wider text-muted-foreground md:block">
             Investiční byty a domy na prodej napříč českými portály
           </span>
-        </div>
+          <span className="sr-only"> — Vyhledávač a kalkulačka výnosu investičních nemovitostí</span>
+        </h1>
         {data && (
           <span className="hidden font-mono text-[11px] text-muted-foreground sm:inline">
             · {new Date(data.ts).toLocaleTimeString("cs-CZ")}
