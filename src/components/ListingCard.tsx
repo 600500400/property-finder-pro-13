@@ -290,9 +290,18 @@ export function ListingCard({ listing, density = "card", rank }: { listing: List
   return <ListingFull listing={listing} rank={rank} />;
 }
 
+function cleanImgUrl(u?: string): string | undefined {
+  if (!u) return undefined;
+  if (u.includes("sdn.cz") && !u.includes("?fl=")) {
+    return `${u}?fl=res,1200,1200,1|shr,,20|jpg,80`;
+  }
+  return u;
+}
+
 function CardHeroImage({ src, alt }: { src?: string; alt: string }) {
   const [failed, setFailed] = useState(false);
-  if (!src || failed) {
+  const finalSrc = cleanImgUrl(src);
+  if (!finalSrc || failed) {
     return (
       <div className="flex aspect-[4/3] w-full items-center justify-center bg-muted/40">
         <MapPin className="h-8 w-8 text-muted-foreground/30" />
@@ -302,7 +311,7 @@ function CardHeroImage({ src, alt }: { src?: string; alt: string }) {
   return (
     <div className="overflow-hidden">
       <img
-        src={src}
+        src={finalSrc}
         alt={alt}
         loading="lazy"
         referrerPolicy="no-referrer"
@@ -621,12 +630,13 @@ function ListingCompact({ listing }: { listing: Listing }) {
 
 function ListingRowThumbnail({ src, alt }: { src?: string; alt: string }) {
   const [failed, setFailed] = useState(false);
-  if (!src || failed) {
+  const finalSrc = cleanImgUrl(src);
+  if (!finalSrc || failed) {
     return <div className="h-14 w-14 shrink-0 rounded-md bg-muted" />;
   }
   return (
     <img
-      src={src}
+      src={finalSrc}
       alt={alt}
       loading="lazy"
       referrerPolicy="no-referrer"

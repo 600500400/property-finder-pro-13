@@ -216,7 +216,9 @@ export const queryListings = createServerFn({ method: "POST" })
         price,
         price_text: priceText,
         url: r.url,
-        img: r.image_url ?? "",
+        img: (r.image_url && r.image_url.includes("sdn.cz") && !r.image_url.includes("?fl="))
+          ? `${r.image_url}?fl=res,1200,1200,1|shr,,20|jpg,80`
+          : r.image_url ?? "",
         area: areaM2 ? `${areaM2} m²` : "",
         area_m2: areaM2 ?? undefined,
         land_area_m2: r.land_area_m2 ?? undefined,

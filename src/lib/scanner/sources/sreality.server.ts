@@ -27,6 +27,10 @@ function normalizeImgUrl(u: string): string {
   if (v.startsWith("//")) v = "https:" + v;
   // Sreality občas vrací template "{width}/{height}"; necháme rozumné rozměry
   v = v.replace(/\{width\}/g, "800").replace(/\{height\}/g, "600");
+  // Seznam CDN (sdn.cz) vrací 401 Unauthorized, pokud chybí povolený preset transformace
+  if (v.includes("sdn.cz") && !v.includes("?fl=")) {
+    v += "?fl=res,1200,1200,1|shr,,20|jpg,80";
+  }
   return v;
 }
 
