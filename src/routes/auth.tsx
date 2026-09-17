@@ -5,9 +5,8 @@ import { Loader2, Radar } from "lucide-react";
 
 export const Route = createFileRoute("/auth")({
   staticData: { sitemap: false },
-  validateSearch: (search: Record<string, unknown>) => ({
-    next: typeof search.next === "string" ? search.next : undefined,
-  }),
+  validateSearch: (search: Record<string, unknown>): { next?: string } =>
+    typeof search.next === "string" ? { next: search.next } : {},
   head: () => ({ meta: [{ title: "Přihlášení — RealityScanner" }] }),
   component: AuthPage,
 });
