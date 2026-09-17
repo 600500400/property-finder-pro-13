@@ -130,5 +130,15 @@ describe("Scanner: detekce vlastnictví (OV/DV/JINÉ)", () => {
       45_000,
     );
   }
+
+  it("Sreality: inzeráty mají vyplněný kraj", async () => {
+    const listings = await fetchSreality({ ...baseFilters, sources: ["sreality"], per_source_limit: 5 });
+    expect(listings.length).toBeGreaterThan(0);
+    for (const l of listings) {
+      expect(l.kraj).toBeDefined();
+      expect(typeof l.kraj).toBe("string");
+      expect(l.kraj!.length).toBeGreaterThan(0);
+    }
+  }, 30_000);
 });
 

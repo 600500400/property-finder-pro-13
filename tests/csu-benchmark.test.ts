@@ -57,6 +57,28 @@ describe("ČSÚ house benchmark", () => {
     expect(result?.benchmark_per_m2).toBe(35466);
     expect(result?.benchmark_low_sample).toBe(true);
   });
+
+  it("auto-derives kraj from village name in populationByName and falls back to kraj_band", () => {
+    const kraj: CsuKrajRow[] = [
+      { kraj: "stredocesky", band: "do1999", price_2025: 45000, avg_size_m2: 110 },
+      { kraj: "stredocesky", band: null, price_2025: 55000, avg_size_m2: 115 },
+    ];
+    const population: PopulationRow[] = [
+      { kraj: "stredocesky", name: "Sloveč", name_norm: "slovec", population: 520, is_ambiguous_in_kraj: false },
+    ];
+    const result = computeCsuHouseCompare({
+      kraj: null,
+      locality: "Sloveč",
+      areaM2: 120,
+      price: 4_800_000,
+      indexes: buildCsuIndexes([], kraj, population),
+    });
+    expect(result).not.toBeNull();
+    expect(result?.scope).toBe("kraj_band");
+    expect(result?.benchmark_per_m2).toBe(45000);
+    expect(result?.verdict).toBeDefined();
+    expect(result?.verdict_label).toBeDefined();
+  });
 });
 
 describe("ČSÚ uplift validation", () => {

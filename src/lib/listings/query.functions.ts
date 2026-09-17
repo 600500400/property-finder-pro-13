@@ -3,7 +3,7 @@ import { z } from "zod";
 import type { Listing, ScanFilters, ScanResult, SourceKey } from "@/lib/scanner/types";
 import type { RentComp } from "./yield.server";
 import { indexPriceComps, computePriceCompare, type PriceCompRow } from "./price-compare";
-import { buildCsuIndexes, computeCsuHouseCompare, type CsuKrajRow, type CsuOkresRow, type PopulationRow, type SizeBand } from "./csu-benchmark";
+import { buildCsuIndexes, computeCsuHouseCompare, municipalityFromLocality, type CsuKrajRow, type CsuOkresRow, type PopulationRow, type SizeBand } from "./csu-benchmark";
 
 
 const SOURCE_LABEL: Record<SourceKey, string> = {
@@ -128,7 +128,6 @@ export const queryListings = createServerFn({ method: "POST" })
       compRows.push(...(chunk as PriceCompRow[]));
       if (chunk.length < PAGE) break;
     }
-    const priceIndex = indexPriceComps(compRows);
 
     const [{ data: okresData }, { data: krajData }] = await Promise.all([
       supabaseAdmin.from("csu_house_prices_okres").select("kraj, okres, level, avg_size_m2, price_2025, band, band_price_uplifted, low_sample"),
@@ -159,6 +158,20 @@ export const queryListings = createServerFn({ method: "POST" })
       })),
     );
 
+    // Doplňujeme kraj pro srovnávací nabídky v bazénu, kterým kraj chybí
+    if (csuIndexes.populationByName) {
+      for (const comp of compRows) {
+        if (!comp.kraj && comp.city) {
+          const mun = municipalityFromLocality(comp.city);
+          const popMatches = csuIndexes.populationByName.get(mun);
+          if (popMatches && popMatches.length > 0) {
+            comp.kraj = [...popMatches].sort((a, b) => b.population - a.population)[0].kraj;
+          }
+        }
+      }
+    }
+    const priceIndex = indexPriceComps(compRows);
+
 
     const bench = await getBenchmark();
 
@@ -184,9 +197,20 @@ export const queryListings = createServerFn({ method: "POST" })
             rentIndex,
           })
         : null;
+
+      // Pokud záznam v DB nemá vyplněný kraj, zkusíme ho odvodit z názvu obce v populaci
+      const mun = r.city ? municipalityFromLocality(r.city) : "";
+      const popMatches = (!r.kraj && mun && csuIndexes.populationByName)
+        ? csuIndexes.populationByName.get(mun)
+        : null;
+      const derivedKraj = (popMatches && popMatches.length > 0)
+        ? [...popMatches].sort((a, b) => b.population - a.population)[0].kraj
+        : null;
+      const effectiveKraj = r.kraj ?? derivedKraj;
+
       const priceCompare = computePriceCompare({
         propertyType,
-        kraj: r.kraj,
+        kraj: effectiveKraj,
         city: r.city,
         areaM2,
         price: r.price,
@@ -197,7 +221,7 @@ export const queryListings = createServerFn({ method: "POST" })
         houseSubtype: r.house_subtype,
       }) ?? undefined;
       const csuCompare = propertyType === "domy" ? computeCsuHouseCompare({
-        kraj: r.kraj,
+        kraj: effectiveKraj,
         locality: r.city,
         areaM2,
         price: r.price,
@@ -212,7 +236,7 @@ export const queryListings = createServerFn({ method: "POST" })
         source_key: sourceKey,
         name: r.title ?? "",
         locality: r.city ?? "",
-        kraj: r.kraj ?? undefined,
+        kraj: effectiveKraj ?? r.kraj ?? undefined,
         price,
         price_text: priceText,
         url: r.url,

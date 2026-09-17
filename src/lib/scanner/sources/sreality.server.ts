@@ -1,5 +1,6 @@
 import type { Listing, Ownership, ScanFilters } from "../types";
 import { cleanText, fmtPrice, parseArea, parseOwnership } from "../valuation";
+import { regionFromLocality } from "../kraj-mapping";
 
 const SREALITY_CATEGORY_MAIN: Record<string, number> = {
   byty: 1, domy: 2, pozemky: 3, komercni: 4, ostatni: 5,
@@ -15,6 +16,9 @@ const SREALITY_REGIONS: Record<string, number> = {
   kralovehradecky: 4, liberecky: 5, moravskoslezsky: 6, olomoucky: 7,
   pardubicky: 8, plzensky: 9, ustecky: 12, vysocina: 13, zlinsky: 14,
 };
+const SREALITY_REGION_ID_TO_SLUG: Record<number, string> = Object.fromEntries(
+  Object.entries(SREALITY_REGIONS).map(([slug, id]) => [id, slug])
+);
 const SREALITY_COUNTRY_CZ = 112;
 const MAIN_SLUG: Record<number, string> = {
   1: "byt", 2: "dum", 3: "pozemek", 4: "komercni", 5: "ostatni",
@@ -83,11 +87,54 @@ function extractImage(e: any): string {
 function localityOf(e: any): string {
   const loc = e.locality;
   if (loc && typeof loc === "object") {
-    const city = loc.city || ""; const part = loc.citypart || "";
-    return cleanText(city && part ? `${city} – ${part}` : city || part);
+    const city = loc.city || "";
+    const part = loc.citypart || "";
+    const cityPart = cleanText(city && part && city !== part ? `${city} – ${part}` : city || part);
+    const district = loc.district ? cleanText(loc.district) : "";
+    if (
+      district &&
+      !district.toLowerCase().startsWith("praha") &&
+      !district.toLowerCase().startsWith("brno") &&
+      !cityPart.toLowerCase().includes(district.toLowerCase())
+    ) {
+      return cityPart ? `${cityPart}, okres ${district}` : `okres ${district}`;
+    }
+    return cityPart;
   }
   if (typeof loc === "string") return cleanText(loc);
   return cleanText(e.seo?.locality || "");
+}
+
+function krajOf(e: any, detailLoc?: string): string | undefined {
+  if (!e) return undefined;
+  const loc = e.locality;
+  // 1. Check region_seo_name
+  const seoReg = String(loc?.region_seo_name || e.region_seo_name || "");
+  if (seoReg) {
+    const clean = seoReg.replace(/-kraj$/, "").replace(/[^a-z]/g, "");
+    if (clean in SREALITY_REGIONS) return clean;
+  }
+  // 2. Check region string
+  if (loc?.region) {
+    const fromReg = regionFromLocality(String(loc.region));
+    if (fromReg) return fromReg;
+  }
+  // 3. Check district string
+  if (loc?.district) {
+    const fromDist = regionFromLocality(`okres ${loc.district}`);
+    if (fromDist) return fromDist;
+  }
+  // 4. Check region_id
+  const regId = loc?.region_id ?? e.locality_region_id ?? e.region_id;
+  if (typeof regId === "number" && SREALITY_REGION_ID_TO_SLUG[regId]) {
+    return SREALITY_REGION_ID_TO_SLUG[regId];
+  }
+  // 5. Check detailLoc if provided
+  if (detailLoc) {
+    const fromDetail = regionFromLocality(detailLoc);
+    if (fromDetail) return fromDetail;
+  }
+  return undefined;
 }
 
 function locSlug(e: any): string {
@@ -205,7 +252,7 @@ function landAreaOf(result: any): number | undefined {
   return undefined;
 }
 
-async function detailInfo(hashId: string | number | undefined, headers: HeadersInit): Promise<{ ownership?: Ownership; description?: string; land_area_m2?: number; locality?: string }> {
+async function detailInfo(hashId: string | number | undefined, headers: HeadersInit): Promise<{ ownership?: Ownership; description?: string; land_area_m2?: number; locality?: string; kraj?: string }> {
   if (!hashId) return {};
   try {
     const r = await fetch(`https://www.sreality.cz/api/v1/estates/${hashId}`, { headers, signal: AbortSignal.timeout(12000) });
@@ -227,6 +274,7 @@ async function detailInfo(hashId: string | number | undefined, headers: HeadersI
       description,
       land_area_m2: landAreaOf(result),
       locality,
+      kraj: krajOf(result, locality),
     };
   } catch {
     return {};
@@ -347,11 +395,13 @@ export async function fetchSreality(f: ScanFilters): Promise<Listing[]> {
     const img = extractImage(e);
     if (img) withImg++;
     const pubIso = publishedOf(e);
+    const kraj = details[idx]?.kraj ?? krajOf(e, details[idx]?.locality);
     out.push({
       source: "Sreality",
       source_key: "sreality",
       name,
       locality: details[idx]?.locality ?? localityOf(e),
+      kraj,
       price,
       price_text: price ? fmtPrice(price) : "Cena na vyžádání",
       url,

@@ -151,7 +151,7 @@ export async function runSourceScrape(
             : (parsedArea?.areaType ?? null))
         : null;
 
-      const kraj = regionFromLocality(l.locality);
+      const kraj = l.kraj || regionFromLocality(l.locality);
       const price = l.price || null;
       const flags = detectFlags({
         title: l.name,

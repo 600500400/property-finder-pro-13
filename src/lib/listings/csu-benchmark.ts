@@ -107,6 +107,7 @@ export interface CsuIndexes {
   okres: Map<string, CsuOkresRow>;
   kraj: Map<string, CsuKrajRow>;
   population: Map<string, PopulationRow[]>;
+  populationByName?: Map<string, PopulationRow[]>;
   calibration?: Map<SizeBand, BandCalibration>;
 }
 
@@ -145,15 +146,20 @@ export function buildCsuIndexes(
   const kraj = new Map<string, CsuKrajRow>();
   for (const row of krajRows) kraj.set(`${row.kraj}|${row.band ?? ""}`, row);
   const population = new Map<string, PopulationRow[]>();
+  const populationByName = new Map<string, PopulationRow[]>();
   for (const row of populationRows) {
     const key = `${row.kraj}|${row.name_norm}`;
     const values = population.get(key) ?? [];
     values.push(row);
     population.set(key, values);
+
+    const byName = populationByName.get(row.name_norm) ?? [];
+    byName.push(row);
+    populationByName.set(row.name_norm, byName);
   }
   const calibration = new Map<SizeBand, BandCalibration>();
   for (const row of calibrationRows) calibration.set(row.size_band, row);
-  return { okres, kraj, population, calibration: calibration.size ? calibration : undefined };
+  return { okres, kraj, population, populationByName, calibration: calibration.size ? calibration : undefined };
 }
 
 // Last-resort net. The 14 corrupt band prices (okres Písek: 617 806 "Kč/m²") came
@@ -195,12 +201,25 @@ export function computeCsuHouseCompare(args: {
   source?: string | null;
   areaType?: string | null;
 }): CsuHouseCompare | null {
-  const { kraj, locality, areaM2, price, indexes } = args;
-  if (!kraj || !locality || !areaM2 || !price) return null;
+  let { kraj, locality, areaM2, price, indexes } = args;
+  if (!locality || !areaM2 || !price) return null;
   const own = price / areaM2;
   if (!Number.isFinite(own) || own < 3000 || own > 400_000) return null;
 
   const municipality = municipalityFromLocality(locality);
+
+  // Pokud kraj není známý, zkusíme ho odvodit z názvu obce v populaci
+  if (!kraj && municipality && indexes.populationByName) {
+    const popMatches = indexes.populationByName.get(municipality);
+    if (popMatches && popMatches.length > 0) {
+      // Seřadíme podle populace od největší
+      const sorted = [...popMatches].sort((a, b) => b.population - a.population);
+      kraj = sorted[0].kraj;
+    }
+  }
+
+  if (!kraj) return null;
+
   const populationMatches = indexes.population.get(`${kraj}|${municipality}`) ?? [];
   const ambiguous = populationMatches.length > 1 || populationMatches.some(row => row.is_ambiguous_in_kraj);
   const matched = populationMatches.length === 1 && !ambiguous;
