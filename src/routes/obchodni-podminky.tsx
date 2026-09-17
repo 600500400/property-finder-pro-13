@@ -6,7 +6,15 @@ export const Route = createFileRoute("/obchodni-podminky")({
   head: () => ({
     meta: [
       { title: "Obchodní podmínky — RealityScanner" },
-      { name: "description", content: "Obchodní podmínky služby RealityScanner." },
+      { name: "description", content: "Obchodní podmínky služby RealityScanner: rozsah služby, platby, odstoupení od smlouvy." },
+      // TEMPORARY: page still contains placeholders; keep out of search until finalized.
+      { name: "robots", content: "noindex, follow" },
+      { property: "og:title", content: "Obchodní podmínky — RealityScanner" },
+      { property: "og:description", content: "Podmínky užívání služby RealityScanner, platby a odstoupení od smlouvy." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:title", content: "Obchodní podmínky — RealityScanner" },
+      { name: "twitter:description", content: "Podmínky užívání služby RealityScanner, platby a odstoupení od smlouvy." },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: TermsPage,
