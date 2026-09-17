@@ -21,9 +21,17 @@ export const Route = createFileRoute("/")({
   staticData: { sitemap: true },
   head: () => ({
     meta: [
-      { title: "RealityScanner — analýza investičních nemovitostí" },
-      { name: "description", content: "Prohlížej aktuální inzeráty z českých realitních portálů s okamžitým vyhodnocením výnosnosti." },
+      { title: "RealityScanner — investiční byty a domy z českých portálů" },
+      { name: "description", content: "Prohlížejte aktuální inzeráty z českých realitních portálů s okamžitým vyhodnocením výnosnosti a srovnáním ceny za m²." },
+      { property: "og:title", content: "RealityScanner — investiční byty a domy z českých portálů" },
+      { property: "og:description", content: "Aktuální inzeráty bytů a domů s výnosem z nájmu a srovnáním ceny za m² napříč českými portály." },
+      { property: "og:type", content: "website" },
+      { property: "og:url", content: "https://realityscanner.cz/" },
+      { name: "twitter:title", content: "RealityScanner — investiční byty a domy z českých portálů" },
+      { name: "twitter:description", content: "Aktuální inzeráty bytů a domů s výnosem z nájmu a srovnáním ceny za m² napříč českými portály." },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
+    links: [{ rel: "canonical", href: "https://realityscanner.cz/" }],
   }),
   component: Index,
 });
