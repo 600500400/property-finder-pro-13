@@ -139,7 +139,7 @@ function Index() {
           <div className="text-base font-bold tracking-tight">
             Reality<span className="text-primary">Scanner</span>
           </div>
-          <span className="mt-0.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+          <span className="mt-0.5 hidden text-[10px] font-medium uppercase tracking-wider text-muted-foreground md:block">
             Investiční byty a domy na prodej napříč českými portály
           </span>
         </div>

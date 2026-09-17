@@ -290,6 +290,29 @@ export function ListingCard({ listing, density = "card", rank }: { listing: List
   return <ListingFull listing={listing} rank={rank} />;
 }
 
+function CardHeroImage({ src, alt }: { src?: string; alt: string }) {
+  const [failed, setFailed] = useState(false);
+  if (!src || failed) {
+    return (
+      <div className="flex aspect-[4/3] w-full items-center justify-center bg-muted/40">
+        <MapPin className="h-8 w-8 text-muted-foreground/30" />
+      </div>
+    );
+  }
+  return (
+    <div className="overflow-hidden">
+      <img
+        src={src}
+        alt={alt}
+        loading="lazy"
+        referrerPolicy="no-referrer"
+        onError={() => setFailed(true)}
+        className="aspect-[4/3] w-full object-cover transition-transform duration-300 group-hover:scale-105"
+      />
+    </div>
+  );
+}
+
 function ListingFull({ listing, rank }: { listing: Listing; rank?: number }) {
   const inv = listing.invest;
   const fresh = freshnessBadge(listing.published_at);
@@ -320,6 +343,8 @@ function ListingFull({ listing, rank }: { listing: Listing; rank?: number }) {
           #{rank} nejvyšší výnos
         </span>
       )}
+
+      <CardHeroImage src={listing.img} alt={listing.name} />
 
       <div className="flex flex-1 flex-col gap-2 p-3">
         {/* Source + badges řada */}
