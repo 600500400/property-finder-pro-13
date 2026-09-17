@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { getScraperHealth } from "@/lib/health/health.functions";
 
 export const Route = createFileRoute("/_authenticated/health")({
+  staticData: { sitemap: false },
   component: HealthPage,
 });
 

@@ -7,6 +7,7 @@ import {
 import { Dog, Trash2, Pause, Play, ChevronLeft, Loader2, Mail, Zap } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/watchdogs")({
+  staticData: { sitemap: false },
   head: () => ({ meta: [{ title: "Hlídací psi — RealityScanner" }] }),
   component: WatchdogsPage,
 });

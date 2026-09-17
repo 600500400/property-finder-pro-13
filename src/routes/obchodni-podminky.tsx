@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
 
 export const Route = createFileRoute("/obchodni-podminky")({
+  staticData: { sitemap: false },
   head: () => ({
     meta: [
       { title: "Obchodní podmínky — RealityScanner" },

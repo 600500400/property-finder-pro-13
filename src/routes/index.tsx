@@ -18,6 +18,7 @@ import { toast } from "sonner";
 import { Radar, SlidersHorizontal, LayoutGrid, Rows3, List, Download, Crown } from "lucide-react";
 
 export const Route = createFileRoute("/")({
+  staticData: { sitemap: true },
   head: () => ({
     meta: [
       { title: "RealityScanner — analýza investičních nemovitostí" },

@@ -3,6 +3,7 @@ import { verifyCronSecret } from "@/lib/scanner/cron-auth.server";
 import { processDailyDigest } from "@/lib/alerts/notify.server";
 
 export const Route = createFileRoute("/api/public/cron/daily-digest")({
+  staticData: { sitemap: false },
   server: {
     handlers: {
       POST: async ({ request }) => {

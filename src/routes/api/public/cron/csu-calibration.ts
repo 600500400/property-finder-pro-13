@@ -9,6 +9,7 @@ function median(values: number[]): number {
 }
 
 export const Route = createFileRoute("/api/public/cron/csu-calibration")({
+  staticData: { sitemap: false },
   server: {
     handlers: {
       POST: async ({ request }) => {

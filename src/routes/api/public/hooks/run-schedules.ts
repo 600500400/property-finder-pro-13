@@ -6,6 +6,7 @@ import type { ScanFilters } from "@/lib/scanner/types";
 // (na základě last_run_at + frequency_per_day) a uloží výsledky do scan_results.
 // Email rozesílka se napojí v dalším kroku (Lovable Emails).
 export const Route = createFileRoute("/api/public/hooks/run-schedules")({
+  staticData: { sitemap: false },
   server: {
     handlers: {
       POST: async ({ request }) => {

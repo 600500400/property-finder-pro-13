@@ -4,6 +4,7 @@ import { runSourceScrape } from "@/lib/scanner/persist.server";
 import type { DealType, PropertyType } from "@/lib/scanner/types";
 
 export const Route = createFileRoute("/api/public/cron/scrape-sreality")({
+  staticData: { sitemap: false },
   server: {
     handlers: {
       POST: async ({ request }) => {

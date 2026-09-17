@@ -6,6 +6,7 @@ import { ChevronLeft, Loader2, Save } from "lucide-react";
 import { getMyInvestorRules, saveMyInvestorRules } from "@/lib/listings/investor-rules.functions";
 
 export const Route = createFileRoute("/_authenticated/nastaveni-investora")({
+  staticData: { sitemap: false },
   head: () => ({ meta: [{ title: "Nastavení investora — RealityScanner" }] }),
   component: SettingsPage,
 });

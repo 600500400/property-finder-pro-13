@@ -3,6 +3,7 @@ import { verifyCronSecret } from "@/lib/scanner/cron-auth.server";
 import { computeScraperHealth, sendHealthAlert } from "@/lib/health/scraper-health.server";
 
 export const Route = createFileRoute("/api/public/cron/health-check")({
+  staticData: { sitemap: false },
   server: {
     handlers: {
       POST: async ({ request }) => {

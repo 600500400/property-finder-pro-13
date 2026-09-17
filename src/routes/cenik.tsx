@@ -9,6 +9,7 @@ import { useEffect } from "react";
 import { Footer } from "@/components/Footer";
 
 export const Route = createFileRoute("/cenik")({
+  staticData: { sitemap: true },
   head: () => ({
     meta: [
       { title: "Ceník — RealityScanner" },

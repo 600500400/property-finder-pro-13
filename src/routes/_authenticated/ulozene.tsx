@@ -8,6 +8,7 @@ import {
 } from "@/lib/saved-listings/saved-listings.functions";
 
 export const Route = createFileRoute("/_authenticated/ulozene")({
+  staticData: { sitemap: false },
   component: SavedPage,
   head: () => ({ meta: [{ title: "Uložené inzeráty · RealityScanner" }] }),
 });

@@ -10,6 +10,7 @@ import { Bookmark, Calendar, Mail, Trash2, ChevronLeft, Loader2 } from "lucide-r
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/_authenticated/saved")({
+  staticData: { sitemap: false },
   head: () => ({ meta: [{ title: "Uložené filtry — RealityScanner" }] }),
   component: SavedPage,
 });

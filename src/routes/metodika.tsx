@@ -11,6 +11,7 @@ const BAND_LABEL: Record<string, string> = {
 };
 
 export const Route = createFileRoute("/metodika")({
+  staticData: { sitemap: true },
   loader: () => getCsuCalibration(),
   head: () => ({
     meta: [
