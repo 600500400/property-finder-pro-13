@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as OchranaOsobnichUdajuRouteImport } from './routes/ochrana-osobnich-udaju'
 import { Route as ObchodniPodminkyRouteImport } from './routes/obchodni-podminky'
 import { Route as MetodikaRouteImport } from './routes/metodika'
@@ -35,6 +36,11 @@ import { Route as ApiPublicCronHealthCheckRouteImport } from './routes/api/publi
 import { Route as ApiPublicCronDailyDigestRouteImport } from './routes/api/public/cron/daily-digest'
 import { Route as ApiPublicCronCsuCalibrationRouteImport } from './routes/api/public/cron/csu-calibration'
 
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const OchranaOsobnichUdajuRoute = OchranaOsobnichUdajuRouteImport.update({
   id: '/ochrana-osobnich-udaju',
   path: '/ochrana-osobnich-udaju',
@@ -179,6 +185,7 @@ export interface FileRoutesByFullPath {
   '/metodika': typeof MetodikaRoute
   '/obchodni-podminky': typeof ObchodniPodminkyRoute
   '/ochrana-osobnich-udaju': typeof OchranaOsobnichUdajuRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/health': typeof AuthenticatedHealthRoute
   '/nastaveni-investora': typeof AuthenticatedNastaveniInvestoraRoute
@@ -205,6 +212,7 @@ export interface FileRoutesByTo {
   '/metodika': typeof MetodikaRoute
   '/obchodni-podminky': typeof ObchodniPodminkyRoute
   '/ochrana-osobnich-udaju': typeof OchranaOsobnichUdajuRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/health': typeof AuthenticatedHealthRoute
   '/nastaveni-investora': typeof AuthenticatedNastaveniInvestoraRoute
@@ -233,6 +241,7 @@ export interface FileRoutesById {
   '/metodika': typeof MetodikaRoute
   '/obchodni-podminky': typeof ObchodniPodminkyRoute
   '/ochrana-osobnich-udaju': typeof OchranaOsobnichUdajuRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/health': typeof AuthenticatedHealthRoute
   '/_authenticated/nastaveni-investora': typeof AuthenticatedNastaveniInvestoraRoute
@@ -261,6 +270,7 @@ export interface FileRouteTypes {
     | '/metodika'
     | '/obchodni-podminky'
     | '/ochrana-osobnich-udaju'
+    | '/sitemap.xml'
     | '/admin'
     | '/health'
     | '/nastaveni-investora'
@@ -287,6 +297,7 @@ export interface FileRouteTypes {
     | '/metodika'
     | '/obchodni-podminky'
     | '/ochrana-osobnich-udaju'
+    | '/sitemap.xml'
     | '/admin'
     | '/health'
     | '/nastaveni-investora'
@@ -314,6 +325,7 @@ export interface FileRouteTypes {
     | '/metodika'
     | '/obchodni-podminky'
     | '/ochrana-osobnich-udaju'
+    | '/sitemap.xml'
     | '/_authenticated/admin'
     | '/_authenticated/health'
     | '/_authenticated/nastaveni-investora'
@@ -342,6 +354,7 @@ export interface RootRouteChildren {
   MetodikaRoute: typeof MetodikaRoute
   ObchodniPodminkyRoute: typeof ObchodniPodminkyRoute
   OchranaOsobnichUdajuRoute: typeof OchranaOsobnichUdajuRoute
+  SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   ApiPublicCronCsuCalibrationRoute: typeof ApiPublicCronCsuCalibrationRoute
   ApiPublicCronDailyDigestRoute: typeof ApiPublicCronDailyDigestRoute
   ApiPublicCronHealthCheckRoute: typeof ApiPublicCronHealthCheckRoute
@@ -358,6 +371,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/ochrana-osobnich-udaju': {
       id: '/ochrana-osobnich-udaju'
       path: '/ochrana-osobnich-udaju'
@@ -565,6 +585,7 @@ const rootRouteChildren: RootRouteChildren = {
   MetodikaRoute: MetodikaRoute,
   ObchodniPodminkyRoute: ObchodniPodminkyRoute,
   OchranaOsobnichUdajuRoute: OchranaOsobnichUdajuRoute,
+  SitemapDotxmlRoute: SitemapDotxmlRoute,
   ApiPublicCronCsuCalibrationRoute: ApiPublicCronCsuCalibrationRoute,
   ApiPublicCronDailyDigestRoute: ApiPublicCronDailyDigestRoute,
   ApiPublicCronHealthCheckRoute: ApiPublicCronHealthCheckRoute,
