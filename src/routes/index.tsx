@@ -226,13 +226,14 @@ function Index() {
                 <select
                   value={filters.sort_by}
                   onChange={(e) => setFilters({ ...filters, sort_by: e.target.value as ScanFilters["sort_by"] })}
-                  className="bg-transparent text-sm font-semibold text-foreground outline-none"
+                  style={{ colorScheme: "dark" }}
+                  className="cursor-pointer bg-[var(--color-surface-2)] text-sm font-semibold text-foreground outline-none"
                 >
-                  <option value="date_desc">Nejnovější</option>
-                  <option value="price_asc">Cena – nejlevnější</option>
-                  <option value="price_desc">Cena – nejdražší</option>
-                  <option value="yield">Výnos – nejvyšší</option>
-                  <option value="source">Dle zdroje</option>
+                  <option value="date_desc" className="bg-[var(--color-surface-2)] text-foreground">Nejnovější</option>
+                  <option value="price_asc" className="bg-[var(--color-surface-2)] text-foreground">Cena – nejlevnější</option>
+                  <option value="price_desc" className="bg-[var(--color-surface-2)] text-foreground">Cena – nejdražší</option>
+                  <option value="yield" className="bg-[var(--color-surface-2)] text-foreground">Výnos – nejvyšší</option>
+                  <option value="source" className="bg-[var(--color-surface-2)] text-foreground">Dle zdroje</option>
                 </select>
               </label>
               <div className="hidden md:block">

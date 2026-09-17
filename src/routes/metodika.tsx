@@ -206,62 +206,38 @@ function Metodika() {
           </ul>
         </Section>
 
-        <Section title="7. Cena domů za m² vs. realizované ceny ČSÚ">
-          <div className="rounded-md border border-amber-500/40 bg-amber-500/5 p-4 text-amber-200">
-            <strong>Dvě různé jednotky:</strong> ČSÚ počítá cenu na m² <em>obytné</em> plochy,
-            zatímco inzeráty uvádějí zpravidla <em>užitnou</em> plochu, která je u domů řádově
-            dvojnásobná. Nejde tedy o srovnání stejné věci a rozdíl nelze brát jako procento
-            předraženosti. K tomu ČSÚ uvádí ceny skutečně realizované, kdežto inzerát nabídkovou
-            cenu, která bývá systematicky vyšší.
-          </div>
-          <p className="mt-3">
-            Proto neuvádíme u domů přesné procento, ale slovní hodnocení (výrazně levnější,
-            levnější, v průměru, dražší, výrazně dražší). Srovnává se vždy jen v rámci
-            velikostního pásma domu (do 100 m², 100–150 m², 150–250 m², nad 250 m²) a krajská
-            úroveň ČSÚ se do naší jednotky přepočítává koeficientem odvozeným z mediánu našich
-            vlastních nabídek v tomtéž pásmu. Výsledek je <strong>odhad</strong>, nikoli měření.
+        <Section title="7. Cena domů za m² vs. průměr (ČSÚ a trh)">
+          <p>
+            U rodinných domů je cílem rychle odpovědět na klíčovou otázku: <strong>Je tato nabídka v porovnání s lokalitou levná, v průměru, nebo drahá?</strong>
           </p>
-          {calibration && (
-            <div className="mt-3 overflow-x-auto">
-              <table className="w-full text-left text-sm">
-                <thead className="text-muted-foreground">
-                  <tr><th className="py-1 pr-4">Pásmo</th><th className="py-1 pr-4">Koeficient</th><th className="py-1 pr-4">Typická plocha</th><th className="py-1">Počet domů</th></tr>
-                </thead>
-                <tbody>
-                  {calibration.bands.map(band => (
-                    <tr key={band.sizeBand} className="border-t border-border/40">
-                      <td className="py-1 pr-4">{BAND_LABEL[band.sizeBand] ?? band.sizeBand}</td>
-                      <td className="py-1 pr-4">{band.factor.toFixed(2)}×</td>
-                      <td className="py-1 pr-4">{band.typicalAreaM2 ? `${Math.round(band.typicalAreaM2)} m²` : "—"}</td>
-                      <td className="py-1">{band.sampleCount.toLocaleString("cs-CZ")}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+          <div className="mt-3 grid gap-3 sm:grid-cols-3">
+            <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-3">
+              <span className="text-xs font-bold text-emerald-400">🟢 Levnější než průměr</span>
+              <p className="mt-1 text-xs text-muted-foreground">Cena za m² je znatelně pod cenovou hladinou srovnatelných prodejů v lokalitě.</p>
             </div>
-          )}
-          <p className="mt-2">
-            Do výpočtu koeficientu nevstupují inzeráty, kde je uvedena jen zastavěná plocha,
-            ani zdroje bez strukturovaného údaje o ploše (Bazoš) — u těch srovnání zobrazujeme
-            zeslabeně a s upozorněním na nízkou důvěryhodnost plochy.
-          </p>
+            <div className="rounded-lg border border-border bg-[var(--color-surface-2)] p-3">
+              <span className="text-xs font-bold text-muted-foreground">⚪ V průměru</span>
+              <p className="mt-1 text-xs text-muted-foreground">Cena odpovídá běžnému standardu realizovaných prodejů (v toleranci ± 10 %).</p>
+            </div>
+            <div className="rounded-lg border border-red-500/30 bg-red-500/5 p-3">
+              <span className="text-xs font-bold text-red-400">🔴 Dražší než průměr</span>
+              <p className="mt-1 text-xs text-muted-foreground">Cena za m² převyšuje obvyklou cenovou hladinu pro danou velikost a lokalitu.</p>
+            </div>
+          </div>
 
-          <p className="mt-3">
-            Primární srovnání domů vychází z realizovaných kupních cen ČSÚ. Nejprve hledáme
-            okres a velikost obce; utajená nebo chybějící hodnota pásma přechází na okresní
-            cenu roku 2025. Bez známého okresu použijeme krajské pásmo, případně celý kraj.
+          <h4 className="mt-4 text-sm font-semibold">Odkud bereme srovnávací data?</h4>
+          <p className="mt-1 text-muted-foreground">
+            Základem jsou <strong>skutečně realizované kupní ceny rodinných domů z dat ČSÚ</strong>, které kaskádově doplňujeme o data z trhu:
           </p>
-          <p className="mt-2">
-            Okresní pásma jsou průměrem let 2023–2025 přepočteným na úroveň roku 2025 trendem
-            celého okresu. Přepočet jsme ověřili proti krajským hodnotám roku 2025; aktuální
-            kontrola musí mít průměrnou absolutní chybu pod 4 %.
-          </p>
-          <ul className="mt-3 list-disc space-y-1.5 pl-5 text-muted-foreground">
-            <li>Data jsou roční průměr s přibližně ročním zpožděním.</li>
-            <li>ČSÚ sleduje starší rodinné domy, nikoli novostavby.</li>
-            <li>V jednom pásmu se nerozlišuje velikost; průměrný dům má přibližně 80–95 m².</li>
-            <li>Cena za m² podlahové plochy nezohledňuje velikost ani hodnotu pozemku.</li>
+          <ul className="mt-2 list-disc space-y-1.5 pl-5 text-sm text-muted-foreground">
+            <li><strong>Lokalita:</strong> Porovnáváme primárně s prodeji v daném okrese a velikosti obce. Pokud data pro menší obec v evidenci chybí, automaticky využíváme průměr celého okresu nebo kraje.</li>
+            <li><strong>Velikostní kategorie:</strong> Domy srovnáváme vždy v odpovídající velikostní skupině (do 100 m², 100–150 m², 150–250 m², nad 250 m²).</li>
+            <li><strong>Přepočet ploch:</strong> ČSÚ eviduje <em>obytnou plochu</em>, zatímco v inzerátech bývá uvedena <em>užitná plocha</em>. Náš model tento rozdíl automaticky koriguje koeficientem odvozeným z českého trhu.</li>
           </ul>
+
+          <div className="mt-4 rounded-md border border-amber-500/30 bg-amber-500/5 p-3 text-xs text-amber-200/90">
+            💡 <strong>Co vzít v úvahu:</strong> Cena za m² u domu je silně ovlivněna velikostí pozemku, technickým stavem a vybavením. Velká zahrada nebo luxusní rekonstrukce přirozeně posouvá dům do vyšší cenové hladiny. Srovnání slouží pro rychlou orientaci, detailní rozpad najdete v XLS exportu.
+          </div>
         </Section>
 
         <Section title="8. Cena bytů za m² vs. nabídkový medián">
@@ -285,25 +261,12 @@ function Metodika() {
           </p>
         </Section>
 
-        <Section title="9. Proč u domů nepočítáme nájemní výnos">
+        <Section title="9. Proč u domů nepočítáme nájemní výnos?">
           <p>
-            Pro rodinné domy neexistují spolehlivá srovnatelná data o nájmech — trh s
-            pronájmy domů je řádově menší a velmi nesourodý. Aplikovat na dům sazby
-            odvozené z nájmů bytů by dávalo nesmyslné „nájmy" a zavádějící výnosy. Proto u
-            domů <strong>nezobrazujeme</strong> odhad nájmu, výnos ani hvězdičkové
-            hodnocení investice; hlavní metrikou je <strong>cena za m² vs. průměr</strong>.
+            Na rozdíl od bytů se rodinné domy v ČR pronajímají jen minimálně a nabídka je příliš nesourodá. Modelovat fiktivní „nájem rodinného domu“ z dat o pronájmech bytů by vedlo k nereálným číslům a zkresleným výnosům.
           </p>
-          <p className="mt-2">
-            <strong>Pozor:</strong> u domů je cena za m² podlahové plochy silně ovlivněna
-            velikostí pozemku — velká parcela zvedá celkovou cenu, i když je dům samotný
-            malý. Metrika je proto pouze hrubý screeningový signál, ne ocenění. Plochu
-            pozemku zobrazujeme u karty tam, kde ji zdroj uvádí.
-          </p>
-          <p className="mt-2">
-            Srovnání domů je výrazně méně spolehlivé než u bytů: domy se liší velikostí
-            pozemku, technickým stavem i tím, zda jde o novostavbu nebo nemovitost k
-            rekonstrukci, a v jednotlivých regionech je navíc málo skutečně srovnatelných
-            nabídek. Výsledek proto berte jako hrubý screeningový signál, nikoli ocenění.
+          <p className="mt-2 text-muted-foreground">
+            Proto u domů <strong>nezobrazujeme odhad nájmu ani návratnost v letech</strong>, ale soustředíme se na to podstatné: <strong>reálnou pořizovací cenu za m² vůči trhu a realizovaným prodejům</strong>.
           </p>
         </Section>
 

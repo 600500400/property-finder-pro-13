@@ -234,30 +234,34 @@ function csuTooltip(csu: NonNullable<Listing["csu_compare"]>): string {
 }
 
 function CsuCompareHero({ csu, listingPc }: { csu?: Listing["csu_compare"]; listingPc?: Listing["price_compare"] }) {
-  if (!csu) return <PriceCompareHero />;
+  if (!csu) return <PriceCompareHero pc={listingPc} />;
   const weak = csu.area_warning || csu.area_low_confidence || csu.benchmark_low_sample;
   return (
-    <div className={`flex flex-col gap-2 ${weak ? "text-muted-foreground" : ""}`} title={csuTooltip(csu)}>
+    <div className={`flex flex-col gap-2.5 ${weak ? "text-muted-foreground" : ""}`} title={csuTooltip(csu)}>
       <div className="flex items-end justify-between gap-2">
         <div className="flex flex-col leading-none">
           <span className={`inline-flex items-center gap-1.5 text-xl font-bold ${weak ? "text-muted-foreground" : PC_TEXT[csu.band]}`}>
             {weak && <AlertTriangle className="h-4 w-4 shrink-0" aria-label="Orientační srovnání" />}
             {csu.verdict_label}
           </span>
-          <span className="mt-1 text-[10px] uppercase tracking-wider text-muted-foreground">vs. realizované ceny ČSÚ · {csu.size_band_label}</span>
+          <span className="mt-1 text-[10px] uppercase tracking-wider text-muted-foreground">
+            Cena za m² vs. průměr v lokalitě
+          </span>
         </div>
-        <span className={`text-[11px] font-semibold ${weak ? "text-muted-foreground" : PC_TEXT[csu.band]}`}>{csu.scope_label}</span>
+        <span className="rounded bg-muted/60 px-1.5 py-0.5 text-[10px] font-semibold text-muted-foreground">
+          {csu.scope_label.replace("ČSÚ · ", "")}
+        </span>
       </div>
       <div className="grid grid-cols-2 gap-2 border-t border-border/40 pt-2">
-        <Metric label="Tato nabídka" value={`${csu.own_per_m2.toLocaleString("cs-CZ")} Kč/m² užitné`} />
-        <Metric label="ČSÚ 2025" value={`${csu.benchmark_per_m2.toLocaleString("cs-CZ")} Kč/m² obytné`} />
+        <Metric label="Tento dům" value={`${csu.own_per_m2.toLocaleString("cs-CZ")} Kč/m²`} />
+        <Metric label="Průměr lokality (ČSÚ)" value={`${csu.expected_per_m2.toLocaleString("cs-CZ")} Kč/m²`} />
       </div>
-      {listingPc && listingPc.samples >= 10 && (
-        <div className="text-[10px] text-muted-foreground">
-          Nabídkový medián: {listingPc.median_per_m2.toLocaleString("cs-CZ")} Kč/m² ({pcScope(listingPc.scope)}, n={listingPc.samples})
-        </div>
-      )}
-      <div className="text-[10px] text-muted-foreground">Realizované ceny · {csu.scope_label} · odhad, ne přesné procento</div>
+      <div className="flex items-center justify-between text-[10px] text-muted-foreground">
+        <span>Kategorie {csu.size_band_label}</span>
+        {listingPc && listingPc.samples >= 5 && (
+          <span>Trh: {listingPc.median_per_m2.toLocaleString("cs-CZ")} Kč/m²</span>
+        )}
+      </div>
     </div>
   );
 }
@@ -603,10 +607,17 @@ function ListingCompact({ listing }: { listing: Listing }) {
             <>
               <span className={`inline-flex items-center gap-1 font-semibold ${listing.csu_compare.area_warning || listing.csu_compare.area_low_confidence || listing.csu_compare.benchmark_low_sample ? "text-muted-foreground" : PC_TEXT[listing.csu_compare.band]}`}>
                 {(listing.csu_compare.area_warning || listing.csu_compare.area_low_confidence || listing.csu_compare.benchmark_low_sample) && <AlertTriangle className="h-3 w-3 shrink-0" aria-label="Orientační srovnání" />}
-                {listing.csu_compare.verdict_label} vs. ČSÚ
+                {listing.csu_compare.verdict_label}
               </span>
 
-              <span className="text-muted-foreground">{listing.csu_compare.scope_label}</span>
+              <span className="text-muted-foreground">{listing.csu_compare.scope_label.replace("ČSÚ · ", "")}</span>
+            </>
+          ) : listing.price_compare ? (
+            <>
+              <span className={`font-semibold ${PC_TEXT[listing.price_compare.band]}`}>
+                {pcDiff(listing.price_compare.diff_pct)} {PC_LABEL[listing.price_compare.band]}
+              </span>
+              <span className="text-muted-foreground">{pcScope(listing.price_compare.scope)}</span>
             </>
           ) : (
             <span className="text-muted-foreground">nedostatek dat pro srovnání</span>

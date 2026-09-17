@@ -230,7 +230,10 @@ export function computeCsuHouseCompare(args: {
       scope = "okres";
     }
     avgSize = bandRow?.avg_size_m2 ?? total?.avg_size_m2 ?? null;
-  } else {
+  }
+
+  // Kaskádový fallback: pokud se nepodařilo najít okresní benchmark, použijeme krajský
+  if (!benchmark && kraj) {
     const bandRow = sizeBand ? indexes.kraj.get(`${kraj}|${sizeBand}`) : undefined;
     const total = indexes.kraj.get(`${kraj}|`);
     if (bandRow?.price_2025 && plausibleBandPrice(bandRow.price_2025, total?.price_2025 ?? null)) {
