@@ -20,8 +20,12 @@ export const Route = createFileRoute("/metodika")({
       { property: "og:title", content: "Metodika výpočtu výnosu — RealityScanner" },
       { property: "og:description", content: "Jak počítáme výnosy a srovnáváme ceny nemovitostí s realizovanými cenami ČSÚ." },
       { property: "og:type", content: "website" },
+      { property: "og:url", content: "https://realityscanner.cz/metodika" },
+      { name: "twitter:title", content: "Metodika výpočtu výnosu — RealityScanner" },
+      { name: "twitter:description", content: "Jak počítáme výnosy a srovnáváme ceny nemovitostí s realizovanými cenami ČSÚ." },
       { name: "twitter:card", content: "summary" },
     ],
+    links: [{ rel: "canonical", href: "https://realityscanner.cz/metodika" }],
   }),
   component: Metodika,
 });
