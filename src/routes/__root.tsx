@@ -60,21 +60,22 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { name: "referrer", content: "no-referrer" },
-      { title: "RealityScanner — analýza investičních nemovitostí" },
+      { title: "RealityScanner — Investiční byty a domy | Výnos z nájmu & ČSÚ ceny" },
       {
         name: "description",
-        content: "Skenuj inzeráty z českých realitních portálů a okamžitě vyhodnoť výnosnost investice.",
+        content: "Agregátor inzerátů ze Sreality, Bezrealitky a dalších portálů. Okamžitý výpočet čistého výnosu z pronájmu, srovnání cen domů s ČSÚ a automatický hlídací pes.",
       },
-      { property: "og:title", content: "RealityScanner — analýza investičních nemovitostí" },
+      { property: "og:title", content: "RealityScanner — Investiční byty a domy | Výnos z nájmu & ČSÚ ceny" },
       {
         property: "og:description",
-        content: "Skenuj inzeráty z českých realitních portálů a okamžitě vyhodnoť výnosnost investice.",
+        content: "Agregátor inzerátů ze Sreality, Bezrealitky a dalších portálů. Okamžitý výpočet čistého výnosu z pronájmu, srovnání cen domů s ČSÚ a automatický hlídací pes.",
       },
       { property: "og:type", content: "website" },
-      { name: "twitter:title", content: "RealityScanner — analýza investičních nemovitostí" },
+      { property: "og:url", content: "https://www.realityscanner.cz/" },
+      { name: "twitter:title", content: "RealityScanner — Investiční byty a domy | Výnos z nájmu & ČSÚ ceny" },
       {
         name: "twitter:description",
-        content: "Skenuj inzeráty z českých realitních portálů a okamžitě vyhodnoť výnosnost investice.",
+        content: "Agregátor inzerátů ze Sreality, Bezrealitky a dalších portálů. Okamžitý výpočet čistého výnosu z pronájmu, srovnání cen domů s ČSÚ a automatický hlídací pes.",
       },
       {
         property: "og:image",
@@ -89,12 +90,44 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "twitter:card", content: "summary_large_image" },
     ],
     links: [
+      { rel: "icon", type: "image/svg+xml", href: "/favicon.svg" },
+      { rel: "alternate icon", href: "/favicon.ico" },
+      { rel: "apple-touch-icon", href: "/favicon.svg" },
+      { rel: "canonical", href: "https://www.realityscanner.cz/" },
       { rel: "stylesheet", href: appCss },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       {
         rel: "stylesheet",
         href: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap",
+      },
+    ],
+    scripts: [
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@graph": [
+            {
+              "@type": "WebApplication",
+              "name": "RealityScanner",
+              "url": "https://www.realityscanner.cz/",
+              "applicationCategory": "BusinessApplication",
+              "operatingSystem": "Web Browser",
+              "description": "Nástroj pro analýzu investičních nemovitostí v ČR. Výpočet čistého výnosu z nájmu a srovnání cen s daty ČSÚ.",
+              "offers": {
+                "@type": "Offer",
+                "price": "0",
+                "priceCurrency": "CZK"
+              }
+            },
+            {
+              "@type": "WebSite",
+              "name": "RealityScanner",
+              "url": "https://www.realityscanner.cz/"
+            }
+          ]
+        }),
       },
     ],
   }),
