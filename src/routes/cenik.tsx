@@ -13,13 +13,13 @@ export const Route = createFileRoute("/cenik")({
   head: () => ({
     meta: [
       { title: "Ceník předplatného | RealityScanner" },
-      { name: "description", content: "Vyzkoušejte RealityScanner zdarma nebo získejte Premium od 299 Kč/měs. Získejte okamžité notifikace nových inzerátů, neomezené hlídací psy a exporty do Excelu." },
-      { property: "og:title", content: "Ceník předplatného | RealityScanner" },
-      { property: "og:description", content: "Vyzkoušejte RealityScanner zdarma nebo získejte Premium od 299 Kč/měs. Inzeráty v reálném čase, neomezení hlídací psi a XLS export." },
+      { name: "description", content: "Vyzkoušejte RealityScanner zdarma nebo získejte Premium za 349 Kč měsíčně. Inzeráty v reálném čase, neomezení hlídací psi, AI analýzy a exporty do Excelu." },
+      { property: "og:title", content: "Ceník RealityScanner — Free a Premium za 349 Kč" },
+      { property: "og:description", content: "Vyzkoušejte RealityScanner zdarma nebo získejte Premium za 349 Kč měsíčně. Inzeráty v reálném čase, neomezení hlídací psi a XLS export." },
       { property: "og:type", content: "website" },
       { property: "og:url", content: "https://www.realityscanner.cz/cenik" },
-      { name: "twitter:title", content: "Ceník předplatného | RealityScanner" },
-      { name: "twitter:description", content: "Vyzkoušejte RealityScanner zdarma nebo získejte Premium od 299 Kč/měs." },
+      { name: "twitter:title", content: "Ceník RealityScanner — Free a Premium za 349 Kč" },
+      { name: "twitter:description", content: "Vyzkoušejte RealityScanner zdarma nebo získejte Premium za 349 Kč měsíčně." },
       { name: "twitter:card", content: "summary" },
     ],
     links: [{ rel: "canonical", href: "https://www.realityscanner.cz/cenik" }],
