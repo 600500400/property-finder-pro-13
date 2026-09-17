@@ -238,17 +238,17 @@ function CsuCompareHero({ csu, listingPc }: { csu?: Listing["csu_compare"]; list
   const weak = csu.area_warning || csu.area_low_confidence || csu.benchmark_low_sample;
   return (
     <div className={`flex flex-col gap-2.5 ${weak ? "text-muted-foreground" : ""}`} title={csuTooltip(csu)}>
-      <div className="flex items-end justify-between gap-2">
-        <div className="flex flex-col leading-none">
-          <span className={`inline-flex items-center gap-1.5 text-xl font-bold ${weak ? "text-muted-foreground" : PC_TEXT[csu.band]}`}>
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex flex-col leading-none min-w-0">
+          <span className={`inline-flex items-center gap-1.5 text-lg sm:text-xl font-bold ${weak ? "text-muted-foreground" : PC_TEXT[csu.band]}`}>
             {weak && <AlertTriangle className="h-4 w-4 shrink-0" aria-label="Orientační srovnání" />}
-            {csu.verdict_label}
+            <span className="truncate">{csu.verdict_label}</span>
           </span>
-          <span className="mt-1 text-[10px] uppercase tracking-wider text-muted-foreground">
+          <span className="mt-1 text-[10px] uppercase tracking-wider text-muted-foreground truncate">
             Cena za m² vs. průměr v lokalitě
           </span>
         </div>
-        <span className="rounded bg-muted/60 px-1.5 py-0.5 text-[10px] font-semibold text-muted-foreground">
+        <span className="rounded bg-muted/60 px-1.5 py-0.5 text-[9px] font-semibold text-muted-foreground shrink-0 whitespace-nowrap">
           {csu.scope_label.replace("ČSÚ · ", "")}
         </span>
       </div>
@@ -256,10 +256,10 @@ function CsuCompareHero({ csu, listingPc }: { csu?: Listing["csu_compare"]; list
         <Metric label="Tento dům" value={`${csu.own_per_m2.toLocaleString("cs-CZ")} Kč/m²`} />
         <Metric label="Průměr lokality (ČSÚ)" value={`${csu.expected_per_m2.toLocaleString("cs-CZ")} Kč/m²`} />
       </div>
-      <div className="flex items-center justify-between text-[10px] text-muted-foreground">
-        <span>Kategorie {csu.size_band_label}</span>
+      <div className="flex items-center justify-between text-[10px] text-muted-foreground gap-1">
+        <span className="truncate">Kategorie {csu.size_band_label}</span>
         {listingPc && listingPc.samples >= 5 && (
-          <span>Trh: {listingPc.median_per_m2.toLocaleString("cs-CZ")} Kč/m²</span>
+          <span className="shrink-0 whitespace-nowrap">Trh: {listingPc.median_per_m2.toLocaleString("cs-CZ")} Kč/m²</span>
         )}
       </div>
     </div>
@@ -410,32 +410,32 @@ function ListingFull({ listing, rank }: { listing: Listing; rank?: number }) {
         <FlagChips flags={listing.flags} />
 
         {/* Cena + plocha + OV/DV chip */}
-        <div className="flex items-end justify-between gap-2 pt-1">
-          <div className="flex flex-col">
-            <span className="font-mono text-lg font-bold text-primary leading-tight">{listing.price_text}</span>
+        <div className="flex flex-wrap items-end justify-between gap-x-2 gap-y-1 pt-1">
+          <div className="flex flex-col min-w-0">
+            <span className="font-mono text-lg font-bold text-primary leading-tight whitespace-nowrap">{listing.price_text}</span>
             {pricePerM2 && (
-              <span className="font-mono text-[10px] text-muted-foreground">
+              <span className="font-mono text-[10px] text-muted-foreground whitespace-nowrap">
                 {pricePerM2.toLocaleString("cs-CZ")} Kč/m²
               </span>
             )}
           </div>
-          <div className="flex items-center gap-1.5">
+          <div className="flex flex-wrap items-center justify-end gap-1 shrink-0">
             {listing.area && (
-              <span className="rounded-md border border-border bg-[var(--color-surface-2)] px-2 py-1 font-mono text-[11px] font-semibold text-foreground">
+              <span className="rounded-md border border-border bg-[var(--color-surface-2)] px-1.5 py-0.5 font-mono text-[10px] sm:text-[11px] font-semibold text-foreground whitespace-nowrap">
                 {listing.area}
               </span>
             )}
             {listing.land_area_m2 ? (
               <span
                 title="Plocha pozemku"
-                className="rounded-md border border-border bg-[var(--color-surface-2)] px-2 py-1 font-mono text-[11px] font-semibold text-muted-foreground"
+                className="rounded-md border border-border bg-[var(--color-surface-2)] px-1.5 py-0.5 font-mono text-[10px] sm:text-[11px] font-semibold text-muted-foreground whitespace-nowrap"
               >
                 🌳 {listing.land_area_m2.toLocaleString("cs-CZ")} m²
               </span>
             ) : null}
             <span
               title={own.full}
-              className={`inline-flex items-center justify-center rounded-md px-2 py-1 text-[11px] font-bold tracking-wide ${own.cls}`}
+              className={`inline-flex items-center justify-center rounded-md px-1.5 py-0.5 text-[10px] font-bold tracking-wide whitespace-nowrap ${own.cls}`}
             >
               {own.short}
             </span>
@@ -544,9 +544,9 @@ function ListingFull({ listing, rank }: { listing: Listing; rank?: number }) {
 
 function Metric({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex flex-col gap-0.5">
-      <span className="text-[9px] uppercase tracking-wider text-muted-foreground">{label}</span>
-      <span className="font-mono text-xs font-semibold text-foreground">{value}</span>
+    <div className="flex flex-col gap-0.5 min-w-0">
+      <span className="truncate text-[9px] uppercase tracking-wider text-muted-foreground" title={label}>{label}</span>
+      <span className="font-mono text-xs font-semibold text-foreground whitespace-nowrap truncate">{value}</span>
     </div>
   );
 }

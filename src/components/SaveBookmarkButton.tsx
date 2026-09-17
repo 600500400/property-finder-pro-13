@@ -76,14 +76,14 @@ export function SaveBookmarkButton({ listing }: { listing: Listing }) {
           ? "Odebrat z oblíbených"
           : "Uložit do oblíbených"
       }
-      className={`flex items-center gap-1 rounded-md border px-2 py-1 text-[10px] font-semibold transition ${
+      className={`flex shrink-0 items-center gap-1 rounded-md border px-2 py-1 text-[10px] font-semibold transition whitespace-nowrap ${
         isSaved
           ? "border-primary/60 bg-primary/15 text-primary hover:bg-primary/25"
           : "border-border bg-[var(--color-surface-2)] text-muted-foreground hover:text-foreground"
       } disabled:opacity-50`}
     >
-      {isSaved ? <BookmarkCheck className="h-3 w-3" /> : <Bookmark className="h-3 w-3" />}
-      {isSaved ? "Uloženo" : "Uložit"}
+      {isSaved ? <BookmarkCheck className="h-3 w-3 shrink-0" /> : <Bookmark className="h-3 w-3 shrink-0" />}
+      <span>{isSaved ? "Uloženo" : "Uložit"}</span>
     </button>
   );
 }

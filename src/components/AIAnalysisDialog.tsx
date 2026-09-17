@@ -23,9 +23,9 @@ export function AIAnalysisButton({ listing }: { listing: Listing }) {
         type="button"
         onClick={(e) => { e.preventDefault(); e.stopPropagation(); navigate({ to: "/auth", search: { next: window.location.pathname + window.location.search } }); }}
         title="Pro AI analýzu se zaregistrujte — získáte jednu zdarma na vyzkoušení"
-        className="flex items-center gap-1 rounded-md border border-primary/40 bg-primary/10 px-2 py-1 text-[10px] font-semibold text-primary hover:bg-primary/20"
+        className="flex shrink-0 items-center gap-1 rounded-md border border-primary/40 bg-primary/10 px-2 py-1 text-[10px] font-semibold text-primary hover:bg-primary/20 whitespace-nowrap"
       >
-        <Sparkles className="h-3 w-3" /> AI analýza (zdarma po registraci)
+        <Sparkles className="h-3 w-3 shrink-0" /> AI analýza <span className="opacity-80 text-[9px]">(zdarma)</span>
       </button>
     );
   }
@@ -37,9 +37,9 @@ export function AIAnalysisButton({ listing }: { listing: Listing }) {
         type="button"
         onClick={(e) => { e.preventDefault(); e.stopPropagation(); navigate({ to: "/cenik" }); }}
         title="Volnou AI analýzu jste již vyčerpali — Premium = 50/měsíc"
-        className="flex items-center gap-1 rounded-md border border-amber-500/40 bg-amber-500/10 px-2 py-1 text-[10px] font-semibold text-amber-300 hover:bg-amber-500/20"
+        className="flex shrink-0 items-center gap-1 rounded-md border border-amber-500/40 bg-amber-500/10 px-2 py-1 text-[10px] font-semibold text-amber-300 hover:bg-amber-500/20 whitespace-nowrap"
       >
-        <Crown className="h-3 w-3" /> AI analýza (Premium)
+        <Crown className="h-3 w-3 shrink-0" /> AI analýza <span className="opacity-80 text-[9px]">(Premium)</span>
       </button>
     );
   }
@@ -51,9 +51,9 @@ export function AIAnalysisButton({ listing }: { listing: Listing }) {
         type="button"
         disabled
         title="AI analýza není pro tento inzerát dostupná"
-        className="flex cursor-not-allowed items-center gap-1 rounded-md bg-muted px-2 py-1 text-[10px] font-semibold text-muted-foreground opacity-60"
+        className="flex shrink-0 cursor-not-allowed items-center gap-1 rounded-md bg-muted px-2 py-1 text-[10px] font-semibold text-muted-foreground opacity-60 whitespace-nowrap"
       >
-        <Sparkles className="h-3 w-3" /> AI analýza
+        <Sparkles className="h-3 w-3 shrink-0" /> AI analýza
       </button>
     );
   }
@@ -64,10 +64,10 @@ export function AIAnalysisButton({ listing }: { listing: Listing }) {
       <button
         type="button"
         onClick={(e) => { e.preventDefault(); e.stopPropagation(); setOpen(true); }}
-        className="flex items-center gap-1 rounded-md bg-primary/15 px-2 py-1 text-[10px] font-semibold text-primary hover:bg-primary/25"
+        className="flex shrink-0 items-center gap-1 rounded-md bg-primary/15 px-2 py-1 text-[10px] font-semibold text-primary hover:bg-primary/25 whitespace-nowrap"
       >
-        <Sparkles className="h-3 w-3" />
-        {isPremium ? "AI analýza" : "AI analýza (ukázka zdarma)"}
+        <Sparkles className="h-3 w-3 shrink-0" />
+        AI analýza {!isPremium && <span className="opacity-80 text-[9px]">(zdarma)</span>}
       </button>
       {open && <Dialog listing={listing} onClose={() => setOpen(false)} />}
     </>
