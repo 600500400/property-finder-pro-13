@@ -4,21 +4,27 @@ import { supabase } from "@/integrations/supabase/client";
 import { Loader2, Radar } from "lucide-react";
 
 export const Route = createFileRoute("/auth")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    next: typeof search.next === "string" ? search.next : undefined,
+  }),
   head: () => ({ meta: [{ title: "Přihlášení — RealityScanner" }] }),
   component: AuthPage,
 });
 
 function AuthPage() {
   const navigate = useNavigate();
+  const search = Route.useSearch();
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [msg, setMsg] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setMsg(null);
     setBusy(true);
     try {
       if (mode === "signup") {
@@ -31,7 +37,32 @@ function AuthPage() {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
       }
-      navigate({ to: "/saved" });
+      if (search.next) {
+        window.location.href = search.next;
+      } else {
+        navigate({ to: "/saved" });
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleResetPassword = async () => {
+    setError(null);
+    setMsg(null);
+    if (!email) {
+      setError("Pro obnovu hesla zadejte svůj e-mail nahoru do pole.");
+      return;
+    }
+    setBusy(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: window.location.origin + "/auth?next=" + (search.next || "/"),
+      });
+      if (error) throw error;
+      setMsg("Odkaz pro obnovu hesla byl odeslán na váš e-mail.");
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
@@ -62,6 +93,7 @@ function AuthPage() {
             className="rounded-lg border border-border bg-[var(--color-surface-2)] px-3 py-2 text-sm outline-none focus:border-primary"
           />
           {error && <p className="rounded bg-[var(--color-danger)]/10 px-2 py-1.5 text-xs text-[var(--color-danger)]">{error}</p>}
+          {msg && <p className="rounded bg-emerald-500/10 px-2 py-1.5 text-xs text-emerald-500">{msg}</p>}
           <button
             type="submit" disabled={busy}
             className="flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-bold text-primary-foreground transition hover:opacity-90 disabled:opacity-50"
@@ -70,6 +102,14 @@ function AuthPage() {
             {mode === "signin" ? "Přihlásit se" : "Vytvořit účet"}
           </button>
         </form>
+        {mode === "signin" && (
+          <button
+            type="button" onClick={handleResetPassword} disabled={busy}
+            className="mt-2 w-full text-center text-xs text-muted-foreground hover:text-foreground"
+          >
+            Zapomněli jste heslo?
+          </button>
+        )}
         <button
           type="button" onClick={() => setMode(mode === "signin" ? "signup" : "signin")}
           className="mt-3 w-full text-center text-xs text-muted-foreground hover:text-foreground"

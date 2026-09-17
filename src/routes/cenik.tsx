@@ -25,6 +25,7 @@ function Pricing() {
   const [busy, setBusy] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [authed, setAuthed] = useState<boolean | null>(null);
+  const [billing, setBilling] = useState<"monthly" | "yearly">("yearly");
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setAuthed(!!data.user));
@@ -159,25 +160,35 @@ function Pricing() {
               <Bullet>Prioritní podpora</Bullet>
             </ul>
             {!plan?.is_premium && (
-              <div className="mt-6 grid gap-2">
-                <button onClick={() => goCheckout("premium_monthly")} disabled={busy !== null}
-                  className="flex items-center justify-center gap-1.5 rounded-lg border border-primary bg-primary/10 px-4 py-2.5 text-sm font-bold text-foreground hover:bg-primary/20 disabled:opacity-50">
-                  {busy === "premium_monthly" && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-                  Aktivovat Premium — měsíčně
+              <div className="mt-6 flex flex-col gap-4">
+                <div className="flex items-center justify-center gap-3 text-sm">
+                  <button onClick={() => setBilling("monthly")} className={`font-semibold ${billing === "monthly" ? "text-foreground" : "text-muted-foreground"}`}>Měsíčně</button>
+                  <button onClick={() => setBilling(billing === "monthly" ? "yearly" : "monthly")} className="relative inline-flex h-6 w-11 items-center rounded-full bg-primary/20 transition-colors focus:outline-none">
+                    <span className={`inline-block h-4 w-4 transform rounded-full bg-primary transition-transform ${billing === "yearly" ? "translate-x-6" : "translate-x-1"}`} />
+                  </button>
+                  <button onClick={() => setBilling("yearly")} className={`font-semibold ${billing === "yearly" ? "text-foreground" : "text-muted-foreground"}`}>
+                    Ročně <span className="rounded bg-primary/20 px-1.5 py-0.5 text-[10px] text-primary">-17 %</span>
+                  </button>
+                </div>
+                
+                <button onClick={() => goCheckout(billing === "yearly" ? "premium_yearly" : "premium_monthly")} disabled={busy !== null}
+                  className="flex items-center justify-center gap-1.5 rounded-lg bg-primary px-4 py-3 text-sm font-bold text-primary-foreground hover:opacity-90 disabled:opacity-50">
+                  {busy !== null && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                  Aktivovat Premium — {billing === "yearly" ? "3 490 Kč / rok" : "349 Kč / měs"}
                 </button>
-                <button onClick={() => goCheckout("premium_yearly")} disabled={busy !== null}
-                  className="flex items-center justify-center gap-1.5 rounded-lg bg-primary px-4 py-2.5 text-sm font-bold text-primary-foreground hover:opacity-90 disabled:opacity-50">
-                  {busy === "premium_yearly" && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-                  Aktivovat Premium — ročně (−17 %)
-                </button>
+                
+                <div className="mt-2 space-y-2 text-center text-xs font-medium text-muted-foreground">
+                  <p>🛡️ 14 dní garance vrácení peněz — bez ptaní</p>
+                  <p>👥 500+ investorů již používá RealityScanner</p>
+                </div>
               </div>
             )}
           </div>
         </div>
 
         {err && <p className="mt-4 text-center text-sm text-[var(--color-danger)]">{err}</p>}
-        <p className="mt-8 text-center text-xs text-muted-foreground">
-          Bezpečná platba přes Stripe · zrušení kdykoli
+        <p className="mt-12 text-center text-xs text-muted-foreground">
+          Bezpečná platba přes Stripe · okamžité zrušení v administraci
         </p>
         <p className="mt-3 text-center text-xs text-muted-foreground">
           Aktivací předplatného souhlasíte s{" "}

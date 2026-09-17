@@ -48,10 +48,12 @@ interface Props {
   setView: (v: ViewOptions) => void;
   onExport: () => void;
   canExport: boolean;
+  onReset?: () => void;
+  canReset?: boolean;
 }
 
 
-export function FilterSidebar({ filters, setFilters, view, setView, onExport, canExport }: Props) {
+export function FilterSidebar({ filters, setFilters, view, setView, onExport, canExport, onReset, canReset }: Props) {
   const [isAuthed, setIsAuthed] = useState(false);
   const [watchdogOpen, setWatchdogOpen] = useState(false);
 
@@ -261,6 +263,18 @@ export function FilterSidebar({ filters, setFilters, view, setView, onExport, ca
           Dostanete e-mail, jakmile přibyde nový inzerát odpovídající tomuto filtru.
         </p>
       </Section>
+
+      {canReset && onReset && (
+        <div className="flex flex-col gap-2 pt-2 border-t border-border mt-auto">
+          <button
+            type="button"
+            onClick={onReset}
+            className="flex items-center justify-center gap-2 rounded-lg border border-border bg-[var(--color-surface-2)] px-4 py-2.5 text-sm font-semibold text-foreground transition hover:border-primary/40 hover:text-primary"
+          >
+            Zrušit všechny filtry
+          </button>
+        </div>
+      )}
 
       {/* Desktop action button — export only (live scan removed, data is now DB-backed) */}
       <div className="mt-auto hidden flex-col gap-2 pt-2 md:flex">

@@ -21,7 +21,7 @@ export function AIAnalysisButton({ listing }: { listing: Listing }) {
     return (
       <button
         type="button"
-        onClick={(e) => { e.preventDefault(); e.stopPropagation(); navigate({ to: "/auth" }); }}
+        onClick={(e) => { e.preventDefault(); e.stopPropagation(); navigate({ to: "/auth", search: { next: window.location.pathname + window.location.search } }); }}
         title="Pro AI analýzu se zaregistrujte — získáte jednu zdarma na vyzkoušení"
         className="flex items-center gap-1 rounded-md border border-primary/40 bg-primary/10 px-2 py-1 text-[10px] font-semibold text-primary hover:bg-primary/20"
       >

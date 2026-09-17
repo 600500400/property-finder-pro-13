@@ -57,7 +57,7 @@ export function SaveBookmarkButton({ listing }: { listing: Listing }) {
     e.preventDefault();
     e.stopPropagation();
     if (tier === "anonymous") {
-      navigate({ to: "/auth" });
+      navigate({ to: "/auth", search: { next: window.location.pathname + window.location.search } });
       return;
     }
     setBusy(true);

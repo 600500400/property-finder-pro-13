@@ -166,16 +166,28 @@ function Index() {
               <SlidersHorizontal className="h-3.5 w-3.5 text-primary" /> Filtry
             </button>
           </SheetTrigger>
-          <SheetContent side="left" className="w-[85vw] max-w-sm overflow-y-auto p-0">
+          <SheetContent side="left" className="flex w-[85vw] max-w-sm flex-col p-0">
             <SheetHeader className="border-b border-border p-4"><SheetTitle>Filtry</SheetTitle></SheetHeader>
-            <FilterSidebar
-              filters={filters}
-              setFilters={(f) => setFilters({ ...filters, ...f })}
-              view={view}
-              setView={(v) => setView({ ...view, ...v, density: (v.density as Density) ?? view.density })}
-              onExport={handleExport}
-              canExport={listings.length > 0}
-            />
+            <div className="flex-1 overflow-y-auto">
+              <FilterSidebar
+                filters={filters}
+                setFilters={(f) => setFilters({ ...filters, ...f })}
+                view={view}
+                setView={(v) => setView({ ...view, ...v, density: (v.density as Density) ?? view.density })}
+                onExport={handleExport}
+                canExport={listings.length > 0}
+                onReset={() => setFilters(DEFAULT_FILTERS)}
+                canReset={JSON.stringify(filters) !== JSON.stringify(DEFAULT_FILTERS)}
+              />
+            </div>
+            <div className="border-t border-border bg-[var(--color-surface)] p-4">
+              <button
+                onClick={() => setMobileFiltersOpen(false)}
+                className="w-full rounded-lg bg-primary py-3 text-sm font-bold text-primary-foreground transition-opacity hover:opacity-90"
+              >
+                Zobrazit {listings.length} výsledků
+              </button>
+            </div>
           </SheetContent>
         </Sheet>
         <FreshnessToggle value={filters.freshness} onChange={(v) => setFilters({ ...filters, freshness: v })} compact />
@@ -194,6 +206,8 @@ function Index() {
             setView={(v) => setView({ ...view, ...v, density: (v.density as Density) ?? view.density })}
             onExport={handleExport}
             canExport={listings.length > 0}
+            onReset={() => setFilters(DEFAULT_FILTERS)}
+            canReset={JSON.stringify(filters) !== JSON.stringify(DEFAULT_FILTERS)}
           />
         </div>
 
