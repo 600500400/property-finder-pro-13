@@ -6,7 +6,15 @@ export const Route = createFileRoute("/ochrana-osobnich-udaju")({
   head: () => ({
     meta: [
       { title: "Ochrana osobních údajů — RealityScanner" },
-      { name: "description", content: "Zásady zpracování osobních údajů (GDPR) ve službě RealityScanner." },
+      { name: "description", content: "Zásady zpracování osobních údajů (GDPR) ve službě RealityScanner: jaká data ukládáme a jak je chráníme." },
+      // TEMPORARY: page still contains placeholders; keep out of search until finalized.
+      { name: "robots", content: "noindex, follow" },
+      { property: "og:title", content: "Ochrana osobních údajů — RealityScanner" },
+      { property: "og:description", content: "Jaká osobní data RealityScanner zpracovává, jak dlouho je uchovává a jaká máte práva." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:title", content: "Ochrana osobních údajů — RealityScanner" },
+      { name: "twitter:description", content: "Jaká osobní data RealityScanner zpracovává a jaká máte práva." },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: PrivacyPage,
