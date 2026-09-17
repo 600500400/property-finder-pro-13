@@ -7,7 +7,19 @@ export const Route = createFileRoute("/auth")({
   staticData: { sitemap: false },
   validateSearch: (search: Record<string, unknown>): { next?: string } =>
     typeof search.next === "string" ? { next: search.next } : {},
-  head: () => ({ meta: [{ title: "Přihlášení — RealityScanner" }] }),
+  head: () => ({
+    meta: [
+      { title: "Přihlášení — RealityScanner" },
+      { name: "description", content: "Přihlaste se do RealityScanneru a pokračujte ve vyhledávání investičních nemovitostí." },
+      { name: "robots", content: "noindex, follow" },
+      { property: "og:title", content: "Přihlášení — RealityScanner" },
+      { property: "og:description", content: "Přihlášení k účtu RealityScanner." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:title", content: "Přihlášení — RealityScanner" },
+      { name: "twitter:description", content: "Přihlášení k účtu RealityScanner." },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
   component: AuthPage,
 });
 
