@@ -14,7 +14,15 @@ export const Route = createFileRoute("/cenik")({
     meta: [
       { title: "Ceník — RealityScanner" },
       { name: "description", content: "Free zdarma nebo Premium za 349 Kč měsíčně. Inzeráty v reálném čase, neomezení hlídací psi, XLS export." },
+      { property: "og:title", content: "Ceník RealityScanner — Free a Premium za 349 Kč" },
+      { property: "og:description", content: "Porovnání plánů Free a Premium: počet výsledků, hlídací psi, AI analýza a XLS export." },
+      { property: "og:type", content: "website" },
+      { property: "og:url", content: "https://realityscanner.cz/cenik" },
+      { name: "twitter:title", content: "Ceník RealityScanner — Free a Premium za 349 Kč" },
+      { name: "twitter:description", content: "Porovnání plánů Free a Premium: počet výsledků, hlídací psi, AI analýza a XLS export." },
+      { name: "twitter:card", content: "summary" },
     ],
+    links: [{ rel: "canonical", href: "https://realityscanner.cz/cenik" }],
   }),
   component: Pricing,
 });
