@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://realityscanner.cz/sitemap.xml
+Sitemap: https://www.realityscanner.cz/sitemap.xml
