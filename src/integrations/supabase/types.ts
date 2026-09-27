@@ -751,6 +751,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      acquire_billing_operation: { Args: { _user_id: string }; Returns: Json }
+      save_billing_attempt: { Args: { _user_id: string; _token: string; _attempt: Json }; Returns: undefined }
+      release_billing_operation: { Args: { _user_id: string; _token: string }; Returns: undefined }
+      apply_stripe_subscription: { Args: { _user_id: string; _token: string; _event_id: string; _snapshot: Json }; Returns: boolean }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

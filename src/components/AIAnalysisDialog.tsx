@@ -5,6 +5,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import type { Listing } from "@/lib/scanner/types";
 import { analyzeListing, type AIAnalysisResult } from "@/lib/ai/analyze.functions";
 import { usePlan } from "@/hooks/usePlan";
+import { listingActionId, listingReturnPath } from "@/lib/listing-return";
 import { Loader2, Sparkles, X, AlertTriangle, Crown, ShieldAlert, CheckCircle2, XCircle } from "lucide-react";
 
 export function AIAnalysisButton({ listing }: { listing: Listing }) {
@@ -20,8 +21,9 @@ export function AIAnalysisButton({ listing }: { listing: Listing }) {
   if (tier === "anonymous") {
     return (
       <button
+        id={listingActionId("ai", listing)}
         type="button"
-        onClick={(e) => { e.preventDefault(); e.stopPropagation(); navigate({ to: "/auth", search: { next: window.location.pathname + window.location.search } }); }}
+        onClick={(e) => { e.preventDefault(); e.stopPropagation(); navigate({ to: "/auth", search: { next: listingReturnPath("ai", listing, window.location) } }); }}
         title="Pro AI analýzu se zaregistrujte — získáte jednu zdarma na vyzkoušení"
         className="flex shrink-0 items-center gap-1 rounded-md border border-primary/40 bg-primary/10 px-2 py-1 text-[10px] font-semibold text-primary hover:bg-primary/20 whitespace-nowrap"
       >
@@ -34,6 +36,7 @@ export function AIAnalysisButton({ listing }: { listing: Listing }) {
   if (!isPremium && sampleUsed) {
     return (
       <button
+        id={listingActionId("ai", listing)}
         type="button"
         onClick={(e) => { e.preventDefault(); e.stopPropagation(); navigate({ to: "/cenik" }); }}
         title="Volnou AI analýzu jste již vyčerpali — Premium = 50/měsíc"
@@ -48,6 +51,7 @@ export function AIAnalysisButton({ listing }: { listing: Listing }) {
   if (!listing.id) {
     return (
       <button
+        id={listingActionId("ai", listing)}
         type="button"
         disabled
         title="AI analýza není pro tento inzerát dostupná"
@@ -62,6 +66,7 @@ export function AIAnalysisButton({ listing }: { listing: Listing }) {
   return (
     <>
       <button
+        id={listingActionId("ai", listing)}
         type="button"
         onClick={(e) => { e.preventDefault(); e.stopPropagation(); setOpen(true); }}
         className="flex shrink-0 items-center gap-1 rounded-md bg-primary/15 px-2 py-1 text-[10px] font-semibold text-primary hover:bg-primary/25 whitespace-nowrap"
