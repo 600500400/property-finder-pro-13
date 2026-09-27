@@ -67,6 +67,27 @@ export type Database = {
           },
         ]
       }
+      billing_operations: {
+        Row: {
+          checkout_attempt: Json | null
+          lock_token: string | null
+          lock_until: string | null
+          user_id: string
+        }
+        Insert: {
+          checkout_attempt?: Json | null
+          lock_token?: string | null
+          lock_until?: string | null
+          user_id: string
+        }
+        Update: {
+          checkout_attempt?: Json | null
+          lock_token?: string | null
+          lock_until?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       csu_house_calibration: {
         Row: {
           computed_at: string
@@ -656,6 +677,21 @@ export type Database = {
         }
         Relationships: []
       }
+      stripe_processed_events: {
+        Row: {
+          event_id: string
+          processed_at: string
+        }
+        Insert: {
+          event_id: string
+          processed_at?: string
+        }
+        Update: {
+          event_id?: string
+          processed_at?: string
+        }
+        Relationships: []
+      }
       subscriptions: {
         Row: {
           cancel_at_period_end: boolean
@@ -751,6 +787,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      acquire_billing_operation: { Args: { _user_id: string }; Returns: Json }
+      apply_stripe_subscription: {
+        Args: {
+          _event_id: string
+          _snapshot: Json
+          _token: string
+          _user_id: string
+        }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -759,6 +805,10 @@ export type Database = {
         Returns: boolean
       }
       is_premium: { Args: { _user_id: string }; Returns: boolean }
+      release_billing_operation: {
+        Args: { _token: string; _user_id: string }
+        Returns: undefined
+      }
       reserve_ai_analysis: {
         Args: { _listing_id: string; _user_id: string }
         Returns: {
@@ -767,6 +817,10 @@ export type Database = {
           reservation_id: string
           used: number
         }[]
+      }
+      save_billing_attempt: {
+        Args: { _attempt: Json; _token: string; _user_id: string }
+        Returns: undefined
       }
     }
     Enums: {
