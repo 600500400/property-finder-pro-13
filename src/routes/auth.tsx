@@ -1,12 +1,14 @@
-import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { safeReturnPath, signupConfirmationUrl } from "@/lib/auth-return";
+import { emitConversion } from "@/lib/conversion-events";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2, Radar } from "lucide-react";
 
 export const Route = createFileRoute("/auth")({
   staticData: { sitemap: false },
-  validateSearch: (search: Record<string, unknown>): { next?: string } =>
-    typeof search.next === "string" ? { next: search.next } : {},
+  validateSearch: (search: Record<string, unknown>): { next?: string; confirmed?: boolean } =>
+    ({ next: safeReturnPath(search.next), confirmed: search.confirmed === "1" || search.confirmed === true || undefined }),
   head: () => ({
     meta: [
       { title: "Přihlášení — RealityScanner" },
@@ -24,7 +26,6 @@ export const Route = createFileRoute("/auth")({
 });
 
 function AuthPage() {
-  const navigate = useNavigate();
   const search = Route.useSearch();
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
@@ -32,6 +33,18 @@ function AuthPage() {
   const [error, setError] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  useEffect(() => {
+    if (!search.confirmed) return;
+    let cancelled = false;
+    // Supabase initialization consumes the confirmation tokens before getUser resolves.
+    void supabase.auth.getUser().then(({ data, error }) => {
+      if (!cancelled && !error && data.user) {
+        emitConversion("signup_completed");
+        window.location.assign(safeReturnPath(search.next));
+      }
+    });
+    return () => { cancelled = true; };
+  }, [search.confirmed, search.next]);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,20 +53,22 @@ function AuthPage() {
     setBusy(true);
     try {
       if (mode === "signup") {
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email, password,
-          options: { emailRedirectTo: window.location.origin },
+          options: { emailRedirectTo: signupConfirmationUrl(window.location.origin, search.next) },
         });
         if (error) throw error;
+        if (!data.session) {
+          emitConversion("signup_confirmation_required");
+          setMsg("Potvrďte registraci odkazem v e-mailu. Poté se vrátíte na původní stránku.");
+          return;
+        }
+        emitConversion("signup_completed");
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
       }
-      if (search.next) {
-        window.location.href = search.next;
-      } else {
-        navigate({ to: "/saved" });
-      }
+      window.location.assign(safeReturnPath(search.next));
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
@@ -71,7 +86,7 @@ function AuthPage() {
     setBusy(true);
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: window.location.origin + "/auth?next=" + (search.next || "/"),
+        redirectTo: window.location.origin + "/auth?next=" + encodeURIComponent(safeReturnPath(search.next)),
       });
       if (error) throw error;
       setMsg("Odkaz pro obnovu hesla byl odeslán na váš e-mail.");

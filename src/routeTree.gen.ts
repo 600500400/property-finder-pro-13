@@ -13,6 +13,10 @@ import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as OchranaOsobnichUdajuRouteImport } from './routes/ochrana-osobnich-udaju'
 import { Route as ObchodniPodminkyRouteImport } from './routes/obchodni-podminky'
 import { Route as MetodikaRouteImport } from './routes/metodika'
+import { Route as KontaktRouteImport } from './routes/kontakt'
+import { Route as KalkulackaVynosuRouteImport } from './routes/kalkulacka-vynosu'
+import { Route as JakPoznatPredrazenyBytRouteImport } from './routes/jak-poznat-predrazeny-byt'
+import { Route as InvesticniNemovitostiRouteImport } from './routes/investicni-nemovitosti'
 import { Route as CenikRouteImport } from './routes/cenik'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
@@ -54,6 +58,26 @@ const ObchodniPodminkyRoute = ObchodniPodminkyRouteImport.update({
 const MetodikaRoute = MetodikaRouteImport.update({
   id: '/metodika',
   path: '/metodika',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const KontaktRoute = KontaktRouteImport.update({
+  id: '/kontakt',
+  path: '/kontakt',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const KalkulackaVynosuRoute = KalkulackaVynosuRouteImport.update({
+  id: '/kalkulacka-vynosu',
+  path: '/kalkulacka-vynosu',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const JakPoznatPredrazenyBytRoute = JakPoznatPredrazenyBytRouteImport.update({
+  id: '/jak-poznat-predrazeny-byt',
+  path: '/jak-poznat-predrazeny-byt',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InvesticniNemovitostiRoute = InvesticniNemovitostiRouteImport.update({
+  id: '/investicni-nemovitosti',
+  path: '/investicni-nemovitosti',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CenikRoute = CenikRouteImport.update({
@@ -182,6 +206,10 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/cenik': typeof CenikRoute
+  '/investicni-nemovitosti': typeof InvesticniNemovitostiRoute
+  '/jak-poznat-predrazeny-byt': typeof JakPoznatPredrazenyBytRoute
+  '/kalkulacka-vynosu': typeof KalkulackaVynosuRoute
+  '/kontakt': typeof KontaktRoute
   '/metodika': typeof MetodikaRoute
   '/obchodni-podminky': typeof ObchodniPodminkyRoute
   '/ochrana-osobnich-udaju': typeof OchranaOsobnichUdajuRoute
@@ -209,6 +237,10 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/cenik': typeof CenikRoute
+  '/investicni-nemovitosti': typeof InvesticniNemovitostiRoute
+  '/jak-poznat-predrazeny-byt': typeof JakPoznatPredrazenyBytRoute
+  '/kalkulacka-vynosu': typeof KalkulackaVynosuRoute
+  '/kontakt': typeof KontaktRoute
   '/metodika': typeof MetodikaRoute
   '/obchodni-podminky': typeof ObchodniPodminkyRoute
   '/ochrana-osobnich-udaju': typeof OchranaOsobnichUdajuRoute
@@ -238,6 +270,10 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/cenik': typeof CenikRoute
+  '/investicni-nemovitosti': typeof InvesticniNemovitostiRoute
+  '/jak-poznat-predrazeny-byt': typeof JakPoznatPredrazenyBytRoute
+  '/kalkulacka-vynosu': typeof KalkulackaVynosuRoute
+  '/kontakt': typeof KontaktRoute
   '/metodika': typeof MetodikaRoute
   '/obchodni-podminky': typeof ObchodniPodminkyRoute
   '/ochrana-osobnich-udaju': typeof OchranaOsobnichUdajuRoute
@@ -267,6 +303,10 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/cenik'
+    | '/investicni-nemovitosti'
+    | '/jak-poznat-predrazeny-byt'
+    | '/kalkulacka-vynosu'
+    | '/kontakt'
     | '/metodika'
     | '/obchodni-podminky'
     | '/ochrana-osobnich-udaju'
@@ -294,6 +334,10 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/cenik'
+    | '/investicni-nemovitosti'
+    | '/jak-poznat-predrazeny-byt'
+    | '/kalkulacka-vynosu'
+    | '/kontakt'
     | '/metodika'
     | '/obchodni-podminky'
     | '/ochrana-osobnich-udaju'
@@ -322,6 +366,10 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/auth'
     | '/cenik'
+    | '/investicni-nemovitosti'
+    | '/jak-poznat-predrazeny-byt'
+    | '/kalkulacka-vynosu'
+    | '/kontakt'
     | '/metodika'
     | '/obchodni-podminky'
     | '/ochrana-osobnich-udaju'
@@ -351,6 +399,10 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
   CenikRoute: typeof CenikRoute
+  InvesticniNemovitostiRoute: typeof InvesticniNemovitostiRoute
+  JakPoznatPredrazenyBytRoute: typeof JakPoznatPredrazenyBytRoute
+  KalkulackaVynosuRoute: typeof KalkulackaVynosuRoute
+  KontaktRoute: typeof KontaktRoute
   MetodikaRoute: typeof MetodikaRoute
   ObchodniPodminkyRoute: typeof ObchodniPodminkyRoute
   OchranaOsobnichUdajuRoute: typeof OchranaOsobnichUdajuRoute
@@ -397,6 +449,34 @@ declare module '@tanstack/react-router' {
       path: '/metodika'
       fullPath: '/metodika'
       preLoaderRoute: typeof MetodikaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/kontakt': {
+      id: '/kontakt'
+      path: '/kontakt'
+      fullPath: '/kontakt'
+      preLoaderRoute: typeof KontaktRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/kalkulacka-vynosu': {
+      id: '/kalkulacka-vynosu'
+      path: '/kalkulacka-vynosu'
+      fullPath: '/kalkulacka-vynosu'
+      preLoaderRoute: typeof KalkulackaVynosuRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/jak-poznat-predrazeny-byt': {
+      id: '/jak-poznat-predrazeny-byt'
+      path: '/jak-poznat-predrazeny-byt'
+      fullPath: '/jak-poznat-predrazeny-byt'
+      preLoaderRoute: typeof JakPoznatPredrazenyBytRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/investicni-nemovitosti': {
+      id: '/investicni-nemovitosti'
+      path: '/investicni-nemovitosti'
+      fullPath: '/investicni-nemovitosti'
+      preLoaderRoute: typeof InvesticniNemovitostiRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/cenik': {
@@ -582,6 +662,10 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   CenikRoute: CenikRoute,
+  InvesticniNemovitostiRoute: InvesticniNemovitostiRoute,
+  JakPoznatPredrazenyBytRoute: JakPoznatPredrazenyBytRoute,
+  KalkulackaVynosuRoute: KalkulackaVynosuRoute,
+  KontaktRoute: KontaktRoute,
   MetodikaRoute: MetodikaRoute,
   ObchodniPodminkyRoute: ObchodniPodminkyRoute,
   OchranaOsobnichUdajuRoute: OchranaOsobnichUdajuRoute,

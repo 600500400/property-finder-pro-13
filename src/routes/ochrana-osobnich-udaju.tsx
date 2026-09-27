@@ -1,5 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
+import { OperatorDetails } from "@/components/OperatorDetails";
+import { OPERATOR } from "@/lib/site";
+import { Footer } from "@/components/Footer";
 
 export const Route = createFileRoute("/ochrana-osobnich-udaju")({
   staticData: { sitemap: false },
@@ -7,7 +10,7 @@ export const Route = createFileRoute("/ochrana-osobnich-udaju")({
     meta: [
       { title: "Ochrana osobních údajů — RealityScanner" },
       { name: "description", content: "Zásady zpracování osobních údajů (GDPR) ve službě RealityScanner: jaká data ukládáme a jak je chráníme." },
-      // TEMPORARY: page still contains placeholders; keep out of search until finalized.
+      // Public legal information, excluded from acquisition search results.
       { name: "robots", content: "noindex, follow" },
       { property: "og:title", content: "Ochrana osobních údajů — RealityScanner" },
       { property: "og:description", content: "Jaká osobní data RealityScanner zpracovává, jak dlouho je uchovává a jaká máte práva." },
@@ -33,17 +36,9 @@ function PrivacyPage() {
 
       <main className="mx-auto max-w-3xl px-5 py-10">
         <h1 className="text-3xl font-bold tracking-tight">Ochrana osobních údajů</h1>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Účinné od: <em>[DATUM — DOPLNIT]</em>
-        </p>
 
         <Section title="1. Správce osobních údajů">
-          <Placeholder>
-            Správce: [JMÉNO / FIRMA — DOPLNIT]<br />
-            IČO: [DOPLNIT]<br />
-            Sídlo: [DOPLNIT]<br />
-            Kontakt pro GDPR: [E-MAIL]
-          </Placeholder>
+          <OperatorDetails />
         </Section>
 
         <Section title="2. Jaké údaje zpracováváme">
@@ -54,6 +49,8 @@ function PrivacyPage() {
             <li><strong>Užívání služby:</strong> uložené vyhledávací filtry a hlídací psi, historie zobrazených
               inzerátů (pro účely doručení upozornění).</li>
             <li><strong>Technické údaje:</strong> IP adresa, User-Agent, časy přístupů (logy serveru).</li>
+            <li><strong>AI analýzy:</strong> uživatelská investiční pravidla, identifikátor nabídky,
+              výsledek a evidence spotřeby analýz. Osobní investiční pravidla nevkládejte do veřejných inzerátů.</li>
           </ul>
         </Section>
 
@@ -69,16 +66,16 @@ function PrivacyPage() {
 
         <Section title="4. Příjemci údajů (zpracovatelé)">
           <ul className="list-disc space-y-1 pl-5">
-            <li><strong>Supabase</strong> (hosting databáze a autentizace; EU region).</li>
+            <li><strong>Supabase</strong> (hosting databáze a autentizace).</li>
             <li><strong>Stripe Payments Europe, Ltd.</strong> (zpracování plateb).</li>
             <li><strong>Resend</strong> (odesílání transakčních e-mailů).</li>
             <li><strong>Cloudflare</strong> (hostingová a CDN infrastruktura).</li>
             <li><strong>Lovable / Supabase Edge</strong> (serverless běhové prostředí).</li>
           </ul>
           <p className="mt-2">
-            Se všemi zpracovateli má Provozovatel uzavřené odpovídající smluvní podmínky.
-            Někteří zpracovatelé mohou data zpracovávat mimo EU; v takovém případě jsou kryti
-            standardními smluvními doložkami EU (SCC).
+            Informace o konkrétních zpracovatelích, místě zpracování a zárukách případného
+            předávání mimo EU poskytne správce na kontaktním e-mailu. AI analýza využívá
+            externího poskytovatele prostřednictvím serveru aplikace; do analýzy nezadávejte citlivé osobní údaje.
           </p>
         </Section>
 
@@ -106,21 +103,21 @@ function PrivacyPage() {
           <p>
             Služba používá pouze technicky nezbytné cookies pro fungování přihlášení a relace.
             Marketingové ani analytické cookies třetích stran nepoužíváme.
-            <em> [Aktualizovat, pokud bude nasazena analytika.]</em>
           </p>
         </Section>
 
         <Section title="8. Kontakt">
-          <Placeholder>
+          <p>
             Veškeré dotazy ke zpracování osobních údajů zasílejte na:<br />
-            <strong>[KONTAKTNÍ E-MAIL — DOPLNIT]</strong>
-          </Placeholder>
+            <a className="text-primary hover:underline" href={`mailto:${OPERATOR.email}`}>{OPERATOR.email}</a>
+          </p>
         </Section>
 
         <p className="mt-10 text-xs text-muted-foreground">
           Viz též <Link to="/obchodni-podminky" className="text-primary hover:underline">Obchodní podmínky</Link>.
         </p>
       </main>
+      <Footer />
     </div>
   );
 }
@@ -131,13 +128,5 @@ function Section({ title, children }: { title: string; children: React.ReactNode
       <h2 className="text-lg font-semibold">{title}</h2>
       <div className="mt-2 space-y-2 text-sm leading-relaxed text-muted-foreground">{children}</div>
     </section>
-  );
-}
-
-function Placeholder({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="rounded-md border border-dashed border-amber-500/40 bg-amber-500/5 p-3 text-sm text-foreground">
-      {children}
-    </div>
   );
 }

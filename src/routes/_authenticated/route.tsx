@@ -4,9 +4,10 @@ import { supabase } from "@/integrations/supabase/client";
 export const Route = createFileRoute("/_authenticated")({
   staticData: { sitemap: "exclude-subtree" },
   ssr: false,
-  beforeLoad: async () => {
+  head: () => ({ meta: [{ name: "robots", content: "noindex, nofollow" }] }),
+  beforeLoad: async ({ location }) => {
     const { data, error } = await supabase.auth.getUser();
-    if (error || !data.user) throw redirect({ to: "/auth" });
+    if (error || !data.user) throw redirect({ to: "/auth", search: { next: location.href } });
     return { user: data.user };
   },
   component: () => <Outlet />,

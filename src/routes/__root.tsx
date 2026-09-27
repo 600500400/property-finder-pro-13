@@ -6,6 +6,8 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { supabase } from "@/integrations/supabase/client";
 import { Toaster } from "@/components/ui/sonner";
+import { OPERATOR, SITE_URL } from "@/lib/site";
+import { emitConversion } from "@/lib/conversion-events";
 
 
 function NotFoundComponent() {
@@ -60,6 +62,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { name: "referrer", content: "no-referrer" },
+      ...(import.meta.env.VITE_GOOGLE_SITE_VERIFICATION
+        ? [{ name: "google-site-verification", content: import.meta.env.VITE_GOOGLE_SITE_VERIFICATION as string }]
+        : []),
       { title: "RealityScanner — Investiční byty a domy | Výnos z nájmu & ČSÚ ceny" },
       {
         name: "description",
@@ -88,7 +93,6 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "icon", type: "image/svg+xml", href: "/favicon.svg" },
       { rel: "alternate icon", href: "/favicon.ico" },
       { rel: "apple-touch-icon", href: "/favicon.svg" },
-      { rel: "canonical", href: "https://www.realityscanner.cz/" },
       { rel: "stylesheet", href: appCss },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
@@ -104,8 +108,17 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
           "@context": "https://schema.org",
           "@graph": [
             {
+              "@type": "Person",
+              "@id": SITE_URL + "/#operator",
+              "name": OPERATOR.name,
+              "identifier": { "@type": "PropertyValue", "propertyID": "IČO", "value": OPERATOR.ico },
+              "email": OPERATOR.email,
+              "address": { "@type": "PostalAddress", "streetAddress": OPERATOR.street, "addressLocality": OPERATOR.city, "postalCode": OPERATOR.postalCode, "addressCountry": "CZ" }
+            },
+            {
               "@type": "WebApplication",
               "name": "RealityScanner",
+              "provider": { "@id": SITE_URL + "/#operator" },
               "url": "https://www.realityscanner.cz/",
               "applicationCategory": "BusinessApplication",
               "operatingSystem": "Web Browser",
@@ -148,6 +161,12 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  useEffect(() => {
+    try {
+      const referrer = new URL(document.referrer);
+      if (/(^|\.)(google\.[a-z.]+|bing\.com|search\.seznam\.cz)$/.test(referrer.hostname)) emitConversion("organic_landing");
+    } catch { /* Direct navigation: no referrer. */ }
+  }, []);
   return (
     <QueryClientProvider client={queryClient}>
       <AuthSync />

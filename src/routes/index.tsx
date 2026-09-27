@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 
 import { queryListings } from "@/lib/listings/query.functions";
 import { sortListings } from "@/lib/scanner/sort";
@@ -107,6 +107,21 @@ function Index() {
   const tier = data?.meta?.tier ?? "anonymous";
   const resultCap = data?.meta?.result_cap ?? 20;
   const freeCapped = data?.meta?.free_capped ?? false;
+  const restoredAction = useRef(false);
+  useEffect(() => {
+    if (restoredAction.current || isFetching || !data) return;
+    const id = window.location.hash.slice(1);
+    if (!/^(ai|save)-/.test(id)) return;
+    restoredAction.current = true;
+    const button = document.getElementById(id);
+    if (button) {
+      button.scrollIntoView({ block: "center" });
+      button.focus({ preventScroll: true });
+      toast.info("Jste zpět u vybraného inzerátu. Pokračujte kliknutím na zvýrazněné tlačítko.");
+    } else {
+      toast.info("Původní inzerát už v těchto výsledcích není. Ověřte filtr nebo uložené nabídky.");
+    }
+  }, [data, isFetching, listings]);
 
   const [exporting, setExporting] = useState(false);
 

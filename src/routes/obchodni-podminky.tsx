@@ -1,5 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
+import { OperatorDetails } from "@/components/OperatorDetails";
+import { OPERATOR } from "@/lib/site";
+import { Footer } from "@/components/Footer";
 
 export const Route = createFileRoute("/obchodni-podminky")({
   staticData: { sitemap: false },
@@ -7,7 +10,7 @@ export const Route = createFileRoute("/obchodni-podminky")({
     meta: [
       { title: "Obchodní podmínky — RealityScanner" },
       { name: "description", content: "Obchodní podmínky služby RealityScanner: rozsah služby, platby, odstoupení od smlouvy." },
-      // TEMPORARY: page still contains placeholders; keep out of search until finalized.
+      // Legal pages are public but not acquisition landing pages.
       { name: "robots", content: "noindex, follow" },
       { property: "og:title", content: "Obchodní podmínky — RealityScanner" },
       { property: "og:description", content: "Podmínky užívání služby RealityScanner, platby a odstoupení od smlouvy." },
@@ -33,19 +36,9 @@ function TermsPage() {
 
       <main className="mx-auto max-w-3xl px-5 py-10">
         <h1 className="text-3xl font-bold tracking-tight">Obchodní podmínky</h1>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Účinné od: <em>[DATUM ÚČINNOSTI — DOPLNIT]</em>
-        </p>
 
         <Section title="1. Provozovatel">
-          <Placeholder>
-            Jméno / obchodní firma: [DOPLNIT]<br />
-            IČO: [DOPLNIT]<br />
-            DIČ: [DOPLNIT / nejsem plátce DPH]<br />
-            Sídlo: [DOPLNIT]<br />
-            Zápis: [DOPLNIT — např. živnostenský rejstřík / OR vedený u …]<br />
-            Kontakt: [E-MAIL] · [TELEFON nepovinné]
-          </Placeholder>
+          <OperatorDetails />
           <p className="mt-2 text-sm">
             (dále jen „Provozovatel“) provozuje webovou službu RealityScanner dostupnou
             na adrese této aplikace (dále jen „Služba“).
@@ -68,7 +61,7 @@ function TermsPage() {
 
         <Section title="3. Registrace a uživatelský účet">
           <p>
-            Pro využití části Služby je nutná registrace e-mailem nebo přihlášení přes Google.
+            Pro využití části Služby je nutná registrace e-mailem.
             Uživatel se zavazuje uvádět pravdivé údaje a chránit přístupové údaje ke svému účtu.
           </p>
         </Section>
@@ -90,12 +83,15 @@ function TermsPage() {
 
         <Section title="5. Odstoupení od smlouvy">
           <p>
-            Aktivací předplatného Premium spotřebitel výslovně souhlasí se zahájením plnění před
-            uplynutím lhůty pro odstoupení od smlouvy a bere na vědomí, že tímto ztrácí právo
-            odstoupit od smlouvy dle § 1837 písm. l) občanského zákoníku.
+            Provozovatel neposkytuje dobrovolnou garanci vrácení peněz bez udání důvodu.
+            Tím nejsou omezena zákonná práva spotřebitele, včetně práva odstoupit od smlouvy
+            v případech a lhůtách stanovených zákonem. Samotné přihlášení nebo aktivace
+            předplatného se nepovažuje za vzdání se těchto práv.
           </p>
-          <p className="mt-2 text-xs text-muted-foreground">
-            [Doplnit individuální politiku vracení peněz, pokud chcete být vstřícnější než zákon vyžaduje.]
+          <p className="mt-2">
+            Pro uplatnění odstoupení nebo reklamace napište na <a className="text-primary hover:underline" href={`mailto:${OPERATOR.email}`}>{OPERATOR.email}</a>.
+            Uveďte e-mail účtu, datum objednávky a svůj požadavek; číslo platební karty neposílejte.
+            Zrušení automatického obnovování ve Stripe samo o sobě neznamená žádost o vrácení platby.
           </p>
         </Section>
 
@@ -103,7 +99,8 @@ function TermsPage() {
           <p>
             Služba je poskytována „tak jak je“. Provozovatel neručí za škodu vzniklou v důsledku
             chyb v datech ze třetích portálů, nedostupnosti Služby ani investičních rozhodnutí
-            uživatele.
+            uživatele. Toto ustanovení nevylučuje odpovědnost, kterou nelze podle zákona vyloučit,
+            ani zákonná práva z vadného plnění.
           </p>
         </Section>
 
@@ -120,12 +117,17 @@ function TermsPage() {
             Tyto podmínky se řídí právním řádem České republiky. Provozovatel je oprávněn podmínky
             jednostranně měnit; o změnách bude uživatele informovat e-mailem nebo v aplikaci.
           </p>
+          <p>Spotřebitel se může s návrhem na mimosoudní řešení spotřebitelského sporu obrátit
+            na Českou obchodní inspekci, Ústřední inspektorát – oddělení ADR, Štěpánská 567/15,
+            120 00 Praha 2: <a href="https://coi.gov.cz/informace-o-adr/" className="text-primary hover:underline">informace o ADR</a>.
+          </p>
         </Section>
 
         <p className="mt-10 text-xs text-muted-foreground">
           Viz též <Link to="/ochrana-osobnich-udaju" className="text-primary hover:underline">Ochrana osobních údajů</Link>.
         </p>
       </main>
+      <Footer />
     </div>
   );
 }
@@ -136,13 +138,5 @@ function Section({ title, children }: { title: string; children: React.ReactNode
       <h2 className="text-lg font-semibold">{title}</h2>
       <div className="mt-2 space-y-2 text-sm leading-relaxed text-muted-foreground">{children}</div>
     </section>
-  );
-}
-
-function Placeholder({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="rounded-md border border-dashed border-amber-500/40 bg-amber-500/5 p-3 text-sm text-foreground">
-      {children}
-    </div>
   );
 }

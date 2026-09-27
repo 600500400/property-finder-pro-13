@@ -1,8 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, useRef } from "react";
+import { emitConversion } from "@/lib/conversion-events";
 import { useServerFn } from "@tanstack/react-start";
 import { Check, Crown, Loader2, ArrowLeft } from "lucide-react";
-import { createCheckoutSession, createPortalSession } from "@/lib/billing/checkout.functions";
+import { createCheckoutSession, createPortalSession, getBillingEnvironment } from "@/lib/billing/checkout.functions";
+import { useQuery } from "@tanstack/react-query";
+import { OPERATOR } from "@/lib/site";
 import { usePlan } from "@/hooks/usePlan";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect } from "react";
@@ -10,6 +13,10 @@ import { Footer } from "@/components/Footer";
 
 export const Route = createFileRoute("/cenik")({
   staticData: { sitemap: true },
+  validateSearch: (search: Record<string, unknown>): { billing?: "monthly" | "yearly"; checkout?: "success" | "cancel" } => ({
+    billing: search.billing === "monthly" || search.billing === "yearly" ? search.billing : undefined,
+    checkout: search.checkout === "success" || search.checkout === "cancel" ? search.checkout : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Ceník předplatného | RealityScanner" },
@@ -28,13 +35,24 @@ export const Route = createFileRoute("/cenik")({
 });
 
 function Pricing() {
+  const search = Route.useSearch();
   const { data: plan, refetch } = usePlan();
   const checkout = useServerFn(createCheckoutSession);
   const portal = useServerFn(createPortalSession);
+  const environment = useServerFn(getBillingEnvironment);
+  const { data: paymentEnvironment, isError: billingEnvironmentError } = useQuery({ queryKey: ["billing-environment"], queryFn: () => environment() });
   const [busy, setBusy] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [authed, setAuthed] = useState<boolean | null>(null);
-  const [billing, setBilling] = useState<"monthly" | "yearly">("yearly");
+  const [billing, setBilling] = useState<"monthly" | "yearly">(search.billing ?? "yearly");
+  const [verificationEnded, setVerificationEnded] = useState(false);
+  const premiumReported = useRef(false);
+  useEffect(() => {
+    if (search.checkout === "success" && plan?.is_premium && !premiumReported.current) {
+      premiumReported.current = true;
+      emitConversion("premium_confirmed");
+    }
+  }, [search.checkout, plan?.is_premium]);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setAuthed(!!data.user));
@@ -43,21 +61,28 @@ function Pricing() {
   }, []);
 
   useEffect(() => {
-    const u = new URL(window.location.href);
-    if (u.searchParams.get("checkout") === "success") {
-      // Webhook may not have landed yet — poll briefly
+    if (search.checkout === "success" && authed && !plan?.is_premium) {
+      setVerificationEnded(false);
       let n = 0;
-      const t = setInterval(() => { refetch(); if (++n > 10) clearInterval(t); }, 1500);
+      const t = setInterval(() => {
+        void refetch();
+        if (++n >= 10) { clearInterval(t); setVerificationEnded(true); }
+      }, 1500);
       return () => clearInterval(t);
     }
-  }, [refetch]);
+  }, [refetch, search.checkout, authed, plan?.is_premium]);
 
   const goCheckout = async (planKey: "premium_monthly" | "premium_yearly") => {
-    if (!authed) { window.location.href = "/auth?next=/cenik"; return; }
+    if (!authed) { window.location.href = "/auth?next=" + encodeURIComponent("/cenik?billing=" + (planKey === "premium_yearly" ? "yearly" : "monthly")); return; }
     setBusy(planKey); setErr(null);
     try {
       const { url } = await checkout({ data: { plan: planKey } });
-      if (url) window.location.href = url;
+      if (url) {
+        // Existing subscribers may be returned to the billing portal instead.
+        if (new URL(url).hostname === "checkout.stripe.com") emitConversion("checkout_started");
+        window.location.href = url;
+      }
+      else throw new Error("Platební stránka není dostupná. Zkuste to prosím znovu.");
     } catch (e) {
       setErr(e instanceof Error ? e.message : String(e));
       setBusy(null);
@@ -90,6 +115,15 @@ function Pricing() {
         <p className="mx-auto mt-2 max-w-xl text-center text-sm text-muted-foreground">
           Free na vyzkoušení, Premium pro investory, kteří nesmí přijít o nový inzerát.
         </p>
+
+        {paymentEnvironment?.mode === "test" && <p role="status" className="mx-auto mt-5 max-w-xl rounded-lg border border-amber-500/40 p-3 text-center text-sm text-amber-500">Testovací režim plateb (Stripe sandbox). Nejde o skutečnou platbu.</p>}
+        {(paymentEnvironment?.mode === "unavailable" || billingEnvironmentError) && <p role="status" className="mt-5 text-center text-sm">Platby nyní nejsou dostupné. Skener zdarma můžete používat dál.</p>}
+        {search.checkout === "cancel" && <p role="status" className="mt-5 text-center text-sm">Vrátili jste se z platby. Stav případného předplatného ověřujeme v účtu.</p>}
+        {search.checkout === "success" && !plan?.is_premium && <div role="status" className="mx-auto mt-5 max-w-xl rounded-lg border border-border p-4 text-center text-sm">
+          {!authed ? <>Pro ověření Premium se <Link to="/auth" search={{ next: "/cenik?checkout=success" }} className="text-primary underline">přihlaste ke stejnému účtu</Link>.</>
+            : verificationEnded ? <>Aktivace zatím není potvrzená. Neplaťte znovu. <button className="text-primary underline" onClick={() => void refetch()}>Ověřit znovu</button> nebo <a className="text-primary underline" href={`mailto:${OPERATOR.email}`}>kontaktujte podporu</a>.</>
+            : <>Ověřujeme aktivaci Premium. Může to chvíli trvat…</>}
+        </div>}
 
         {plan?.is_premium && (
           <div className="mx-auto mt-6 max-w-md rounded-lg border border-primary/40 bg-primary/10 p-3 text-center text-sm">
@@ -172,7 +206,7 @@ function Pricing() {
               <div className="mt-6 flex flex-col gap-4">
                 <div className="flex items-center justify-center gap-3 text-sm">
                   <button onClick={() => setBilling("monthly")} className={`font-semibold ${billing === "monthly" ? "text-foreground" : "text-muted-foreground"}`}>Měsíčně</button>
-                  <button onClick={() => setBilling(billing === "monthly" ? "yearly" : "monthly")} className="relative inline-flex h-6 w-11 items-center rounded-full bg-primary/20 transition-colors focus:outline-none">
+                  <button role="switch" aria-label="Roční platba" aria-checked={billing === "yearly"} onClick={() => setBilling(billing === "monthly" ? "yearly" : "monthly")} className="relative inline-flex h-6 w-11 items-center rounded-full bg-primary/20 transition-colors focus-visible:outline-2">
                     <span className={`inline-block h-4 w-4 transform rounded-full bg-primary transition-transform ${billing === "yearly" ? "translate-x-6" : "translate-x-1"}`} />
                   </button>
                   <button onClick={() => setBilling("yearly")} className={`font-semibold ${billing === "yearly" ? "text-foreground" : "text-muted-foreground"}`}>
@@ -180,15 +214,14 @@ function Pricing() {
                   </button>
                 </div>
                 
-                <button onClick={() => goCheckout(billing === "yearly" ? "premium_yearly" : "premium_monthly")} disabled={busy !== null}
+                <button onClick={() => goCheckout(billing === "yearly" ? "premium_yearly" : "premium_monthly")} disabled={busy !== null || authed === null || !paymentEnvironment || paymentEnvironment.mode === "unavailable" || search.checkout === "success"}
                   className="flex items-center justify-center gap-1.5 rounded-lg bg-primary px-4 py-3 text-sm font-bold text-primary-foreground hover:opacity-90 disabled:opacity-50">
                   {busy !== null && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
                   Aktivovat Premium — {billing === "yearly" ? "3 490 Kč / rok" : "349 Kč / měs"}
                 </button>
                 
                 <div className="mt-2 space-y-2 text-center text-xs font-medium text-muted-foreground">
-                  <p>🛡️ 14 dní garance vrácení peněz — bez ptaní</p>
-                  <p>👥 500+ investorů již používá RealityScanner</p>
+                  <p>Obnovování můžete kdykoli vypnout ve správě předplatného.</p>
                 </div>
               </div>
             )}
@@ -197,7 +230,7 @@ function Pricing() {
 
         {err && <p className="mt-4 text-center text-sm text-[var(--color-danger)]">{err}</p>}
         <p className="mt-12 text-center text-xs text-muted-foreground">
-          Bezpečná platba přes Stripe · okamžité zrušení v administraci
+          Platba přes Stripe · po zrušení obnovování Premium doběhne do konce zaplaceného období
         </p>
         <p className="mt-3 text-center text-xs text-muted-foreground">
           Aktivací předplatného souhlasíte s{" "}

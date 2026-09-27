@@ -5,6 +5,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { Bookmark, BookmarkCheck } from "lucide-react";
 import type { Listing } from "@/lib/scanner/types";
 import { usePlan } from "@/hooks/usePlan";
+import { listingActionId, listingReturnPath } from "@/lib/listing-return";
 import {
   listSavedListings,
   saveListing,
@@ -57,7 +58,7 @@ export function SaveBookmarkButton({ listing }: { listing: Listing }) {
     e.preventDefault();
     e.stopPropagation();
     if (tier === "anonymous") {
-      navigate({ to: "/auth", search: { next: window.location.pathname + window.location.search } });
+      navigate({ to: "/auth", search: { next: listingReturnPath("save", listing, window.location) } });
       return;
     }
     setBusy(true);
@@ -66,6 +67,7 @@ export function SaveBookmarkButton({ listing }: { listing: Listing }) {
 
   return (
     <button
+      id={listingActionId("save", listing)}
       type="button"
       onClick={handleClick}
       disabled={busy}

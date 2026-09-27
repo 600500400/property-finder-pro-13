@@ -342,6 +342,14 @@ function Metodika() {
           </div>
         </div>
 
+        <section className="mt-8 rounded-xl border border-border p-5">
+          <h2 className="text-xl font-semibold">Vlastní scénář v kalkulačce</h2>
+          <p className="mt-3 text-sm text-muted-foreground">Samostatná <Link to="/kalkulacka-vynosu" className="text-primary hover:underline">kalkulačka výnosu</Link> používá Vámi zadané náklady a neobsazenost místo automatické 15% paušální srážky na kartách.
+            Hrubý výnos = měsíční nájem × 12 ÷ celková pořizovací cena.
+            Čistý provozní výnos = (měsíční nájem × 12 × (1 − neobsazenost) − měsíční náklady majitele × 12) ÷ celková pořizovací cena.
+            Oba podíly násobíme 100 pro výsledek v procentech. Výpočet nezahrnuje financování a daň z příjmů.</p>
+        </section>
+
         {/* SEKCIE 3: KOMPROMISY A TRANSPARENTNOST */}
         <div className="mt-12 space-y-4">
           <div className="border-b border-border pb-2">

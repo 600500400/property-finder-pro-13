@@ -14,7 +14,7 @@ export type PlanInfo = {
 };
 
 export const getMyPlan = createServerFn({ method: "GET" }).handler(async (): Promise<PlanInfo> => {
-  const { viewerUserId, isUserPremium } = await import("./premium.server");
+  const { viewerUserId } = await import("./premium.server");
   const userId = await viewerUserId();
   if (!userId) {
     return {
@@ -28,7 +28,7 @@ export const getMyPlan = createServerFn({ method: "GET" }).handler(async (): Pro
     };
   }
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const [{ data: sub }, { count: aiCount }] = await Promise.all([
+  const [subscription, usage, premium] = await Promise.all([
     supabaseAdmin
       .from("subscriptions")
       .select("plan, status, current_period_end, cancel_at_period_end")
@@ -38,8 +38,12 @@ export const getMyPlan = createServerFn({ method: "GET" }).handler(async (): Pro
       .from("ai_analysis_usage")
       .select("id", { count: "exact", head: true })
       .eq("user_id", userId),
+    supabaseAdmin.rpc("is_premium", { _user_id: userId }),
   ]);
-  const isPremium = await isUserPremium(userId);
+  if (subscription.error || usage.error || premium.error) throw new Error("Stav účtu nelze nyní ověřit. Zkuste to prosím znovu.");
+  const sub = subscription.data;
+  const aiCount = usage.count;
+  const isPremium = premium.data === true;
   return {
     tier: isPremium ? "premium" : "free",
     is_premium: isPremium,
