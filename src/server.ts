@@ -40,14 +40,8 @@ async function normalizeCatastrophicSsrResponse(response: Response): Promise<Res
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
     try {
-      const url = new URL(request.url);
-      // Only public navigation on our production alias; leave APIs, POST and previews untouched.
-      if (url.hostname === "realityscanner.cz" && ["GET", "HEAD"].includes(request.method)
-        && !url.pathname.startsWith("/api/") && !url.pathname.startsWith("/_serverFn/")) {
-        url.hostname = "www.realityscanner.cz";
-        url.protocol = "https:";
-        return Response.redirect(url.href, 308);
-      }
+      // The hosting layer owns domain redirects (www -> apex).
+      // Redirecting apex -> www here creates a production redirect loop.
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
       return await normalizeCatastrophicSsrResponse(response);
