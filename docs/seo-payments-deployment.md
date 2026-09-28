@@ -62,11 +62,10 @@ Stejně ručně řešte historická duplicitní předplatná; migrace je automat
 - Nové SSR stránky: `/investicni-nemovitosti`, `/kalkulacka-vynosu`,
   `/jak-poznat-predrazeny-byt`, `/kontakt`; sitemap je generuje z registrace rout.
 - Canonical je na každé veřejné cílové stránce právě jednou, ne zděděný z rootu.
-- GET/HEAD navigace z realityscanner.cz přesměruje na www. API a POST zůstávají
-  beze změny kvůli webhookům a přihlašování. Ověřit DNS/TLS obou domén a případná
-  hostingová přesměrování, aby nevznikla opačná přesměrovací smyčka.
-  Uživatelé přihlášení výhradně na non-www doméně se mohou na www potřebovat
-  znovu přihlásit (úložiště relace je oddělené podle originu).
+- Přesměrování domén spravuje pouze hosting: www → realityscanner.cz.
+  Aplikace nesmí přesměrovávat opačně na www; vznikla by produkční smyčka.
+  Po Publish ověřit GET na obou doménách: konečná odpověď musí být 200.
+  Tato hotfix oprava nevyžaduje novou migraci ani změnu Stripe konfigurace.
 - Search Console: ověřit vlastnictví domény přes DNS nebo nastavit veřejnou
   `VITE_GOOGLE_SITE_VERIFICATION` (URL-prefix property), následně odeslat
   `https://www.realityscanner.cz/sitemap.xml`. Token ani účet zde nejsou nastavené.
