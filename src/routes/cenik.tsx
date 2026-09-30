@@ -11,9 +11,36 @@ import { Footer } from "@/components/Footer";
 export const Route = createFileRoute("/cenik")({
   head: () => ({
     meta: [
-      { title: "Ceník — RealityScanner" },
-      { name: "description", content: "Free zdarma nebo Premium za 349 Kč měsíčně. Inzeráty v reálném čase, neomezení hlídací psi, XLS export." },
+      { title: "Ceník a tarify Free a Premium — RealityScanner" },
+      {
+        name: "description",
+        content:
+          "Porovnejte tarify Free a Premium. Vyhledávejte investiční nemovitosti, nastavte hlídací psy a zjistěte výnosy. Začněte zdarma na RealityScanner.cz.",
+      },
+      { property: "og:title", content: "Ceník a tarify Free a Premium — RealityScanner" },
+      {
+        property: "og:description",
+        content:
+          "Porovnejte tarify Free a Premium. Vyhledávejte investiční nemovitosti, nastavte hlídací psy a zjistěte výnosy. Začněte zdarma na RealityScanner.cz.",
+      },
+      { property: "og:type", content: "website" },
+      { property: "og:url", content: "https://www.realityscanner.cz/cenik" },
+      { property: "og:image", content: "https://www.realityscanner.cz/og-image.png" },
+      { property: "og:image:width", content: "1200" },
+      { property: "og:image:height", content: "630" },
+      { property: "og:image:alt", content: "Ceník RealityScanner.cz – tarify Free a Premium pro investory do nemovitostí" },
+      { property: "og:site_name", content: "RealityScanner.cz" },
+      { property: "og:locale", content: "cs_CZ" },
+      { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: "Ceník a tarify Free a Premium — RealityScanner" },
+      {
+        name: "twitter:description",
+        content:
+          "Porovnejte tarify Free a Premium. Vyhledávejte investiční nemovitosti, nastavte hlídací psy a zjistěte výnosy. Začněte zdarma na RealityScanner.cz.",
+      },
+      { name: "twitter:image", content: "https://www.realityscanner.cz/og-image.png" },
     ],
+    links: [{ rel: "canonical", href: "https://www.realityscanner.cz/cenik" }],
   }),
   component: Pricing,
 });
