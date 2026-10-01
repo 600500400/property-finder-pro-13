@@ -59,10 +59,14 @@ export async function processStripeEvent(event: Stripe.Event) {
     if (readError) throw new Error("Subscription lookup failed");
     if (current?.stripe_subscription_id && current.stripe_subscription_id !== id) {
       if (sub.status === "canceled") return;
-      const replacement = await stripe.subscriptions.retrieve(current.stripe_subscription_id);
-      if (replacement.created > sub.created) return;
-      if (replacement.created === sub.created)
-        throw new Error("Ambiguous subscription replacement; reconcile manually");
+      try {
+        const replacement = await stripe.subscriptions.retrieve(current.stripe_subscription_id);
+        if (replacement.created > sub.created) return;
+        if (replacement.created === sub.created)
+          throw new Error("Ambiguous subscription replacement; reconcile manually");
+      } catch (err: unknown) {
+        if (err instanceof Error && err.message.includes("Ambiguous")) throw err;
+      }
     }
     const interval = sub.items.data[0]?.price.recurring?.interval;
     const plan =

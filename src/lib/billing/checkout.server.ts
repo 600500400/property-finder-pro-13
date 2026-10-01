@@ -20,6 +20,14 @@ export async function startCheckout(userId: string, email: string | undefined, p
       .maybeSingle();
     if (error) throw new Error("Stav předplatného nelze načíst. Platba nebyla spuštěna.");
     let customerId = sub?.stripe_customer_id;
+    if (customerId) {
+      try {
+        const existing = await stripe.customers.retrieve(customerId);
+        if ("deleted" in existing && existing.deleted) customerId = undefined;
+      } catch {
+        customerId = undefined;
+      }
+    }
     if (!customerId) {
       const customer = await stripe.customers.create(
         { metadata: { user_id: userId } },

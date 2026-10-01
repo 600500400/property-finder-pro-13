@@ -102,6 +102,8 @@ beforeEach(() => {
     url: "https://checkout.stripe.com/test",
     status: "open",
   });
+  mocks.customerRetrieve.mockResolvedValue({ id: "cus_1", deleted: false });
+  mocks.customerCreate.mockResolvedValue({ id: "cus_new" });
   mocks.portal.mockResolvedValue({ url: "https://billing.stripe.com/test" });
 });
 
@@ -137,6 +139,14 @@ describe("checkout with mocked Stripe, no payments", () => {
     });
     await expect(startCheckout("user", undefined, "premium_monthly")).rejects.toThrow("dokončena");
     expect(mocks.sessionCreate).not.toHaveBeenCalled();
+  });
+  it("recreates customer if existing customerId does not exist in provider (e.g. sandbox to live)", async () => {
+    mocks.customerRetrieve.mockRejectedValue(new Error("No such customer: 'cus_sandbox'"));
+    await startCheckout("user", undefined, "premium_monthly");
+    expect(mocks.customerCreate).toHaveBeenCalledWith(
+      { metadata: { user_id: "user" } },
+      { idempotencyKey: "rs-customer-user" },
+    );
   });
   it("permits repurchase after the old subscription has actually ended", async () => {
     mocks.acquire.mockResolvedValue({
