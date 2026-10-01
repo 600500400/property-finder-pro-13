@@ -10,17 +10,26 @@ const BAND_LABEL: Record<string, string> = {
   gt250: "nad 250 m²",
 };
 
-export const Route = createFileRoute("/metodika")({
+export const Route = createFileRoute('/metodika')({
   loader: () => getCsuCalibration(),
   head: () => ({
+    title: 'Metodika výpočtu výnosnosti nemovitostí — RealityScanner',
     meta: [
-      { title: "Metodika výpočtu výnosu — RealityScanner" },
-      { name: "description", content: "Jak počítáme hrubý a čistý výnos z pronájmu, návratnost a hodnocení investice. Transparentní vzorce a zdroje dat." },
-      { property: "og:title", content: "Metodika výpočtu výnosu — RealityScanner" },
-      { property: "og:description", content: "Jak počítáme výnosy a srovnáváme ceny nemovitostí s realizovanými cenami ČSÚ." },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary" },
+      { name: 'description', content: 'Jak přesně počítáme čistou výnosnost, LTV, ROI a roční cashflow u investičních bytů? Poznejte naši transparentní metodiku analýzy nemovitostí.' },
+      { property: 'og:title', content: 'Metodika výpočtu výnosnosti nemovitostí — RealityScanner' },
+      { property: 'og:description', content: 'Jak přesně počítáme čistou výnosnost, LTV, ROI a roční cashflow u investičních bytů? Poznejte naši transparentní metodiku analýzy nemovitostí.' },
+      { property: 'og:type', content: 'website' },
+      { property: 'og:url', content: 'https://www.realityscanner.cz/metodika' },
+      { property: 'og:image', content: 'https://www.realityscanner.cz/og-image.png' },
+      { property: 'og:site_name', content: 'RealityScanner.cz' },
+      { property: 'og:locale', content: 'cs_CZ' },
+      { name: 'twitter:card', content: 'summary_large_image' },
+      { name: 'twitter:title', content: 'Metodika výpočtu výnosnosti nemovitostí — RealityScanner' },
+      { name: 'twitter:description', content: 'Jak přesně počítáme čistou výnosnost, LTV, ROI a roční cashflow u investičních bytů?' }
     ],
+    links: [
+      { rel: 'canonical', href: 'https://www.realityscanner.cz/metodika' }
+    ]
   }),
   component: Metodika,
 });
