@@ -5,8 +5,7 @@ export function Footer() {
   return (
     <footer className="border-t border-border bg-[var(--color-surface)] px-5 py-4 text-xs text-muted-foreground">
       <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-2">
-        <div>© {new Date().getFullYear()} RealityScanner · {OPERATOR.name} · IČO {OPERATOR.ico}<br />
-          {OPERATOR.address} · <a href={`mailto:${OPERATOR.email}`} className="hover:text-foreground">{OPERATOR.email}</a>
+        <div>© 2026 RealityScanner · Ing. Kamil Němec · IČO 88549836<br />
         </div>
         <nav className="flex flex-wrap items-center gap-4">
           <Link to="/cenik" className="hover:text-foreground">Ceník</Link>
