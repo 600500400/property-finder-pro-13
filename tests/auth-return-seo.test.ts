@@ -76,12 +76,16 @@ describe("public pages and operator", () => {
       expect(readFileSync("src/routes/" + name + ".tsx", "utf8")).not.toContain("DOPLNIT");
     }
   });
-  it("makes the four new public pages eligible for sitemap", () => {
+  it("makes the public guide pages eligible for sitemap", () => {
     for (const name of [
       "kontakt",
       "investicni-nemovitosti",
       "kalkulacka-vynosu",
       "jak-poznat-predrazeny-byt",
+      "kde-koupit-investicni-byt-2026",
+      "kolik-vydelava-byt-2kk-brno",
+      "5-chyb-investora-do-nemovitosti",
+      "sreality-vs-bezrealitky-srovnani",
     ]) {
       expect(readFileSync("src/routes/" + name + ".tsx", "utf8")).toContain("sitemap: true");
     }

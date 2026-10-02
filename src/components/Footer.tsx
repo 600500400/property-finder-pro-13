@@ -16,6 +16,10 @@ export function Footer() {
               <Link to="/investicni-nemovitosti" className="hover:text-foreground">Investiční nemovitosti</Link>
               <Link to="/kalkulacka-vynosu" className="hover:text-foreground">Kalkulačka výnosu</Link>
               <Link to="/jak-poznat-predrazeny-byt" className="hover:text-foreground">Jak porovnat cenu</Link>
+              <Link to="/kde-koupit-investicni-byt-2026" className="hover:text-foreground">Kde koupit byt 2026</Link>
+              <Link to="/kolik-vydelava-byt-2kk-brno" className="hover:text-foreground">Výnos 2+kk v Brně</Link>
+              <Link to="/5-chyb-investora-do-nemovitosti" className="hover:text-foreground">5 chyb investora</Link>
+              <Link to="/sreality-vs-bezrealitky-srovnani" className="hover:text-foreground">Sreality vs Bezrealitky</Link>
             </div>
           </details>
           <Link to="/kontakt" className="hover:text-foreground">Kontakt</Link>

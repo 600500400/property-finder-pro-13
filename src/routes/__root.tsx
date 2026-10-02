@@ -101,6 +101,17 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       },
     ],
     scripts: [
+      ...(import.meta.env.VITE_GA_MEASUREMENT_ID
+        ? [
+            {
+              src: `https://www.googletagmanager.com/gtag/js?id=${import.meta.env.VITE_GA_MEASUREMENT_ID}`,
+              async: true,
+            },
+            {
+              children: `window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${import.meta.env.VITE_GA_MEASUREMENT_ID}',{send_page_view:false});`,
+            },
+          ]
+        : []),
       {
         type: "application/ld+json",
         children: JSON.stringify({
@@ -121,7 +132,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
               "url": "https://www.realityscanner.cz/",
               "applicationCategory": "BusinessApplication",
               "operatingSystem": "Web Browser",
-              "description": "Nástroj pro analýzu investičních nemovitostí v ČR. Výpočet čistého výnosu z nájmu a srovnání cen s daty ČSÚ.",
+              "description": "Nástroj pro analýzu investičních nemovitostí v ČR. Výpočet výnosu z nájmu a srovnání cen s daty ČSÚ.",
               "offers": {
                 "@type": "Offer",
                 "price": "0",
@@ -160,12 +171,52 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const router = useRouter();
+
   useEffect(() => {
     try {
       const referrer = new URL(document.referrer);
       if (/(^|\.)(google\.[a-z.]+|bing\.com|search\.seznam\.cz)$/.test(referrer.hostname)) emitConversion("organic_landing");
     } catch { /* Direct navigation: no referrer. */ }
   }, []);
+
+  // GA4 Page View Tracking on initial load and route changes
+  useEffect(() => {
+    const gaId = import.meta.env.VITE_GA_MEASUREMENT_ID;
+    if (!gaId || typeof window === "undefined") return;
+
+    if (typeof (window as unknown as { gtag?: (...args: unknown[]) => void }).gtag === "function") {
+      (window as unknown as { gtag: (...args: unknown[]) => void }).gtag("event", "page_view", {
+        page_path: window.location.pathname,
+      });
+    }
+
+    const unsub = router.subscribe("onResolved", ({ toLocation }) => {
+      if (typeof (window as unknown as { gtag?: (...args: unknown[]) => void }).gtag === "function") {
+        (window as unknown as { gtag: (...args: unknown[]) => void }).gtag("event", "page_view", {
+          page_path: toLocation.pathname,
+        });
+      }
+    });
+    return () => unsub();
+  }, [router]);
+
+  // Forward custom conversion events to GA4
+  useEffect(() => {
+    const handleConversion = (e: Event) => {
+      const customEvent = e as CustomEvent<{ event: string }>;
+      if (
+        typeof window !== "undefined" &&
+        typeof (window as unknown as { gtag?: (...args: unknown[]) => void }).gtag === "function" &&
+        customEvent.detail?.event
+      ) {
+        (window as unknown as { gtag: (...args: unknown[]) => void }).gtag("event", customEvent.detail.event);
+      }
+    };
+    window.addEventListener("realityscanner:conversion", handleConversion);
+    return () => window.removeEventListener("realityscanner:conversion", handleConversion);
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <AuthSync />

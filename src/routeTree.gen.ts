@@ -9,16 +9,20 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SrealityVsBezrealitkySrovnaniRouteImport } from './routes/sreality-vs-bezrealitky-srovnani'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as OchranaOsobnichUdajuRouteImport } from './routes/ochrana-osobnich-udaju'
 import { Route as ObchodniPodminkyRouteImport } from './routes/obchodni-podminky'
 import { Route as MetodikaRouteImport } from './routes/metodika'
 import { Route as KontaktRouteImport } from './routes/kontakt'
+import { Route as KolikVydelavaByt2kkBrnoRouteImport } from './routes/kolik-vydelava-byt-2kk-brno'
+import { Route as KdeKoupitInvesticniByt2026RouteImport } from './routes/kde-koupit-investicni-byt-2026'
 import { Route as KalkulackaVynosuRouteImport } from './routes/kalkulacka-vynosu'
 import { Route as JakPoznatPredrazenyBytRouteImport } from './routes/jak-poznat-predrazeny-byt'
 import { Route as InvesticniNemovitostiRouteImport } from './routes/investicni-nemovitosti'
 import { Route as CenikRouteImport } from './routes/cenik'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as R5ChybInvestoraDoNemovitostiRouteImport } from './routes/5-chyb-investora-do-nemovitosti'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedWatchdogsRouteImport } from './routes/_authenticated/watchdogs'
@@ -40,6 +44,12 @@ import { Route as ApiPublicCronHealthCheckRouteImport } from './routes/api/publi
 import { Route as ApiPublicCronDailyDigestRouteImport } from './routes/api/public/cron/daily-digest'
 import { Route as ApiPublicCronCsuCalibrationRouteImport } from './routes/api/public/cron/csu-calibration'
 
+const SrealityVsBezrealitkySrovnaniRoute =
+  SrealityVsBezrealitkySrovnaniRouteImport.update({
+    id: '/sreality-vs-bezrealitky-srovnani',
+    path: '/sreality-vs-bezrealitky-srovnani',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
   path: '/sitemap.xml',
@@ -65,6 +75,17 @@ const KontaktRoute = KontaktRouteImport.update({
   path: '/kontakt',
   getParentRoute: () => rootRouteImport,
 } as any)
+const KolikVydelavaByt2kkBrnoRoute = KolikVydelavaByt2kkBrnoRouteImport.update({
+  id: '/kolik-vydelava-byt-2kk-brno',
+  path: '/kolik-vydelava-byt-2kk-brno',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const KdeKoupitInvesticniByt2026Route =
+  KdeKoupitInvesticniByt2026RouteImport.update({
+    id: '/kde-koupit-investicni-byt-2026',
+    path: '/kde-koupit-investicni-byt-2026',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const KalkulackaVynosuRoute = KalkulackaVynosuRouteImport.update({
   id: '/kalkulacka-vynosu',
   path: '/kalkulacka-vynosu',
@@ -90,6 +111,12 @@ const AuthRoute = AuthRouteImport.update({
   path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
+const R5ChybInvestoraDoNemovitostiRoute =
+  R5ChybInvestoraDoNemovitostiRouteImport.update({
+    id: '/5-chyb-investora-do-nemovitosti',
+    path: '/5-chyb-investora-do-nemovitosti',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
   id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
@@ -204,16 +231,20 @@ const ApiPublicCronCsuCalibrationRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/5-chyb-investora-do-nemovitosti': typeof R5ChybInvestoraDoNemovitostiRoute
   '/auth': typeof AuthRoute
   '/cenik': typeof CenikRoute
   '/investicni-nemovitosti': typeof InvesticniNemovitostiRoute
   '/jak-poznat-predrazeny-byt': typeof JakPoznatPredrazenyBytRoute
   '/kalkulacka-vynosu': typeof KalkulackaVynosuRoute
+  '/kde-koupit-investicni-byt-2026': typeof KdeKoupitInvesticniByt2026Route
+  '/kolik-vydelava-byt-2kk-brno': typeof KolikVydelavaByt2kkBrnoRoute
   '/kontakt': typeof KontaktRoute
   '/metodika': typeof MetodikaRoute
   '/obchodni-podminky': typeof ObchodniPodminkyRoute
   '/ochrana-osobnich-udaju': typeof OchranaOsobnichUdajuRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/sreality-vs-bezrealitky-srovnani': typeof SrealityVsBezrealitkySrovnaniRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/health': typeof AuthenticatedHealthRoute
   '/nastaveni-investora': typeof AuthenticatedNastaveniInvestoraRoute
@@ -235,16 +266,20 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/5-chyb-investora-do-nemovitosti': typeof R5ChybInvestoraDoNemovitostiRoute
   '/auth': typeof AuthRoute
   '/cenik': typeof CenikRoute
   '/investicni-nemovitosti': typeof InvesticniNemovitostiRoute
   '/jak-poznat-predrazeny-byt': typeof JakPoznatPredrazenyBytRoute
   '/kalkulacka-vynosu': typeof KalkulackaVynosuRoute
+  '/kde-koupit-investicni-byt-2026': typeof KdeKoupitInvesticniByt2026Route
+  '/kolik-vydelava-byt-2kk-brno': typeof KolikVydelavaByt2kkBrnoRoute
   '/kontakt': typeof KontaktRoute
   '/metodika': typeof MetodikaRoute
   '/obchodni-podminky': typeof ObchodniPodminkyRoute
   '/ochrana-osobnich-udaju': typeof OchranaOsobnichUdajuRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/sreality-vs-bezrealitky-srovnani': typeof SrealityVsBezrealitkySrovnaniRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/health': typeof AuthenticatedHealthRoute
   '/nastaveni-investora': typeof AuthenticatedNastaveniInvestoraRoute
@@ -268,16 +303,20 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
+  '/5-chyb-investora-do-nemovitosti': typeof R5ChybInvestoraDoNemovitostiRoute
   '/auth': typeof AuthRoute
   '/cenik': typeof CenikRoute
   '/investicni-nemovitosti': typeof InvesticniNemovitostiRoute
   '/jak-poznat-predrazeny-byt': typeof JakPoznatPredrazenyBytRoute
   '/kalkulacka-vynosu': typeof KalkulackaVynosuRoute
+  '/kde-koupit-investicni-byt-2026': typeof KdeKoupitInvesticniByt2026Route
+  '/kolik-vydelava-byt-2kk-brno': typeof KolikVydelavaByt2kkBrnoRoute
   '/kontakt': typeof KontaktRoute
   '/metodika': typeof MetodikaRoute
   '/obchodni-podminky': typeof ObchodniPodminkyRoute
   '/ochrana-osobnich-udaju': typeof OchranaOsobnichUdajuRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/sreality-vs-bezrealitky-srovnani': typeof SrealityVsBezrealitkySrovnaniRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/health': typeof AuthenticatedHealthRoute
   '/_authenticated/nastaveni-investora': typeof AuthenticatedNastaveniInvestoraRoute
@@ -301,16 +340,20 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/5-chyb-investora-do-nemovitosti'
     | '/auth'
     | '/cenik'
     | '/investicni-nemovitosti'
     | '/jak-poznat-predrazeny-byt'
     | '/kalkulacka-vynosu'
+    | '/kde-koupit-investicni-byt-2026'
+    | '/kolik-vydelava-byt-2kk-brno'
     | '/kontakt'
     | '/metodika'
     | '/obchodni-podminky'
     | '/ochrana-osobnich-udaju'
     | '/sitemap.xml'
+    | '/sreality-vs-bezrealitky-srovnani'
     | '/admin'
     | '/health'
     | '/nastaveni-investora'
@@ -332,16 +375,20 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/5-chyb-investora-do-nemovitosti'
     | '/auth'
     | '/cenik'
     | '/investicni-nemovitosti'
     | '/jak-poznat-predrazeny-byt'
     | '/kalkulacka-vynosu'
+    | '/kde-koupit-investicni-byt-2026'
+    | '/kolik-vydelava-byt-2kk-brno'
     | '/kontakt'
     | '/metodika'
     | '/obchodni-podminky'
     | '/ochrana-osobnich-udaju'
     | '/sitemap.xml'
+    | '/sreality-vs-bezrealitky-srovnani'
     | '/admin'
     | '/health'
     | '/nastaveni-investora'
@@ -364,16 +411,20 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/_authenticated'
+    | '/5-chyb-investora-do-nemovitosti'
     | '/auth'
     | '/cenik'
     | '/investicni-nemovitosti'
     | '/jak-poznat-predrazeny-byt'
     | '/kalkulacka-vynosu'
+    | '/kde-koupit-investicni-byt-2026'
+    | '/kolik-vydelava-byt-2kk-brno'
     | '/kontakt'
     | '/metodika'
     | '/obchodni-podminky'
     | '/ochrana-osobnich-udaju'
     | '/sitemap.xml'
+    | '/sreality-vs-bezrealitky-srovnani'
     | '/_authenticated/admin'
     | '/_authenticated/health'
     | '/_authenticated/nastaveni-investora'
@@ -397,16 +448,20 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
+  R5ChybInvestoraDoNemovitostiRoute: typeof R5ChybInvestoraDoNemovitostiRoute
   AuthRoute: typeof AuthRoute
   CenikRoute: typeof CenikRoute
   InvesticniNemovitostiRoute: typeof InvesticniNemovitostiRoute
   JakPoznatPredrazenyBytRoute: typeof JakPoznatPredrazenyBytRoute
   KalkulackaVynosuRoute: typeof KalkulackaVynosuRoute
+  KdeKoupitInvesticniByt2026Route: typeof KdeKoupitInvesticniByt2026Route
+  KolikVydelavaByt2kkBrnoRoute: typeof KolikVydelavaByt2kkBrnoRoute
   KontaktRoute: typeof KontaktRoute
   MetodikaRoute: typeof MetodikaRoute
   ObchodniPodminkyRoute: typeof ObchodniPodminkyRoute
   OchranaOsobnichUdajuRoute: typeof OchranaOsobnichUdajuRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  SrealityVsBezrealitkySrovnaniRoute: typeof SrealityVsBezrealitkySrovnaniRoute
   ApiPublicCronCsuCalibrationRoute: typeof ApiPublicCronCsuCalibrationRoute
   ApiPublicCronDailyDigestRoute: typeof ApiPublicCronDailyDigestRoute
   ApiPublicCronHealthCheckRoute: typeof ApiPublicCronHealthCheckRoute
@@ -423,6 +478,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/sreality-vs-bezrealitky-srovnani': {
+      id: '/sreality-vs-bezrealitky-srovnani'
+      path: '/sreality-vs-bezrealitky-srovnani'
+      fullPath: '/sreality-vs-bezrealitky-srovnani'
+      preLoaderRoute: typeof SrealityVsBezrealitkySrovnaniRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/sitemap.xml': {
       id: '/sitemap.xml'
       path: '/sitemap.xml'
@@ -458,6 +520,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof KontaktRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/kolik-vydelava-byt-2kk-brno': {
+      id: '/kolik-vydelava-byt-2kk-brno'
+      path: '/kolik-vydelava-byt-2kk-brno'
+      fullPath: '/kolik-vydelava-byt-2kk-brno'
+      preLoaderRoute: typeof KolikVydelavaByt2kkBrnoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/kde-koupit-investicni-byt-2026': {
+      id: '/kde-koupit-investicni-byt-2026'
+      path: '/kde-koupit-investicni-byt-2026'
+      fullPath: '/kde-koupit-investicni-byt-2026'
+      preLoaderRoute: typeof KdeKoupitInvesticniByt2026RouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/kalkulacka-vynosu': {
       id: '/kalkulacka-vynosu'
       path: '/kalkulacka-vynosu'
@@ -491,6 +567,13 @@ declare module '@tanstack/react-router' {
       path: '/auth'
       fullPath: '/auth'
       preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/5-chyb-investora-do-nemovitosti': {
+      id: '/5-chyb-investora-do-nemovitosti'
+      path: '/5-chyb-investora-do-nemovitosti'
+      fullPath: '/5-chyb-investora-do-nemovitosti'
+      preLoaderRoute: typeof R5ChybInvestoraDoNemovitostiRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated': {
@@ -660,16 +743,20 @@ const AuthenticatedRouteRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
+  R5ChybInvestoraDoNemovitostiRoute: R5ChybInvestoraDoNemovitostiRoute,
   AuthRoute: AuthRoute,
   CenikRoute: CenikRoute,
   InvesticniNemovitostiRoute: InvesticniNemovitostiRoute,
   JakPoznatPredrazenyBytRoute: JakPoznatPredrazenyBytRoute,
   KalkulackaVynosuRoute: KalkulackaVynosuRoute,
+  KdeKoupitInvesticniByt2026Route: KdeKoupitInvesticniByt2026Route,
+  KolikVydelavaByt2kkBrnoRoute: KolikVydelavaByt2kkBrnoRoute,
   KontaktRoute: KontaktRoute,
   MetodikaRoute: MetodikaRoute,
   ObchodniPodminkyRoute: ObchodniPodminkyRoute,
   OchranaOsobnichUdajuRoute: OchranaOsobnichUdajuRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
+  SrealityVsBezrealitkySrovnaniRoute: SrealityVsBezrealitkySrovnaniRoute,
   ApiPublicCronCsuCalibrationRoute: ApiPublicCronCsuCalibrationRoute,
   ApiPublicCronDailyDigestRoute: ApiPublicCronDailyDigestRoute,
   ApiPublicCronHealthCheckRoute: ApiPublicCronHealthCheckRoute,
