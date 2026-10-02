@@ -10,10 +10,6 @@ const FAQ_ITEMS = [
     a: "Tržní nájem modelujeme kaskádově. Přednostně bereme medián skutečných aktivních pronájmů v naší databázi v daném kraji u nemovitostí podobné velikosti (± 20 %, min. 5 vzorků). Pokud vzorky chybí, využíváme denně aktualizovaný medián okresu ze Sreality (kalibrovaný na Deloitte Rent Index a ČSÚ). Výslednou sazbu korigujeme podle dispozice (garsonky mají vyšší cenu za m², velké byty nižší) a u družstevních bytů zohledňujeme 8% diskont kvůli omezením."
   },
   {
-    q: "Co všechno pokrývá 15% paušální srážka u čistého výnosu?",
-    a: "Srážka pokrývá běžné provozní náklady majitele a ztráty, které nelze přenést na nájemníka: příspěvek do fondu oprav / SVJ, daň z nemovitých věcí, pojištění nemovitosti, náklady na inzerci a správu, drobné opravy a průměrnou neobsazenost (cca 1 měsíc za 2 roky). Srážka záměrně neobsahuje hypoteční splátky, protože výnos vyjadřuje výkonnost nemovitosti samotné bez ohledu na způsob financování."
-  },
-  {
     q: "Proč u rodinných domů nepočítáte nájemní výnos jako u bytů?",
     a: "Na rozdíl od bytů se rodinné domy v ČR pronajímají jen minimálně a nabídka je příliš různorodá. Modelovat fiktivní nájem rodinného domu z dat o bytech by vedlo k nereálným číslům. Místo toho u domů srovnáváme reálnou nabídkovou cenu za m² se skutečně realizovanými kupními cenami z databáze Českého statistického úřadu (ČSÚ) pro daný okres a velikostní kategorii."
   },
@@ -37,9 +33,9 @@ export const Route = createFileRoute("/metodika")({
   head: () => ({
     meta: [
       { title: "Metodika výpočtu výnosu a ocenění nemovitostí | RealityScanner" },
-      { name: "description", content: "Jak přesně počítáme hrubý a čistý výnos z pronájmu, návratnost a srovnání cen rodinných domů vůči realizovaným kupním cenám ČSÚ. Transparentní vzorce a metodika." },
+      { name: "description", content: "Jak přesně počítáme výnos z pronájmu, návratnost a srovnání cen rodinných domů vůči realizovaným kupním cenám ČSÚ. Transparentní vzorce a metodika." },
       { property: "og:title", content: "Metodika výpočtu výnosu a ocenění nemovitostí | RealityScanner" },
-      { property: "og:description", content: "Jak přesně počítáme hrubý a čistý výnos z pronájmu, návratnost a srovnání cen domů s ČSÚ." },
+      { property: "og:description", content: "Jak přesně počítáme výnos z pronájmu, návratnost a srovnání cen domů s ČSÚ." },
       { property: "og:type", content: "website" },
       { property: "og:url", content: "https://www.realityscanner.cz/metodika" },
       { property: "og:image", content: "https://www.realityscanner.cz/og-image.jpg" },
@@ -47,7 +43,7 @@ export const Route = createFileRoute("/metodika")({
       { property: "og:image:height", content: "630" },
       { property: "og:image:type", content: "image/jpeg" },
       { name: "twitter:title", content: "Metodika výpočtu výnosu a ocenění nemovitostí | RealityScanner" },
-      { name: "twitter:description", content: "Jak přesně počítáme hrubý a čistý výnos z pronájmu, návratnost a srovnání cen domů s ČSÚ." },
+      { name: "twitter:description", content: "Jak přesně počítáme výnos z pronájmu, návratnost a srovnání cen domů s ČSÚ." },
       { name: "twitter:image", content: "https://www.realityscanner.cz/og-image.jpg" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
@@ -97,7 +93,7 @@ function Metodika() {
           </h1>
           <p className="mt-3 max-w-3xl text-base text-muted-foreground">
             Žádná „černá skříňka“ ani náhodné odhady. Vysvětlujeme krok za krokem, jak u každého inzerátu
-            modelujeme tržní nájem, jak kalkulujeme čistý výnos a jak srovnáváme ceny rodinných domů
+            modelujeme tržní nájem, jak kalkulujeme výnos a jak srovnáváme ceny rodinných domů
             s oficiálními realizovanými prodeji Českého statistického úřadu (ČSÚ).
           </p>
         </div>
@@ -142,7 +138,7 @@ function Metodika() {
               1. Výpočet výnosu z nájmu u bytů
             </h2>
             <p className="text-xs text-muted-foreground">
-              Jak u každého bytu zjistíme odhad nájmu, hrubý a čistý výnos a návratnost v letech.
+              Jak u každého bytu zjistíme odhad nájmu, výnos a návratnost v letech.
             </p>
           </div>
 
@@ -187,7 +183,7 @@ function Metodika() {
           {/* KROK B: VZORCE A PŘÍKLAD */}
           <div className="rounded-xl border border-border bg-[var(--color-surface)] p-5">
             <h3 className="text-base font-semibold text-foreground">
-              B) Hrubý výnos, čistý výnos a návratnost
+              B) Výnos a návratnost
             </h3>
 
             <div className="mt-4 grid gap-4 sm:grid-cols-2">
@@ -200,10 +196,10 @@ function Metodika() {
               </div>
 
               <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-3.5">
-                <div className="text-xs font-bold text-emerald-400 uppercase">Čistý výnos (Net Yield)</div>
-                <div className="mt-1 font-mono text-sm font-semibold">hrubý výnos × 0,85</div>
+                <div className="text-xs font-bold text-emerald-400 uppercase">Výnos p.a.</div>
+                <div className="mt-1 font-mono text-sm font-semibold">roční nájem ÷ kupní cena × 100</div>
                 <p className="mt-2 text-xs text-muted-foreground">
-                  Realistický pohled pro investora: z hrubého nájmu střízlivě odečítáme 15% paušál na nezbytné provozní náklady a neobsazenost.
+                  Kolik procent z pořizovací ceny nemovitost vygeneruje na nájmu za rok. Pro detailní kalkulaci s vlastními náklady použijte kalkulačku.
                 </p>
               </div>
             </div>
@@ -229,15 +225,13 @@ function Metodika() {
                 </div>
                 <div>
                   <span className="text-muted-foreground">Výsledek v RealityScanneru:</span>
-                  <div className="font-mono text-sm font-bold text-emerald-400">Čistý výnos 3,6 %</div>
-                  <div className="text-[10px] text-muted-foreground">Hrubý 4,3 % · Návratnost 23,4 let</div>
+                  <div className="font-mono text-sm font-bold text-emerald-400">Výnos 4,3 %</div>
+                  <div className="text-[10px] text-muted-foreground">Návratnost 23,4 let</div>
                 </div>
               </div>
             </div>
 
-            <div className="mt-4 text-xs text-muted-foreground">
-              <strong>Proč paušální srážka 15 %?</strong> Pokrývá fond oprav a příspěvek do SVJ, daň z nemovitých věcí, pojištění nemovitosti, náklady na inzerci, správu, drobné opravy a rezervu na neobsazenost (typicky 1 měsíc za 2 roky). Hypoteční splátky v srážce <em>nejsou</em>, protože výnos vyjadřuje výkonnost nemovitosti samotné bez ohledu na způsob financování.
-            </div>
+
           </div>
 
           {/* KROK C: ŠKÁLA HVĚZDIČEK */}
@@ -246,14 +240,14 @@ function Metodika() {
               C) Jak hodnotíme atraktivitu investice (hvězdičky)
             </h3>
             <p className="mt-1 text-xs text-muted-foreground">
-              Klasifikace vychází z českého realitního trhu v letech 2024–2026, kde se běžný čistý výnos standardních bytů pohybuje mezi 3 a 5 %:
+              Klasifikace vychází z českého realitního trhu v letech 2024–2026, kde se běžný výnos standardních bytů pohybuje mezi 3 a 5 %:
             </p>
 
             <div className="mt-3 overflow-x-auto rounded-lg border border-border">
               <table className="w-full text-left">
                 <thead className="bg-[var(--color-surface-2)] text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                   <tr>
-                    <th className="px-3 py-2">Čistý výnos</th>
+                    <th className="px-3 py-2">Výnos</th>
                     <th className="px-3 py-2">Slovní verdikt</th>
                     <th className="px-3 py-2">Hodnocení</th>
                     <th className="px-3 py-2">Co to znamená pro investora</th>
@@ -344,10 +338,7 @@ function Metodika() {
 
         <section className="mt-8 rounded-xl border border-border p-5">
           <h2 className="text-xl font-semibold">Vlastní scénář v kalkulačce</h2>
-          <p className="mt-3 text-sm text-muted-foreground">Samostatná <Link to="/kalkulacka-vynosu" className="text-primary hover:underline">kalkulačka výnosu</Link> používá Vámi zadané náklady a neobsazenost místo automatické 15% paušální srážky na kartách.
-            Hrubý výnos = měsíční nájem × 12 ÷ celková pořizovací cena.
-            Čistý provozní výnos = (měsíční nájem × 12 × (1 − neobsazenost) − měsíční náklady majitele × 12) ÷ celková pořizovací cena.
-            Oba podíly násobíme 100 pro výsledek v procentech. Výpočet nezahrnuje financování a daň z příjmů.</p>
+          <p className="mt-3 text-sm text-muted-foreground">Samostatná <Link to="/kalkulacka-vynosu" className="text-primary hover:underline">kalkulačka výnosu</Link> používá Vámi zadané náklady a neobsazenost pro detailnější výpočet.</p>
         </section>
 
         {/* SEKCIE 3: KOMPROMISY A TRANSPARENTNOST */}

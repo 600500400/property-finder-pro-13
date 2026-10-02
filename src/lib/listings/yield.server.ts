@@ -75,7 +75,7 @@ export function computeHybridYield(args: {
     if (args.ownership === "druzstevni") monthly = Math.round(monthly * 0.92);
     const annual = monthly * 12;
     const gross = (annual / args.price) * 100;
-    const net = gross * 0.85;
+    const net = gross;
     const payback = args.price / annual;
     let stars: number; let verdict: string;
     if (net >= 6) { stars = 5; verdict = "Výborná investice 🏆"; }

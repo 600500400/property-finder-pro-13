@@ -490,7 +490,7 @@ function ListingFull({ listing, rank }: { listing: Listing; rank?: number }) {
                 </span>
               )}
               <span className="mt-1 text-[10px] uppercase tracking-wider text-muted-foreground">
-                čistý výnos p.a.
+                výnos p.a.
               </span>
             </div>
             <div className="flex flex-col items-end gap-1">
@@ -500,7 +500,7 @@ function ListingFull({ listing, rank }: { listing: Listing; rank?: number }) {
           </div>
 
           <div className="grid grid-cols-3 gap-2 border-t border-border/40 pt-2">
-            <Metric label="Hrubý výnos" value={trap ? "—" : `${inv.gross_yield.toString().replace(".", ",")} %`} />
+            <Metric label="Výnos p.a." value={trap ? "—" : `${inv.gross_yield.toString().replace(".", ",")} %`} />
             <Metric label="Nájem/měs." value={`${inv.monthly_rent.toLocaleString("cs-CZ")} Kč`} />
             <Metric label="Návratnost" value={`${inv.payback_years} let`} />
           </div>
@@ -627,7 +627,7 @@ function ListingCompact({ listing }: { listing: Listing }) {
         const t = tierOf(inv.stars);
         return (
           <div className={`flex items-center justify-between rounded-sm px-1.5 py-1 text-[10px] ${TIER_VERDICT[t]}`}>
-            <span className={`font-mono font-semibold ${TIER_YIELD[t]}`}>{inv.net_yield}% čistý</span>
+            <span className={`font-mono font-semibold ${TIER_YIELD[t]}`}>{inv.net_yield}% výnos</span>
             <span className={`font-mono tracking-wider ${TIER_STARS[t]}`}>
               {"★".repeat(inv.stars)}
             </span>

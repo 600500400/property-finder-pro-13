@@ -16,12 +16,12 @@ describe("calcYield (static / benchmark fallback path)", () => {
   it("computes gross & net yield using district-level rent (Praha 9)", () => {
     const r = calcYield(5_000_000, "praha", "byty", 60, "2+kk", "Praha 9", "osobni", bench);
     // perM2 = 360, disp(2+kk)=1.05, type=1.0 → 378 Kč/m² → monthly = 378*60 = 22 680
-    // gross = 22680*12/5_000_000 *100 = 5.44 %  → net = 4.62
+    // gross = 22680*12/5_000_000 *100 = 5.44 %  → net = 5.44
     expect(r).not.toBeNull();
     expect(r!.monthly_rent).toBe(22680);
     expect(r!.gross_yield).toBeCloseTo(5.44, 1);
-    expect(r!.net_yield).toBeCloseTo(4.62, 1);
-    expect(r!.stars).toBe(3);
+    expect(r!.net_yield).toBeCloseTo(5.44, 1);
+    expect(r!.stars).toBe(4);
   });
 
   it("falls back to region benchmark when no district/okres match (Jihomoravský)", () => {

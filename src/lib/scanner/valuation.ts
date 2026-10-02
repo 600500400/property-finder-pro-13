@@ -252,7 +252,7 @@ export function calcYield(
   if (ownership === "druzstevni") monthly = Math.round(monthly * 0.92);
   const annual = monthly * 12;
   const gross = (annual / price) * 100;
-  const net = gross * 0.85;
+  const net = gross;
   const payback = price / annual;
 
   let stars: number;

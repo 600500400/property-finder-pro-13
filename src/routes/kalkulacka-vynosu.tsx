@@ -101,8 +101,7 @@ function Calculator() {
           po financování. Náklady zadávejte bez neobsazenosti, kterou kalkulačka odečítá zvlášť.
         </p>
         <p className="mt-3 text-muted-foreground">
-          Na kartách skeneru je automatický orientační odhad s paušální srážkou 15 %. Zde tuto
-          srážku nahrazujete vlastními náklady a neobsazeností, proto se výsledky mohou lišit.{" "}
+          Skener zobrazuje orientační hrubý výnos. Zde ho upřesňujete vlastními náklady a neobsazeností.{" "}
           <Link to="/metodika" className="text-primary hover:underline">
             Více v metodice.
           </Link>

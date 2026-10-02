@@ -46,7 +46,7 @@ Owner: Kamil. Communicate with him in Czech. Code, commit messages and comments 
 ## Yield calculator
 - Max 4 visible inputs: purchase price, monthly rent, owner's monthly costs, vacancy. All prefilled, editable; estimates labelled `odhad` with their source.
 - Gross yield = rent × 12 ÷ price
-- Net yield = (rent × 12 × (1 − vacancy) − owner costs × 12) ÷ price
+- Net yield = Gross yield (no flat deduction applied; use the calculator for custom costs)
 - Owner costs = what is not recharged to the tenant (repair fund, insurance, property tax, management).
 - Always render the calculation in words with the actual numbers, e.g.
   `15 000 Kč × 12 = 180 000 Kč ročně ÷ 4 500 000 Kč = 4,0 %`
