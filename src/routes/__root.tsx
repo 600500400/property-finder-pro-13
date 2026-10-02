@@ -9,6 +9,8 @@ import { Toaster } from "@/components/ui/sonner";
 import { OPERATOR, SITE_URL } from "@/lib/site";
 import { emitConversion } from "@/lib/conversion-events";
 
+const GA_MEASUREMENT_ID = (import.meta.env.VITE_GA_MEASUREMENT_ID as string) || "G-HL1FMNLRC9";
+
 
 function NotFoundComponent() {
   return (
@@ -101,14 +103,14 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       },
     ],
     scripts: [
-      ...(import.meta.env.VITE_GA_MEASUREMENT_ID
+      ...(GA_MEASUREMENT_ID
         ? [
             {
-              src: `https://www.googletagmanager.com/gtag/js?id=${import.meta.env.VITE_GA_MEASUREMENT_ID}`,
+              src: `https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`,
               async: true,
             },
             {
-              children: `window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${import.meta.env.VITE_GA_MEASUREMENT_ID}',{send_page_view:false});`,
+              children: `window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${GA_MEASUREMENT_ID}',{send_page_view:false});`,
             },
           ]
         : []),
@@ -182,8 +184,7 @@ function RootComponent() {
 
   // GA4 Page View Tracking on initial load and route changes
   useEffect(() => {
-    const gaId = import.meta.env.VITE_GA_MEASUREMENT_ID;
-    if (!gaId || typeof window === "undefined") return;
+    if (!GA_MEASUREMENT_ID || typeof window === "undefined") return;
 
     if (typeof (window as unknown as { gtag?: (...args: unknown[]) => void }).gtag === "function") {
       (window as unknown as { gtag: (...args: unknown[]) => void }).gtag("event", "page_view", {
