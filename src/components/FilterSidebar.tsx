@@ -288,11 +288,25 @@ export function FilterSidebar({ filters, setFilters, view, setView, onExport, ca
       </div>
 
 
-      <div className="mt-3 hidden flex-wrap items-center gap-x-3 gap-y-1 border-t border-border pt-3 text-[11px] text-muted-foreground md:flex">
-        <Link to="/cenik" className="hover:text-foreground">Ceník</Link>
-        <Link to="/metodika" className="hover:text-foreground">Metodika</Link>
-        <Link to="/obchodni-podminky" className="hover:text-foreground">Podmínky</Link>
-        <Link to="/ochrana-osobnich-udaju" className="hover:text-foreground">Soukromí</Link>
+      <div className="mt-3 hidden flex-col gap-1.5 border-t border-border pt-3 text-[11px] text-muted-foreground md:flex">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+          <Link to="/cenik" className="hover:text-foreground">Ceník</Link>
+          <Link to="/metodika" className="hover:text-foreground">Metodika</Link>
+          <Link to="/obchodni-podminky" className="hover:text-foreground">Podmínky</Link>
+          <Link to="/ochrana-osobnich-udaju" className="hover:text-foreground">Soukromí</Link>
+        </div>
+        <details className="mt-1">
+          <summary className="cursor-pointer font-medium hover:text-foreground">Průvodce investováním ▾</summary>
+          <div className="mt-1 flex flex-col gap-1 pl-1 text-[11px]">
+            <Link to="/kde-koupit-investicni-byt-2026" className="text-primary hover:underline">Kde koupit byt 2026</Link>
+            <Link to="/kolik-vydelava-byt-2kk-brno" className="text-primary hover:underline">Výnos 2+kk v Brně</Link>
+            <Link to="/5-chyb-investora-do-nemovitosti" className="text-primary hover:underline">5 chyb investora</Link>
+            <Link to="/sreality-vs-bezrealitky-srovnani" className="text-primary hover:underline">Sreality vs Bezrealitky</Link>
+            <Link to="/investicni-nemovitosti" className="hover:text-foreground">Jak vybrat nemovitost</Link>
+            <Link to="/kalkulacka-vynosu" className="hover:text-foreground">Kalkulačka výnosu</Link>
+            <Link to="/jak-poznat-predrazeny-byt" className="hover:text-foreground">Jak porovnat cenu</Link>
+          </div>
+        </details>
       </div>
 
       <SaveSearchDialog open={watchdogOpen} onClose={() => setWatchdogOpen(false)} filters={filters} />

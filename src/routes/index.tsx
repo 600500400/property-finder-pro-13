@@ -316,7 +316,7 @@ function Index() {
             </div>
           )}
 
-          <div className="mt-8 md:hidden">
+          <div className="mt-12">
             <Footer />
           </div>
         </main>
