@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQueryClient } from "@tanstack/react-query";
@@ -6,10 +7,20 @@ import type { Listing } from "@/lib/scanner/types";
 import { analyzeListing, type AIAnalysisResult } from "@/lib/ai/analyze.functions";
 import { usePlan } from "@/hooks/usePlan";
 import { listingActionId, listingReturnPath } from "@/lib/listing-return";
-import { Loader2, Sparkles, X, AlertTriangle, Crown, ShieldAlert, CheckCircle2, XCircle } from "lucide-react";
+import {
+  Loader2,
+  Sparkles,
+  X,
+  AlertTriangle,
+  Crown,
+  ShieldAlert,
+  CheckCircle2,
+  XCircle,
+} from "lucide-react";
 
 export function AIAnalysisButton({ listing }: { listing: Listing }) {
   const [open, setOpen] = useState(false);
+  const triggerRef = useRef<HTMLButtonElement>(null);
   const { data: plan } = usePlan();
   const tier = plan?.tier ?? "anonymous";
   const isPremium = tier === "premium";
@@ -18,31 +29,46 @@ export function AIAnalysisButton({ listing }: { listing: Listing }) {
   const navigate = useNavigate();
 
   // Anonymous: needs to register first
-  if (tier === "anonymous") {
+  if (!open && tier === "anonymous") {
     return (
       <button
         id={listingActionId("ai", listing)}
+        ref={triggerRef}
         type="button"
-        onClick={(e) => { e.preventDefault(); e.stopPropagation(); navigate({ to: "/auth", search: { next: listingReturnPath("ai", listing, window.location) } }); }}
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          navigate({
+            to: "/auth",
+            search: { next: listingReturnPath("ai", listing, window.location) },
+          });
+        }}
         title="Pro AI analýzu se zaregistrujte — získáte jednu zdarma na vyzkoušení"
         className="flex shrink-0 items-center gap-1 rounded-md border border-primary/40 bg-primary/10 px-2 py-1 text-[10px] font-semibold text-primary hover:bg-primary/20 whitespace-nowrap"
       >
-        <Sparkles className="h-3 w-3 shrink-0" /> AI analýza <span className="opacity-80 text-[9px]">(zdarma)</span>
+        <Sparkles className="h-3 w-3 shrink-0" /> AI analýza{" "}
+        <span className="opacity-80 text-[9px]">(zdarma)</span>
       </button>
     );
   }
 
   // Free user who already spent the sample: push Premium
-  if (!isPremium && sampleUsed) {
+  if (!open && !isPremium && sampleUsed) {
     return (
       <button
         id={listingActionId("ai", listing)}
+        ref={triggerRef}
         type="button"
-        onClick={(e) => { e.preventDefault(); e.stopPropagation(); navigate({ to: "/cenik" }); }}
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          navigate({ to: "/cenik" });
+        }}
         title="Volnou AI analýzu jste již vyčerpali — Premium = 50/měsíc"
         className="flex shrink-0 items-center gap-1 rounded-md border border-amber-500/40 bg-amber-500/10 px-2 py-1 text-[10px] font-semibold text-amber-300 hover:bg-amber-500/20 whitespace-nowrap"
       >
-        <Crown className="h-3 w-3 shrink-0" /> AI analýza <span className="opacity-80 text-[9px]">(Premium)</span>
+        <Crown className="h-3 w-3 shrink-0" /> AI analýza{" "}
+        <span className="opacity-80 text-[9px]">(Premium)</span>
       </button>
     );
   }
@@ -67,19 +93,38 @@ export function AIAnalysisButton({ listing }: { listing: Listing }) {
     <>
       <button
         id={listingActionId("ai", listing)}
+        ref={triggerRef}
         type="button"
-        onClick={(e) => { e.preventDefault(); e.stopPropagation(); setOpen(true); }}
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          setOpen(true);
+        }}
         className="flex shrink-0 items-center gap-1 rounded-md bg-primary/15 px-2 py-1 text-[10px] font-semibold text-primary hover:bg-primary/25 whitespace-nowrap"
       >
         <Sparkles className="h-3 w-3 shrink-0" />
         AI analýza {!isPremium && <span className="opacity-80 text-[9px]">(zdarma)</span>}
       </button>
-      {open && <Dialog listing={listing} onClose={() => setOpen(false)} />}
+      {open && (
+        <Dialog
+          listing={listing}
+          onClose={() => setOpen(false)}
+          onReturnFocus={() => triggerRef.current?.focus()}
+        />
+      )}
     </>
   );
 }
 
-function Dialog({ listing, onClose }: { listing: Listing; onClose: () => void }) {
+function Dialog({
+  listing,
+  onClose,
+  onReturnFocus,
+}: {
+  listing: Listing;
+  onClose: () => void;
+  onReturnFocus: () => void;
+}) {
   const analyze = useServerFn(analyzeListing);
   const qc = useQueryClient();
   const [loading, setLoading] = useState(true);
@@ -105,84 +150,129 @@ function Dialog({ listing, onClose }: { listing: Listing; onClose: () => void })
         if (!cancelled) setLoading(false);
       }
     })();
-    return () => { cancelled = true; };
-  }, [analyze, listing, qc]);
+    return () => {
+      cancelled = true;
+    };
+  }, [analyze, listing.id, qc]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={onClose}>
-      <div
-        className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-border bg-card p-5 shadow-xl"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="mb-3 flex items-start justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <Sparkles className="h-4 w-4 text-primary" />
-            <h3 className="text-sm font-bold">AI investiční analýza</h3>
+    <DialogPrimitive.Root
+      open
+      onOpenChange={(nextOpen) => {
+        if (!nextOpen) onClose();
+      }}
+    >
+      <DialogPrimitive.Portal>
+        <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-black/60" />
+        <DialogPrimitive.Content
+          className="fixed left-1/2 top-1/2 z-50 max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-2xl border border-border bg-card p-5 shadow-xl"
+          onClick={(e) => e.stopPropagation()}
+          onCloseAutoFocus={(e) => {
+            e.preventDefault();
+            onReturnFocus();
+          }}
+        >
+          <div className="sticky top-0 z-10 mb-3 flex items-start justify-between gap-2 bg-card">
+            <div className="flex items-center gap-2">
+              <Sparkles className="h-4 w-4 text-primary" />
+              <DialogPrimitive.Title className="text-sm font-bold">
+                AI investiční analýza
+              </DialogPrimitive.Title>
+            </div>
+            <DialogPrimitive.Close
+              type="button"
+              aria-label="Zavřít AI analýzu"
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+            >
+              <X className="h-5 w-5" />
+            </DialogPrimitive.Close>
           </div>
-          <button onClick={onClose} className="text-muted-foreground hover:text-foreground"><X className="h-4 w-4" /></button>
-        </div>
-        <p className="mb-3 line-clamp-1 text-xs text-muted-foreground">{listing.name} — {listing.locality}</p>
+          <DialogPrimitive.Description className="mb-3 line-clamp-1 text-xs text-muted-foreground">
+            {listing.name} — {listing.locality}
+          </DialogPrimitive.Description>
 
-        {loading && (
-          <div className="flex flex-col items-center gap-2 py-10 text-muted-foreground">
-            <Loader2 className="h-6 w-6 animate-spin text-primary" />
-            <span className="text-xs">AI vyhodnocuje cenu, výnos a rizika…</span>
-          </div>
-        )}
+          {loading && (
+            <div className="flex flex-col items-center gap-2 py-10 text-muted-foreground">
+              <Loader2 className="h-6 w-6 animate-spin text-primary" />
+              <span className="text-xs">AI vyhodnocuje cenu, výnos a rizika…</span>
+            </div>
+          )}
 
-        {error && (
-          <div className="flex items-start gap-2 rounded-lg border border-[var(--color-danger)]/40 bg-[var(--color-danger)]/5 p-3 text-xs text-[var(--color-danger)]">
-            <AlertTriangle className="h-4 w-4 shrink-0" /> {error}
-          </div>
-        )}
+          {error && (
+            <div className="flex items-start gap-2 rounded-lg border border-[var(--color-danger)]/40 bg-[var(--color-danger)]/5 p-3 text-xs text-[var(--color-danger)]">
+              <AlertTriangle className="h-4 w-4 shrink-0" /> {error}
+            </div>
+          )}
 
-        {data && data.ok === false && data.error === "premium_required" && (
-          <div className="flex flex-col items-center gap-3 rounded-lg border border-amber-500/40 bg-amber-500/5 p-5 text-center">
-            <Crown className="h-8 w-8 text-amber-400" />
-            <p className="text-sm font-semibold">AI investiční analýza je Premium funkce.</p>
-            <Link to="/cenik" className="rounded-md bg-amber-500 px-4 py-2 text-xs font-bold text-black hover:bg-amber-400">
-              Odemknout v Premium
-            </Link>
-          </div>
-        )}
+          {data && data.ok === false && data.error === "premium_required" && (
+            <div className="flex flex-col items-center gap-3 rounded-lg border border-amber-500/40 bg-amber-500/5 p-5 text-center">
+              <Crown className="h-8 w-8 text-amber-400" />
+              <p className="text-sm font-semibold">AI investiční analýza je Premium funkce.</p>
+              <Link
+                to="/cenik"
+                className="rounded-md bg-amber-500 px-4 py-2 text-xs font-bold text-black hover:bg-amber-400"
+              >
+                Odemknout v Premium
+              </Link>
+            </div>
+          )}
 
-        {data && data.ok === false && data.error === "free_sample_used" && (
-          <div className="flex flex-col items-center gap-3 rounded-lg border border-amber-500/40 bg-amber-500/5 p-5 text-center">
-            <Crown className="h-8 w-8 text-amber-400" />
-            <p className="text-sm font-semibold">Volnou ukázkovou AI analýzu jste již vyčerpali.</p>
-            <p className="text-xs text-muted-foreground">{data.message}</p>
-            <Link to="/cenik" className="rounded-md bg-amber-500 px-4 py-2 text-xs font-bold text-black hover:bg-amber-400">
-              Odemknout Premium · 50 analýz/měs.
-            </Link>
-          </div>
-        )}
+          {data && data.ok === false && data.error === "free_sample_used" && (
+            <div className="flex flex-col items-center gap-3 rounded-lg border border-amber-500/40 bg-amber-500/5 p-5 text-center">
+              <Crown className="h-8 w-8 text-amber-400" />
+              <p className="text-sm font-semibold">
+                Volnou ukázkovou AI analýzu jste již vyčerpali.
+              </p>
+              <p className="text-xs text-muted-foreground">{data.message}</p>
+              <Link
+                to="/cenik"
+                className="rounded-md bg-amber-500 px-4 py-2 text-xs font-bold text-black hover:bg-amber-400"
+              >
+                Odemknout Premium · 50 analýz/měs.
+              </Link>
+            </div>
+          )}
 
-        {data && data.ok === false && data.error === "monthly_limit_reached" && (
-          <div className="rounded-lg border border-amber-500/40 bg-amber-500/5 p-4 text-xs text-amber-200">
-            <p className="font-semibold">Měsíční limit AI analýz vyčerpán</p>
-            <p className="mt-1">{data.message}</p>
-          </div>
-        )}
+          {data && data.ok === false && data.error === "monthly_limit_reached" && (
+            <div className="rounded-lg border border-amber-500/40 bg-amber-500/5 p-4 text-xs text-amber-200">
+              <p className="font-semibold">Měsíční limit AI analýz vyčerpán</p>
+              <p className="mt-1">{data.message}</p>
+            </div>
+          )}
 
-        {data && data.ok === false && data.error === "ai_failed" && (
-          <div className="flex items-start gap-2 rounded-lg border border-[var(--color-danger)]/40 bg-[var(--color-danger)]/5 p-3 text-xs text-[var(--color-danger)]">
-            <AlertTriangle className="h-4 w-4 shrink-0" /> {data.message}
-          </div>
-        )}
+          {data && data.ok === false && data.error === "ai_failed" && (
+            <div className="flex items-start gap-2 rounded-lg border border-[var(--color-danger)]/40 bg-[var(--color-danger)]/5 p-3 text-xs text-[var(--color-danger)]">
+              <AlertTriangle className="h-4 w-4 shrink-0" /> {data.message}
+            </div>
+          )}
 
-        {data && data.ok === true && <Verdict data={data} />}
-      </div>
-    </div>
+          {data && data.ok === true && <Verdict data={data} />}
+        </DialogPrimitive.Content>
+      </DialogPrimitive.Portal>
+    </DialogPrimitive.Root>
   );
 }
 
 function Verdict({ data }: { data: Extract<AIAnalysisResult, { ok: true }> }) {
   const v = data.verdict;
-  const cfg = v === "zvazit"
-    ? { label: "Zvážit", cls: "border-emerald-500/40 bg-emerald-500/10 text-emerald-300", Icon: CheckCircle2 }
-    : v === "opatrne"
-    ? { label: "Opatrně", cls: "border-amber-500/40 bg-amber-500/10 text-amber-300", Icon: ShieldAlert }
-    : { label: "Vyhnout se", cls: "border-red-500/40 bg-red-500/10 text-red-300", Icon: XCircle };
+  const cfg =
+    v === "zvazit"
+      ? {
+          label: "Zvážit",
+          cls: "border-emerald-500/40 bg-emerald-500/10 text-emerald-300",
+          Icon: CheckCircle2,
+        }
+      : v === "opatrne"
+        ? {
+            label: "Opatrně",
+            cls: "border-amber-500/40 bg-amber-500/10 text-amber-300",
+            Icon: ShieldAlert,
+          }
+        : {
+            label: "Vyhnout se",
+            cls: "border-red-500/40 bg-red-500/10 text-red-300",
+            Icon: XCircle,
+          };
   const Icon = cfg.Icon;
 
   return (
@@ -197,7 +287,15 @@ function Verdict({ data }: { data: Extract<AIAnalysisResult, { ok: true }> }) {
 
       {data.price_position && (
         <Section title="Cena vs. srovnatelné">
-          <span className={data.price_position.pct_vs_median < 0 ? "text-emerald-300" : data.price_position.pct_vs_median > 10 ? "text-red-300" : "text-amber-300"}>
+          <span
+            className={
+              data.price_position.pct_vs_median < 0
+                ? "text-emerald-300"
+                : data.price_position.pct_vs_median > 10
+                  ? "text-red-300"
+                  : "text-amber-300"
+            }
+          >
             {data.price_position.label}
           </span>
         </Section>
@@ -213,38 +311,52 @@ function Verdict({ data }: { data: Extract<AIAnalysisResult, { ok: true }> }) {
 
       {data.risks.length > 0 && (
         <div>
-          <h4 className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Rizika</h4>
+          <h4 className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+            Rizika
+          </h4>
           <ul className="ml-4 list-disc space-y-0.5 text-xs">
-            {data.risks.map((r, i) => <li key={i}>{r}</li>)}
+            {data.risks.map((r, i) => (
+              <li key={i}>{r}</li>
+            ))}
           </ul>
         </div>
       )}
 
       {data.uncertainties.length > 0 && (
         <div>
-          <h4 className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Nejistoty</h4>
+          <h4 className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+            Nejistoty
+          </h4>
           <ul className="ml-4 list-disc space-y-0.5 text-xs">
-            {data.uncertainties.map((r, i) => <li key={i}>{r}</li>)}
+            {data.uncertainties.map((r, i) => (
+              <li key={i}>{r}</li>
+            ))}
           </ul>
         </div>
       )}
 
       {data.broker_questions.length > 0 && (
         <div>
-          <h4 className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Otázky na makléře</h4>
+          <h4 className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+            Otázky na makléře
+          </h4>
           <ul className="ml-4 list-disc space-y-0.5 text-xs">
-            {data.broker_questions.map((r, i) => <li key={i}>{r}</li>)}
+            {data.broker_questions.map((r, i) => (
+              <li key={i}>{r}</li>
+            ))}
           </ul>
         </div>
       )}
 
-
-
       {data.user_rule_violations.length > 0 && (
         <div className="rounded-md border border-red-500/40 bg-red-500/5 p-2.5">
-          <h4 className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-red-300">Porušuje vaše pravidla</h4>
+          <h4 className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-red-300">
+            Porušuje vaše pravidla
+          </h4>
           <ul className="ml-4 list-disc space-y-0.5 text-xs text-red-200">
-            {data.user_rule_violations.map((r, i) => <li key={i}>{r}</li>)}
+            {data.user_rule_violations.map((r, i) => (
+              <li key={i}>{r}</li>
+            ))}
           </ul>
         </div>
       )}
@@ -255,9 +367,13 @@ function Verdict({ data }: { data: Extract<AIAnalysisResult, { ok: true }> }) {
         <span>
           {data.cached
             ? `Z cache (${data.cached_at ? new Date(data.cached_at).toLocaleDateString("cs-CZ") : ""})`
-            : data.usage ? `Měsíční využití: ${data.usage.used}/${data.usage.limit}` : ""}
+            : data.usage
+              ? `Měsíční využití: ${data.usage.used}/${data.usage.limit}`
+              : ""}
         </span>
-        <Link to="/nastaveni-investora" className="text-primary hover:underline">Upravit má pravidla</Link>
+        <Link to="/nastaveni-investora" className="text-primary hover:underline">
+          Upravit má pravidla
+        </Link>
       </div>
     </div>
   );
@@ -266,7 +382,9 @@ function Verdict({ data }: { data: Extract<AIAnalysisResult, { ok: true }> }) {
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div>
-      <h4 className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{title}</h4>
+      <h4 className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+        {title}
+      </h4>
       <p className="text-xs leading-relaxed text-foreground">{children}</p>
     </div>
   );
