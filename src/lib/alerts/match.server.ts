@@ -74,7 +74,7 @@ export function matchesSearch(
       bench: ctx.bench,
       rentIndex: ctx.rentIndex,
     });
-    if (!inv || inv.net_yield < search.min_yield) return false;
+    if (!inv || inv.gross_yield < search.min_yield) return false;
   }
   return true;
 }

@@ -62,33 +62,37 @@ export const Route = createFileRoute("/sreality-vs-bezrealitky-srovnani")({
         <h2 className="text-xl font-semibold">2. Mýtus: „Na Bezrealitky koupím vždy levněji“</h2>
         <p className="text-muted-foreground">
           Mnoho začínajících investorů si myslí, že absence realitního makléře automaticky znamená
-          nižší cenu. V praxi to ale často bývá naopak: Soukromý majitel si řekne: <em>„Makléř by si
-          vzal 200 000 Kč provize, tak o těch 200 000 Kč cenu navýším a nechám si to sám.“</em>
+          nižší cenu. V praxi to ale často bývá naopak: Soukromý majitel si řekne:{" "}
+          <em>
+            „Makléř by si vzal 200 000 Kč provize, tak o těch 200 000 Kč cenu navýším a nechám si to
+            sám.“
+          </em>
         </p>
         <p className="text-muted-foreground">
-          Navíc soukromí prodávající mají k nemovitosti silné emoční pouto (vzpomínky na dětství či rekonstrukci)
-          a často odmítají slevit i po měsících neúspěšné inzerce.
+          Navíc soukromí prodávající mají k nemovitosti silné emoční pouto (vzpomínky na dětství či
+          rekonstrukci) a často odmítají slevit i po měsících neúspěšné inzerce.
         </p>
       </section>
 
       <section className="space-y-3">
         <h2 className="text-xl font-semibold">3. Proč nezapomínat na Bazoš a iDnes Reality?</h2>
         <p className="text-muted-foreground">
-          Kromě dvou gigantů existují portály jako <strong>Bazoš</strong> a <strong>iDnes Reality</strong>.
-          Právě na Bazoši se často objevují soukromé inzeráty starších majitelů, kteří nechtějí platit
-          poplatky za inzerci a nemovitost nabídnou za velmi atraktivní cenu. Tyto klenoty však
-          většina lidí přehlédne.
+          Kromě dvou gigantů existují portály jako <strong>Bazoš</strong> a{" "}
+          <strong>iDnes Reality</strong>. Právě na Bazoši se často objevují soukromé inzeráty
+          starších majitelů, kteří nechtějí platit poplatky za inzerci a nemovitost nabídnou za
+          velmi atraktivní cenu. Tyto klenoty však většina lidí přehlédne.
         </p>
       </section>
 
       <section className="space-y-4 rounded-xl border border-primary/30 bg-primary/5 p-5">
         <div className="flex items-center gap-2 font-semibold text-primary">
-          <Layers className="h-5 w-5" /> Proč přepínat mezi 4 záložkami, když můžete mít vše v jednom?
+          <Layers className="h-5 w-5" /> Proč přepínat mezi 4 záložkami, když můžete mít vše v
+          jednom?
         </div>
         <p className="text-xs text-muted-foreground">
-          RealityScanner agreguje <strong>Sreality, Bezrealitky, Bazoš i iDnes Reality</strong> do jednoho
-          přehledného feedu. Odstraní duplicity a u každé nabídky okamžitě spočítá výnos z nájmu
-          a srovnání s cenou v okrese.
+          RealityScanner agreguje <strong>Sreality, Bezrealitky, Bazoš i iDnes Reality</strong> do
+          jednoho přehledného feedu. Spojuje nabídky z více portálů na jednom místě a při dostatku
+          údajů odhadne hrubý výnos z nájmu a srovnání s cenou v okrese.
         </p>
         <div className="pt-1">
           <Link

@@ -1,30 +1,45 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowLeft, Home, Building2, Calculator, ShieldCheck, HelpCircle, AlertTriangle, TrendingUp, CheckCircle2 } from "lucide-react";
+import {
+  ArrowLeft,
+  Home,
+  Building2,
+  Calculator,
+  ShieldCheck,
+  HelpCircle,
+  AlertTriangle,
+  TrendingUp,
+  CheckCircle2,
+} from "lucide-react";
 import { Footer } from "@/components/Footer";
 import { getCsuCalibration } from "@/lib/listings/csu-public.functions";
-import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
+import {
+  Accordion,
+  AccordionItem,
+  AccordionTrigger,
+  AccordionContent,
+} from "@/components/ui/accordion";
 
 const FAQ_ITEMS = [
   {
-    q: "Jak přesně RealityScanner odhaduje tržní měsíční nájem?",
-    a: "Tržní nájem modelujeme kaskádově. Přednostně bereme medián skutečných aktivních pronájmů v naší databázi v daném kraji u nemovitostí podobné velikosti (± 20 %, min. 5 vzorků). Pokud vzorky chybí, využíváme denně aktualizovaný medián okresu ze Sreality (kalibrovaný na Deloitte Rent Index a ČSÚ). Výslednou sazbu korigujeme podle dispozice (garsonky mají vyšší cenu za m², velké byty nižší) a u družstevních bytů zohledňujeme 8% diskont kvůli omezením."
+    q: "Jak přesně RealityScanner odhaduje nabídkový měsíční nájem?",
+    a: "Nabídkový nájem odhadujeme kaskádově. Nejde o skutečně sjednané nájemné. Přednostně bereme medián aktivních nabídek pronájmu v naší databázi v daném kraji u nemovitostí podobné velikosti (± 20 %, min. 5 vzorků). Pokud vzorky chybí, využíváme denně aktualizovaný medián okresu ze Sreality (kalibrovaný na Deloitte Rent Index a ČSÚ). Výslednou sazbu korigujeme podle dispozice (garsonky mají vyšší cenu za m², velké byty nižší) a u družstevních bytů zohledňujeme 8% diskont kvůli omezením.",
   },
   {
     q: "Proč u rodinných domů nepočítáte nájemní výnos jako u bytů?",
-    a: "Na rozdíl od bytů se rodinné domy v ČR pronajímají jen minimálně a nabídka je příliš různorodá. Modelovat fiktivní nájem rodinného domu z dat o bytech by vedlo k nereálným číslům. Místo toho u domů srovnáváme reálnou nabídkovou cenu za m² se skutečně realizovanými kupními cenami z databáze Českého statistického úřadu (ČSÚ) pro daný okres a velikostní kategorii."
+    a: "Na rozdíl od bytů se rodinné domy v ČR pronajímají jen minimálně a nabídka je příliš různorodá. Modelovat fiktivní nájem rodinného domu z dat o bytech by vedlo k nereálným číslům. Místo toho u domů srovnáváme reálnou nabídkovou cenu za m² se skutečně realizovanými kupními cenami z databáze Českého statistického úřadu (ČSÚ) pro daný okres a velikostní kategorii.",
   },
   {
     q: "Jak pracujete s anuitou u družstevních bytů?",
-    a: "Pokud inzerát zmiňuje nesplacenou anuitu nebo úvěr družstva, částku automaticky detekujeme a přičítáme ke kupní ceně (tzv. efektivní pořizovací cena). Díky tomu je srovnání výnosnosti družstevního bytu s bytem v osobním vlastnictví objektivní a odpovídá reálným nákladům na pořízení."
+    a: "Pokud inzerát zmiňuje nesplacenou anuitu nebo úvěr družstva, částku automaticky detekujeme a přičítáme ke kupní ceně (tzv. efektivní pořizovací cena). Díky tomu je srovnání výnosnosti družstevního bytu s bytem v osobním vlastnictví objektivní a odpovídá reálným nákladům na pořízení.",
   },
   {
     q: "Z jakých realitních portálů inzeráty stahujete a jak často?",
-    a: "Agregujeme inzeráty ze 4 hlavních portálů: Sreality, Bezrealitky, Bazoš a iDnes Reality. Nové inzeráty monitorujeme v reálném čase, data aktualizujeme každých 15 minut a denně přepočítáváme cenové mediány ve všech 77 okresech ČR."
+    a: "Agregujeme inzeráty ze 4 hlavních portálů: Sreality, Bezrealitky, Bazoš a iDnes Reality. Nové inzeráty monitorujeme v reálném čase, data aktualizujeme každých 15 minut a denně přepočítáváme cenové mediány ve všech 77 okresech ČR.",
   },
   {
     q: "Nahrazuje RealityScanner fyzickou prohlídku nebo znalecký posudek?",
-    a: "Určitě ne. RealityScanner slouží pro rychlý screening a filtrování tisíců nabídek, abyste během vteřiny poznali, které inzeráty mají investiční potenciál a které jsou předražené. Před samotným nákupem si nemovitost vždy prověřte osobně, zkontrolujte technický stav i list vlastnictví v katastru (LV) a spočítejte si vlastní model s konkrétní hypotékou a daňovou situací."
-  }
+    a: "Určitě ne. RealityScanner slouží pro rychlý screening a filtrování tisíců nabídek, abyste během vteřiny poznali, které inzeráty mají investiční potenciál a které jsou předražené. Před samotným nákupem si nemovitost vždy prověřte osobně, zkontrolujte technický stav i list vlastnictví v katastru (LV) a spočítejte si vlastní model s konkrétní hypotékou a daňovou situací.",
+  },
 ];
 
 export const Route = createFileRoute("/metodika")({
@@ -33,17 +48,33 @@ export const Route = createFileRoute("/metodika")({
   head: () => ({
     meta: [
       { title: "Metodika výpočtu výnosu a ocenění nemovitostí | RealityScanner" },
-      { name: "description", content: "Jak přesně počítáme výnos z pronájmu, návratnost a srovnání cen rodinných domů vůči realizovaným kupním cenám ČSÚ. Transparentní vzorce a metodika." },
-      { property: "og:title", content: "Metodika výpočtu výnosu a ocenění nemovitostí | RealityScanner" },
-      { property: "og:description", content: "Jak přesně počítáme výnos z pronájmu, návratnost a srovnání cen domů s ČSÚ." },
+      {
+        name: "description",
+        content:
+          "Jak přesně počítáme výnos z pronájmu, návratnost a srovnání cen rodinných domů vůči realizovaným kupním cenám ČSÚ. Transparentní vzorce a metodika.",
+      },
+      {
+        property: "og:title",
+        content: "Metodika výpočtu výnosu a ocenění nemovitostí | RealityScanner",
+      },
+      {
+        property: "og:description",
+        content: "Jak přesně počítáme výnos z pronájmu, návratnost a srovnání cen domů s ČSÚ.",
+      },
       { property: "og:type", content: "website" },
       { property: "og:url", content: "https://www.realityscanner.cz/metodika" },
       { property: "og:image", content: "https://www.realityscanner.cz/og-image.jpg" },
       { property: "og:image:width", content: "1200" },
       { property: "og:image:height", content: "630" },
       { property: "og:image:type", content: "image/jpeg" },
-      { name: "twitter:title", content: "Metodika výpočtu výnosu a ocenění nemovitostí | RealityScanner" },
-      { name: "twitter:description", content: "Jak přesně počítáme výnos z pronájmu, návratnost a srovnání cen domů s ČSÚ." },
+      {
+        name: "twitter:title",
+        content: "Metodika výpočtu výnosu a ocenění nemovitostí | RealityScanner",
+      },
+      {
+        name: "twitter:description",
+        content: "Jak přesně počítáme výnos z pronájmu, návratnost a srovnání cen domů s ČSÚ.",
+      },
       { name: "twitter:image", content: "https://www.realityscanner.cz/og-image.jpg" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
@@ -54,12 +85,12 @@ export const Route = createFileRoute("/metodika")({
         children: JSON.stringify({
           "@context": "https://schema.org",
           "@type": "FAQPage",
-          "mainEntity": FAQ_ITEMS.map((item) => ({
+          mainEntity: FAQ_ITEMS.map((item) => ({
             "@type": "Question",
-            "name": item.q,
-            "acceptedAnswer": {
+            name: item.q,
+            acceptedAnswer: {
               "@type": "Answer",
-              "text": item.a,
+              text: item.a,
             },
           })),
         }),
@@ -76,7 +107,10 @@ function Metodika() {
     <div className="min-h-screen bg-background text-foreground">
       <header className="border-b border-border bg-[var(--color-surface)]">
         <div className="mx-auto flex max-w-4xl items-center gap-3 px-5 py-3">
-          <Link to="/" className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
+          <Link
+            to="/"
+            className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
+          >
             <ArrowLeft className="h-4 w-4" /> Zpět na skener
           </Link>
         </div>
@@ -92,9 +126,9 @@ function Metodika() {
             Jak počítáme výnosy a hodnotíme nemovitosti
           </h1>
           <p className="mt-3 max-w-3xl text-base text-muted-foreground">
-            Žádná „černá skříňka“ ani náhodné odhady. Vysvětlujeme krok za krokem, jak u každého inzerátu
-            modelujeme tržní nájem, jak kalkulujeme výnos a jak srovnáváme ceny rodinných domů
-            s oficiálními realizovanými prodeji Českého statistického úřadu (ČSÚ).
+            Žádná „černá skříňka“ ani náhodné odhady. Vysvětlujeme krok za krokem, jak u každého
+            inzerátu odhadujeme nabídkový nájem, jak kalkulujeme výnos a jak srovnáváme ceny
+            rodinných domů s oficiálními realizovanými prodeji Českého statistického úřadu (ČSÚ).
           </p>
         </div>
 
@@ -106,17 +140,19 @@ function Metodika() {
               <span className="text-xs font-bold uppercase tracking-wider">1. Odhad nájmu</span>
             </div>
             <p className="mt-2 text-xs text-muted-foreground">
-              Vycházíme z mediánu skutečných pronájmů v lokalitě a sazbu za m² upravujeme podle dispozice a typu vlastnictví.
+              Vycházíme z nabídek pronájmu; dostupné srovnání může zahrnovat celý kraj. Sazbu za m²
+              upravujeme podle dispozice a typu vlastnictví.
             </p>
           </div>
 
           <div className="rounded-xl border border-border bg-[var(--color-surface)] p-4">
             <div className="flex items-center gap-2 text-emerald-400">
               <TrendingUp className="h-4 w-4" />
-              <span className="text-xs font-bold uppercase tracking-wider">2. Čistý výnos</span>
+              <span className="text-xs font-bold uppercase tracking-wider">2. Hrubý výnos</span>
             </div>
             <p className="mt-2 text-xs text-muted-foreground">
-              Z hrubého výnosu střízlivě odečítáme 15 % na fond oprav, daň z nemovitostí, správu a rezervu na neobsazenost.
+              Nájem za 12 měsíců dělíme kupní cenou. Náklady vlastníka, neobsazenost, hypotéku ani
+              daně z příjmu tento orientační ukazatel neodečítá.
             </p>
           </div>
 
@@ -126,7 +162,8 @@ function Metodika() {
               <span className="text-xs font-bold uppercase tracking-wider">3. Domy a ČSÚ</span>
             </div>
             <p className="mt-2 text-xs text-muted-foreground">
-              U domů nevymýšlíme fiktivní nájem. Porovnáváme pořizovací cenu za m² se skutečně realizovanými kupními cenami ČSÚ.
+              U domů nevymýšlíme fiktivní nájem. Porovnáváme pořizovací cenu za m² se skutečně
+              realizovanými kupními cenami ČSÚ.
             </p>
           </div>
         </div>
@@ -134,9 +171,7 @@ function Metodika() {
         {/* SEKCIE 1: BYTY A VÝNOS Z NÁJMU */}
         <div className="mt-12 space-y-6">
           <div className="border-b border-border pb-2">
-            <h2 className="text-2xl font-bold text-foreground">
-              1. Výpočet výnosu z nájmu u bytů
-            </h2>
+            <h2 className="text-2xl font-bold text-foreground">1. Výpočet výnosu z nájmu u bytů</h2>
             <p className="text-xs text-muted-foreground">
               Jak u každého bytu zjistíme odhad nájmu, výnos a návratnost v letech.
             </p>
@@ -145,23 +180,31 @@ function Metodika() {
           {/* KROK A: TRŽNÍ NÁJEM */}
           <div className="rounded-xl border border-border bg-[var(--color-surface)] p-5">
             <h3 className="text-base font-semibold text-foreground">
-              A) Jak určujeme tržní měsíční nájem?
+              A) Jak odhadujeme nabídkový měsíční nájem?
             </h3>
             <p className="mt-2 text-muted-foreground">
-              Inzeráty na prodej výši nájmu neuvádějí. Náš model proto nájem odhaduje hybridním postupem z reálných nabídek pronájmu:
+              Inzeráty na prodej výši nájmu neuvádějí. Náš model proto nájem odhaduje hybridním
+              postupem z reálných nabídek pronájmu:
             </p>
             <ol className="mt-3 list-decimal space-y-2 pl-5 text-sm text-foreground/90">
               <li>
-                <strong>Přímé srovnání v lokalitě:</strong> Pokud v databázi najdeme alespoň 5 aktivních pronájmů ve stejném kraji a s plochou v rozmezí ± 20 %, vezmeme medián jejich nájmu. Toto je nejpřesnější hodnota.
+                <strong>Srovnání nabídek ve stejném kraji:</strong> Pokud v databázi najdeme alespoň
+                5 aktivních pronájmů ve stejném kraji a s plochou v rozmezí ± 20 %, vezmeme medián
+                jejich nájmu. Rozsah je kraj, nikoli nutně okolí konkrétního bytu; jde o odhad
+                nabídkového nájmu.
               </li>
               <li>
-                <strong>Cenové mapy velkých měst:</strong> Pro městské části Prahy, Brna, Plzně a Ostravy máme přesné sazby Kč/m² (např. Praha 1 = 510 Kč/m², Praha 9 = 360 Kč/m², Brno-střed = 380 Kč/m²) kalibrované na Deloitte Rent Index a Sreality.
+                <strong>Cenové mapy velkých měst:</strong> Pro městské části Prahy, Brna, Plzně a
+                Ostravy máme přesné sazby Kč/m² (např. Praha 1 = 510 Kč/m², Praha 9 = 360 Kč/m²,
+                Brno-střed = 380 Kč/m²) kalibrované na Deloitte Rent Index a Sreality.
               </li>
               <li>
-                <strong>Denní medián v 77 okresech ČR:</strong> Každých 24 hodin počítáme živý medián Kč/m² z inzerátů pronájmů v každém okrese (při min. 8 vzorcích).
+                <strong>Denní medián v 77 okresech ČR:</strong> Každých 24 hodin počítáme živý
+                medián Kč/m² z inzerátů pronájmů v každém okrese (při min. 8 vzorcích).
               </li>
               <li>
-                <strong>Krajský a celorepublikový průměr:</strong> Záložní hodnoty, pokud pro danou menší lokalitu není k dispozici dostatek čerstvých inzerátů pronájmů.
+                <strong>Krajský a celorepublikový průměr:</strong> Záložní hodnoty, pokud pro danou
+                menší lokalitu není k dispozici dostatek čerstvých inzerátů pronájmů.
               </li>
             </ol>
 
@@ -170,36 +213,56 @@ function Metodika() {
                 Korekce základní sazby Kč/m²:
               </div>
               <div className="mt-2 grid gap-2 text-xs sm:grid-cols-2">
-                <div>• <strong>1+kk / garsoniéra:</strong> +15 % (menší byty dosahují vyššího nájmu na m²)</div>
-                <div>• <strong>2+kk:</strong> +5 % k sazbě za m²</div>
-                <div>• <strong>3+kk:</strong> standardní sazba (100 %)</div>
-                <div>• <strong>4+kk a větší:</strong> −5 % až −10 % k sazbě za m²</div>
-                <div>• <strong>Družstevní byt:</strong> −8 % (zohledňuje omezení pronájmu v družstvu)</div>
-                <div>• <strong>Garáž / parkovací stání:</strong> pevná částka (Praha 3 500 Kč, ČR 2 200 Kč)</div>
+                <div>
+                  • <strong>1+kk / garsoniéra:</strong> +15 % (menší byty dosahují vyššího nájmu na
+                  m²)
+                </div>
+                <div>
+                  • <strong>2+kk:</strong> +5 % k sazbě za m²
+                </div>
+                <div>
+                  • <strong>3+kk:</strong> standardní sazba (100 %)
+                </div>
+                <div>
+                  • <strong>4+kk a větší:</strong> −5 % až −10 % k sazbě za m²
+                </div>
+                <div>
+                  • <strong>Družstevní byt:</strong> −8 % (zohledňuje omezení pronájmu v družstvu)
+                </div>
+                <div>
+                  • <strong>Garáž / parkovací stání:</strong> pevná částka (Praha 3 500 Kč, ČR 2 200
+                  Kč)
+                </div>
               </div>
             </div>
           </div>
 
           {/* KROK B: VZORCE A PŘÍKLAD */}
           <div className="rounded-xl border border-border bg-[var(--color-surface)] p-5">
-            <h3 className="text-base font-semibold text-foreground">
-              B) Výnos a návratnost
-            </h3>
+            <h3 className="text-base font-semibold text-foreground">B) Výnos a návratnost</h3>
 
             <div className="mt-4 grid gap-4 sm:grid-cols-2">
               <div className="rounded-lg border border-border bg-[var(--color-surface-2)] p-3.5">
-                <div className="text-xs font-bold text-primary uppercase">Hrubý výnos (Gross Yield)</div>
-                <div className="mt-1 font-mono text-sm font-semibold">roční nájem ÷ kupní cena × 100</div>
+                <div className="text-xs font-bold text-primary uppercase">Hrubý výnos</div>
+                <div className="mt-1 font-mono text-sm font-semibold">
+                  roční nájem ÷ kupní cena × 100
+                </div>
                 <p className="mt-2 text-xs text-muted-foreground">
-                  Základní ukazatel: kolik procent z pořizovací ceny nemovitost vygeneruje na nájmu za jeden rok (před započtením nákladů).
+                  Základní ukazatel: kolik procent z pořizovací ceny nemovitost vygeneruje na nájmu
+                  za jeden rok (před započtením nákladů).
                 </p>
               </div>
 
               <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-3.5">
-                <div className="text-xs font-bold text-emerald-400 uppercase">Výnos p.a.</div>
-                <div className="mt-1 font-mono text-sm font-semibold">roční nájem ÷ kupní cena × 100</div>
+                <div className="text-xs font-bold text-emerald-400 uppercase">
+                  Co hrubý výnos nezahrnuje
+                </div>
+                <div className="mt-1 font-mono text-sm font-semibold">
+                  roční nájem ÷ kupní cena × 100
+                </div>
                 <p className="mt-2 text-xs text-muted-foreground">
-                  Kolik procent z pořizovací ceny nemovitost vygeneruje na nájmu za rok. Pro detailní kalkulaci s vlastními náklady použijte kalkulačku.
+                  Kolik procent z pořizovací ceny nemovitost vygeneruje na nájmu za rok. Pro
+                  detailní kalkulaci s vlastními náklady použijte kalkulačku.
                 </p>
               </div>
             </div>
@@ -215,23 +278,23 @@ function Metodika() {
                   <div className="font-semibold text-foreground">50 m² · Osobní vlastnictví</div>
                 </div>
                 <div>
-                  <span className="text-muted-foreground">Kupní cena:</span>
+                  <span className="text-muted-foreground">Kupní cena (ilustrační):</span>
                   <div className="font-mono font-bold text-foreground">4 500 000 Kč</div>
                 </div>
                 <div>
-                  <span className="text-muted-foreground">Tržní nájem:</span>
+                  <span className="text-muted-foreground">Nájem (ilustrační):</span>
                   <div className="font-mono font-bold text-foreground">16 000 Kč / měsíc</div>
                   <div className="text-[10px] text-muted-foreground">(192 000 Kč ročně)</div>
                 </div>
                 <div>
                   <span className="text-muted-foreground">Výsledek v RealityScanneru:</span>
-                  <div className="font-mono text-sm font-bold text-emerald-400">Výnos 4,3 %</div>
+                  <div className="font-mono text-sm font-bold text-emerald-400">
+                    Hrubý výnos 4,3 %
+                  </div>
                   <div className="text-[10px] text-muted-foreground">Návratnost 23,4 let</div>
                 </div>
               </div>
             </div>
-
-
           </div>
 
           {/* KROK C: ŠKÁLA HVĚZDIČEK */}
@@ -240,7 +303,8 @@ function Metodika() {
               C) Jak hodnotíme atraktivitu investice (hvězdičky)
             </h3>
             <p className="mt-1 text-xs text-muted-foreground">
-              Klasifikace vychází z českého realitního trhu v letech 2024–2026, kde se běžný výnos standardních bytů pohybuje mezi 3 a 5 %:
+              Klasifikace vychází z českého realitního trhu v letech 2024–2026, kde se běžný výnos
+              standardních bytů pohybuje mezi 3 a 5 %:
             </p>
 
             <div className="mt-3 overflow-x-auto rounded-lg border border-border">
@@ -258,31 +322,46 @@ function Metodika() {
                     <td className="px-3 py-2.5 font-mono font-bold text-emerald-400">≥ 6,0 %</td>
                     <td className="px-3 py-2.5 font-semibold">Výborná investice 🏆</td>
                     <td className="px-3 py-2.5 text-primary">★★★★★</td>
-                    <td className="px-3 py-2.5 text-muted-foreground">Mimořádně atraktivní nabídka nebo podhodnocená cena. Prověřte technický stav a právní vady.</td>
+                    <td className="px-3 py-2.5 text-muted-foreground">
+                      Mimořádně atraktivní nabídka nebo podhodnocená cena. Prověřte technický stav a
+                      právní vady.
+                    </td>
                   </tr>
                   <tr>
-                    <td className="px-3 py-2.5 font-mono font-bold text-emerald-300">5,0 – 5,99 %</td>
+                    <td className="px-3 py-2.5 font-mono font-bold text-emerald-300">
+                      5,0 – 5,99 %
+                    </td>
                     <td className="px-3 py-2.5 font-semibold">Dobrá investice ✅</td>
                     <td className="px-3 py-2.5 text-primary">★★★★☆</td>
-                    <td className="px-3 py-2.5 text-muted-foreground">Nadprůměrný výnos pro daný region, vysoký potenciál cashflow.</td>
+                    <td className="px-3 py-2.5 text-muted-foreground">
+                      Nadprůměrný výnos pro daný region, vysoký potenciál cashflow.
+                    </td>
                   </tr>
                   <tr>
                     <td className="px-3 py-2.5 font-mono font-bold text-amber-300">4,0 – 4,99 %</td>
                     <td className="px-3 py-2.5 font-semibold">Průměrný výnos ⚖️</td>
                     <td className="px-3 py-2.5 text-primary">★★★☆☆</td>
-                    <td className="px-3 py-2.5 text-muted-foreground">Běžný tržní standard ve větších městech. Vhodné pro stabilní uchování hodnoty.</td>
+                    <td className="px-3 py-2.5 text-muted-foreground">
+                      Běžný tržní standard ve větších městech. Vhodné pro stabilní uchování hodnoty.
+                    </td>
                   </tr>
                   <tr>
                     <td className="px-3 py-2.5 font-mono font-bold text-amber-500">3,0 – 3,99 %</td>
                     <td className="px-3 py-2.5 font-semibold">Podprůměrné ⚠️</td>
                     <td className="px-3 py-2.5 text-primary">★★☆☆☆</td>
-                    <td className="px-3 py-2.5 text-muted-foreground">Nižší nájemní výnos (typicky novostavby v Praze a Brně). Zhodnocení závisí na růstu ceny.</td>
+                    <td className="px-3 py-2.5 text-muted-foreground">
+                      Nižší nájemní výnos (typicky novostavby v Praze a Brně). Zhodnocení závisí na
+                      růstu ceny.
+                    </td>
                   </tr>
                   <tr>
                     <td className="px-3 py-2.5 font-mono font-bold text-red-400">&lt; 3,0 %</td>
                     <td className="px-3 py-2.5 font-semibold">Nevýhodné ❌</td>
                     <td className="px-3 py-2.5 text-primary">★☆☆☆☆</td>
-                    <td className="px-3 py-2.5 text-muted-foreground">Z pohledu nájemního výnosu předražená nabídka. Nájem nepokryje ani základní náklady.</td>
+                    <td className="px-3 py-2.5 text-muted-foreground">
+                      Z pohledu nájemního výnosu předražená nabídka. Nájem nepokryje ani základní
+                      náklady.
+                    </td>
                   </tr>
                 </tbody>
               </table>
@@ -297,7 +376,8 @@ function Metodika() {
               2. Ocenění rodinných domů (Srovnání s ČSÚ a trhem)
             </h2>
             <p className="text-xs text-muted-foreground">
-              Proč u domů nepočítáme nájem a jak poznáte, zda je dům v dané lokalitě levný nebo drahý.
+              Proč u domů nepočítáme nájem a jak poznáte, zda je dům v dané lokalitě levný nebo
+              drahý.
             </p>
           </div>
 
@@ -306,10 +386,17 @@ function Metodika() {
               Proč u rodinných domů nepočítáme nájemní výnos?
             </h3>
             <p className="mt-2 text-muted-foreground">
-              Na rozdíl od bytů se rodinné domy v České republice pronajímají jen minimálně a nabídka je příliš různorodá. Modelovat fiktivní „nájem domu“ z dat o bytech by vedlo k nereálným číslům a zkresleným závěrům.
+              Na rozdíl od bytů se rodinné domy v České republice pronajímají jen minimálně a
+              nabídka je příliš různorodá. Modelovat fiktivní „nájem domu“ z dat o bytech by vedlo k
+              nereálným číslům a zkresleným závěrům.
             </p>
             <p className="mt-2 text-foreground/90">
-              U rodinných domů se proto soustředíme na to podstatné: <strong>reálnou pořizovací cenu za m² vůči skutečně realizovaným prodejům z databází Českého statistického úřadu (ČSÚ)</strong>.
+              U rodinných domů se proto soustředíme na to podstatné:{" "}
+              <strong>
+                reálnou pořizovací cenu za m² vůči skutečně realizovaným prodejům z databází Českého
+                statistického úřadu (ČSÚ)
+              </strong>
+              .
             </p>
 
             <h4 className="mt-5 text-sm font-semibold text-foreground">
@@ -318,27 +405,43 @@ function Metodika() {
             <div className="mt-3 grid gap-3 sm:grid-cols-3">
               <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-3">
                 <span className="text-xs font-bold text-emerald-400">🟢 Levnější než průměr</span>
-                <p className="mt-1 text-xs text-muted-foreground">Cena za m² je znatelně pod cenovou hladinou realizovaných prodejů v daném okrese a velikostním pásmu.</p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Cena za m² je znatelně pod cenovou hladinou realizovaných prodejů v daném okrese a
+                  velikostním pásmu.
+                </p>
               </div>
               <div className="rounded-lg border border-border bg-[var(--color-surface-2)] p-3">
                 <span className="text-xs font-bold text-muted-foreground">⚪ V průměru</span>
-                <p className="mt-1 text-xs text-muted-foreground">Cena za m² odpovídá běžnému standardu realizovaných nákupů (v toleranci ± 10 %).</p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Cena za m² odpovídá běžnému standardu realizovaných nákupů (v toleranci ± 10 %).
+                </p>
               </div>
               <div className="rounded-lg border border-red-500/30 bg-red-500/5 p-3">
                 <span className="text-xs font-bold text-red-400">🔴 Dražší než průměr</span>
-                <p className="mt-1 text-xs text-muted-foreground">Cena za m² převyšuje obvyklou cenovou hladinu pro danou velikost a lokalitu.</p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Cena za m² převyšuje obvyklou cenovou hladinu pro danou velikost a lokalitu.
+                </p>
               </div>
             </div>
 
             <div className="mt-4 rounded-lg border border-amber-500/30 bg-amber-500/5 p-3 text-xs text-amber-200/90">
-              💡 <strong>Co vzít vždy v úvahu:</strong> Cena za m² u domu je silně ovlivněna velikostí pozemku, technickým stavem a vybavením. Velká zahrada nebo luxusní rekonstrukce přirozeně posouvá dům do vyšší cenové hladiny. Srovnání slouží pro rychlou orientaci; výměru pozemku vidíte na kartě inzerátu i v XLS exportu.
+              💡 <strong>Co vzít vždy v úvahu:</strong> Cena za m² u domu je silně ovlivněna
+              velikostí pozemku, technickým stavem a vybavením. Velká zahrada nebo luxusní
+              rekonstrukce přirozeně posouvá dům do vyšší cenové hladiny. Srovnání slouží pro
+              rychlou orientaci; výměru pozemku vidíte na kartě inzerátu i v XLS exportu.
             </div>
           </div>
         </div>
 
         <section className="mt-8 rounded-xl border border-border p-5">
           <h2 className="text-xl font-semibold">Vlastní scénář v kalkulačce</h2>
-          <p className="mt-3 text-sm text-muted-foreground">Samostatná <Link to="/kalkulacka-vynosu" className="text-primary hover:underline">kalkulačka výnosu</Link> používá Vámi zadané náklady a neobsazenost pro detailnější výpočet.</p>
+          <p className="mt-3 text-sm text-muted-foreground">
+            Samostatná{" "}
+            <Link to="/kalkulacka-vynosu" className="text-primary hover:underline">
+              kalkulačka výnosu
+            </Link>{" "}
+            používá Vámi zadané náklady a neobsazenost pro detailnější výpočet.
+          </p>
         </section>
 
         {/* SEKCIE 3: KOMPROMISY A TRANSPARENTNOST */}
@@ -373,7 +476,9 @@ function Metodika() {
                 <li>• Nevidí stav interiéru, výhled z okna ani hlučnost sousedů.</li>
                 <li>• Neřeší specifika luxusních vil či historických památek.</li>
                 <li>• Nezahrnuje individuální daňové odpisy a konkrétní hypotéku.</li>
-                <li>• Slouží jako filtr pro výběr nabídek k prohlídce, ne jako znalecký posudek.</li>
+                <li>
+                  • Slouží jako filtr pro výběr nabídek k prohlídce, ne jako znalecký posudek.
+                </li>
               </ul>
             </div>
           </div>
@@ -409,7 +514,11 @@ function Metodika() {
 
         {/* DISCLAIMER */}
         <div className="mt-10 rounded-lg border border-amber-500/30 bg-amber-500/5 p-4 text-xs text-amber-200/90 leading-relaxed">
-          <strong>Upozornění:</strong> Všechny výpočty na RealityScanneru jsou orientační odhady určené k rychlému předvýběru (screeningu) inzerátů. Nejedná se o investiční doporučení, ocenění ani znalecký posudek. Před nákupem si nemovitost vždy ověřte fyzicky, prověřte právní stav (list vlastnictví, věcná břemena, anuitu u družstva) a propočtěte si vlastní model s reálnou hypotékou a daňovou situací.
+          <strong>Upozornění:</strong> Všechny výpočty na RealityScanneru jsou orientační odhady
+          určené k rychlému předvýběru (screeningu) inzerátů. Nejedná se o investiční doporučení,
+          ocenění ani znalecký posudek. Před nákupem si nemovitost vždy ověřte fyzicky, prověřte
+          právní stav (list vlastnictví, věcná břemena, anuitu u družstva) a propočtěte si vlastní
+          model s reálnou hypotékou a daňovou situací.
         </div>
       </main>
 

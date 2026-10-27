@@ -1,4 +1,4 @@
-/** User-entered scenario, NOT the scanner's automatic 15% cost estimate. */
+/** User-entered cost/vacancy scenario; the scanner itself publishes gross yield. */
 export function calculateRentalScenario(
   price: number,
   rent: number,

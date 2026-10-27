@@ -15,7 +15,7 @@ export function UpgradeBanner() {
         <div className="flex items-center gap-2 text-foreground">
           <UserPlus className="h-4 w-4 shrink-0 text-primary" />
           <span>
-            <strong>Vytvořte si bezplatný účet</strong> — uvidíte 50 inzerátů (místo 20), uložíte si oblíbené a vyzkoušíte AI analýzu.
+            <strong>Vytvořte si bezplatný účet</strong> — uvidíte až 50 výsledků na dotaz (bez přihlášení nejvýše 20), uložíte si oblíbené a vyzkoušíte AI analýzu.
           </span>
         </div>
         <Link

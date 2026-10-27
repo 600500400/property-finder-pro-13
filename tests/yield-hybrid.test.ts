@@ -43,7 +43,7 @@ describe("computeHybridYield", () => {
     });
     expect(inv).not.toBeNull();
     expect(inv!.monthly_rent).toBe(25000);
-    expect(inv!.rent_basis_label).toMatch(/srovnatelných pronájmů/i);
+    expect(inv!.rent_basis_label).toMatch(/srovnatelných nabídek pronájmu/i);
   });
 
   it("falls back to static benchmark when no comps", () => {

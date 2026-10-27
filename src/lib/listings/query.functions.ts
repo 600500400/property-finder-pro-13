@@ -263,7 +263,7 @@ export const queryListings = createServerFn({ method: "POST" })
 
     // Yield sort (post-compute)
     if (filters.sort_by === "yield") {
-      results.sort((a, b) => (b.invest?.net_yield ?? -1) - (a.invest?.net_yield ?? -1));
+      results.sort((a, b) => (b.invest?.gross_yield ?? -1) - (a.invest?.gross_yield ?? -1));
     }
 
     return {

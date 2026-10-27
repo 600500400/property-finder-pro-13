@@ -92,7 +92,7 @@ export function computeHybridYield(args: {
       stars,
       verdict,
       rent_per_m2: Math.round(monthly / args.areaM2),
-      rent_basis_label: `Medián ${comp.samples} srovnatelných pronájmů (kraj + typ + plocha ±20 %)`,
+      rent_basis_label: `Medián ${comp.samples} srovnatelných nabídek pronájmu (kraj + typ + plocha ±20 %)`,
       rent_source: "okres_live",
     };
   }

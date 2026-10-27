@@ -5,7 +5,7 @@ import { AIAnalysisButton } from "./AIAnalysisDialog";
 import { SaveBookmarkButton } from "./SaveBookmarkButton";
 
 function hasPriceTrap(flags?: Flag[]): boolean {
-  return !!flags?.some(f => f.category === "price_trap");
+  return !!flags?.some((f) => f.category === "price_trap");
 }
 
 function FlagChips({ flags, max = 3 }: { flags?: Flag[]; max?: number }) {
@@ -14,7 +14,7 @@ function FlagChips({ flags, max = 3 }: { flags?: Flag[]; max?: number }) {
   const rest = flags.length - shown.length;
   return (
     <div className="flex flex-wrap gap-1">
-      {shown.map(f => (
+      {shown.map((f) => (
         <span
           key={f.code}
           title={f.snippet || f.label}
@@ -45,7 +45,8 @@ function tierOf(stars: number | undefined): Tier {
 }
 
 const TIER_VERDICT: Record<Tier, string> = {
-  great: "border-t border-emerald-400/30 bg-gradient-to-b from-emerald-500/15 to-emerald-500/[0.04]",
+  great:
+    "border-t border-emerald-400/30 bg-gradient-to-b from-emerald-500/15 to-emerald-500/[0.04]",
   good: "border-t border-emerald-400/20 bg-gradient-to-b from-emerald-500/10 to-emerald-500/[0.03]",
   mid: "border-t border-amber-400/25 bg-gradient-to-b from-amber-500/10 to-amber-500/[0.03]",
   poor: "border-t border-red-400/25 bg-gradient-to-b from-red-500/10 to-red-500/[0.03]",
@@ -68,11 +69,16 @@ const TIER_STARS: Record<Tier, string> = {
 /** Source-dot barva (z prototypu cards.jsx) */
 function sourceDotColor(source: string): string {
   switch (source) {
-    case "Sreality": return "var(--color-primary)";
-    case "Bezrealitky": return "#7aa2ff";
-    case "Bazoš": return "#e0a64b";
-    case "iDnes Reality": return "#d06bd0";
-    default: return "var(--color-muted-foreground)";
+    case "Sreality":
+      return "var(--color-primary)";
+    case "Bezrealitky":
+      return "#7aa2ff";
+    case "Bazoš":
+      return "#e0a64b";
+    case "iDnes Reality":
+      return "#d06bd0";
+    default:
+      return "var(--color-muted-foreground)";
   }
 }
 
@@ -123,7 +129,8 @@ const OWNERSHIP_LABEL: Record<string, { short: string; full: string; cls: string
 };
 
 function fmtMil(n: number): string {
-  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(n >= 10_000_000 ? 1 : 2).replace(".", ",")} mil`;
+  if (n >= 1_000_000)
+    return `${(n / 1_000_000).toFixed(n >= 10_000_000 ? 1 : 2).replace(".", ",")} mil`;
   if (n >= 1_000) return `${Math.round(n / 1_000)} tis`;
   return n.toLocaleString("cs-CZ");
 }
@@ -141,7 +148,8 @@ function Stars({ n, cls }: { n: number; cls: string }) {
 /* ---------- Cena/m² vs. průměr srovnatelných ---------- */
 
 const PC_BLOCK: Record<string, string> = {
-  below: "border-t border-emerald-400/30 bg-gradient-to-b from-emerald-500/12 to-emerald-500/[0.03]",
+  below:
+    "border-t border-emerald-400/30 bg-gradient-to-b from-emerald-500/12 to-emerald-500/[0.03]",
   avg: "border-t border-border bg-[var(--color-surface-2)]/40",
   above: "border-t border-red-400/25 bg-gradient-to-b from-red-500/10 to-red-500/[0.03]",
   none: "border-t border-border bg-[var(--color-surface-2)]/30",
@@ -177,8 +185,10 @@ function pcDiff(diff: number): string {
   return `${diff > 0 ? "+" : "−"}${Math.abs(diff)} %`;
 }
 
-const HOUSE_COMPARISON_WARNING = "Srovnání je orientační — málo srovnatelných domů v okolí (často se porovnává s domy ve městech i na vesnici).";
-const CSU_CAVEAT = "ČSÚ uvádí ceny, za které se domy skutečně prodaly. Inzerát uvádí nabídkovou cenu, která bývá systematicky vyšší. Kladná odchylka proto sama o sobě neznamená předražení.";
+const HOUSE_COMPARISON_WARNING =
+  "Srovnání je orientační — málo srovnatelných domů v okolí (často se porovnává s domy ve městech i na vesnici).";
+const CSU_CAVEAT =
+  "ČSÚ uvádí ceny, za které se domy skutečně prodaly. Inzerát uvádí nabídkovou cenu, která bývá systematicky vyšší. Kladná odchylka proto sama o sobě neznamená předražení.";
 
 function isWeakHouseComparison(pc: NonNullable<Listing["price_compare"]>): boolean {
   return pc.scope === "kraj" || pc.samples < 10;
@@ -188,7 +198,9 @@ function PriceCompareHero({ pc }: { pc?: Listing["price_compare"] }) {
   if (!pc) {
     return (
       <div className="flex flex-col leading-none">
-        <span className="font-mono text-lg font-bold text-muted-foreground">nedostatek dat pro srovnání</span>
+        <span className="font-mono text-lg font-bold text-muted-foreground">
+          nedostatek dat pro srovnání
+        </span>
         <span className="mt-1 text-[10px] uppercase tracking-wider text-muted-foreground">
           cena/m² vs. průměr
         </span>
@@ -197,22 +209,36 @@ function PriceCompareHero({ pc }: { pc?: Listing["price_compare"] }) {
   }
   const weak = isWeakHouseComparison(pc);
   return (
-    <div className={`flex flex-col gap-2 ${weak ? "text-muted-foreground" : ""}`} title={weak ? HOUSE_COMPARISON_WARNING : undefined}>
+    <div
+      className={`flex flex-col gap-2 ${weak ? "text-muted-foreground" : ""}`}
+      title={weak ? HOUSE_COMPARISON_WARNING : undefined}
+    >
       <div className="flex items-end justify-between gap-2">
         <div className="flex flex-col leading-none">
-          <span className={`inline-flex items-center gap-1.5 font-mono text-3xl font-bold ${weak ? "text-muted-foreground" : PC_TEXT[pc.band]}`}>
-            {weak && <AlertTriangle className="h-4 w-4 shrink-0" aria-label="Orientační srovnání" />}
+          <span
+            className={`inline-flex items-center gap-1.5 font-mono text-3xl font-bold ${weak ? "text-muted-foreground" : PC_TEXT[pc.band]}`}
+          >
+            {weak && (
+              <AlertTriangle className="h-4 w-4 shrink-0" aria-label="Orientační srovnání" />
+            )}
             {pcDiff(pc.diff_pct)}
           </span>
           <span className="mt-1 text-[10px] uppercase tracking-wider text-muted-foreground">
             cena/m² vs. {pcScopeMedian(pc.scope)} (n={pc.samples})
           </span>
         </div>
-        <span className={`text-[11px] font-semibold ${weak ? "text-muted-foreground" : PC_TEXT[pc.band]}`}>{PC_LABEL[pc.band]}</span>
+        <span
+          className={`text-[11px] font-semibold ${weak ? "text-muted-foreground" : PC_TEXT[pc.band]}`}
+        >
+          {PC_LABEL[pc.band]}
+        </span>
       </div>
       <div className="grid grid-cols-2 gap-2 border-t border-border/40 pt-2">
         <Metric label="Tato nabídka" value={`${pc.own_per_m2.toLocaleString("cs-CZ")} Kč/m²`} />
-        <Metric label="Medián srovnatelných" value={`${pc.median_per_m2.toLocaleString("cs-CZ")} Kč/m²`} />
+        <Metric
+          label="Medián srovnatelných"
+          value={`${pc.median_per_m2.toLocaleString("cs-CZ")} Kč/m²`}
+        />
       </div>
       <div className="text-[10px] text-muted-foreground">
         Medián z {pc.samples} srovnatelných ({pcScope(pc.scope)}, plocha ±25 %)
@@ -224,24 +250,43 @@ function PriceCompareHero({ pc }: { pc?: Listing["price_compare"] }) {
 function csuTooltip(csu: NonNullable<Listing["csu_compare"]>): string {
   const units = ` Naše hodnota je ${csu.own_per_m2.toLocaleString("cs-CZ")} Kč/m² užitné plochy, ČSÚ uvádí ${csu.benchmark_per_m2.toLocaleString("cs-CZ")} Kč/m² obytné plochy — nejde o stejnou jednotku.`;
   const band = ` Srovnáváme jen v pásmu ${csu.size_band_label}${csu.band_factor ? `, přepočtový koeficient ${csu.band_factor.toFixed(2)}` : ""}${csu.band_sample_count ? ` (z ${csu.band_sample_count} domů)` : ""}; očekávaná úroveň pro toto pásmo je ${csu.expected_per_m2.toLocaleString("cs-CZ")} Kč/m².`;
-  const estimate = " Koeficient je odvozen z našich vlastních nabídkových cen, výsledná úroveň je proto odhad, ne měření.";
-  const area = csu.area_warning && csu.band_typical_area_m2
-    ? ` Plocha domu se výrazně liší od typické velikosti v tomto pásmu (${Math.round(csu.band_typical_area_m2)} m²).`
+  const estimate =
+    " Koeficient je odvozen z našich vlastních nabídkových cen, výsledná úroveň je proto odhad, ne měření.";
+  const area =
+    csu.area_warning && csu.band_typical_area_m2
+      ? ` Plocha domu se výrazně liší od typické velikosti v tomto pásmu (${Math.round(csu.band_typical_area_m2)} m²).`
+      : "";
+  const lowConf = csu.area_low_confidence
+    ? " Plocha u tohoto inzerátu má nízkou důvěryhodnost (není strukturovaný údaj)."
     : "";
-  const lowConf = csu.area_low_confidence ? " Plocha u tohoto inzerátu má nízkou důvěryhodnost (není strukturovaný údaj)." : "";
-  const lowSample = csu.benchmark_low_sample ? " ČSÚ tuto hodnotu uvádí jako údaj z malého počtu převodů — srovnání je proto jen orientační." : "";
+  const lowSample = csu.benchmark_low_sample
+    ? " ČSÚ tuto hodnotu uvádí jako údaj z malého počtu převodů — srovnání je proto jen orientační."
+    : "";
   return `${CSU_CAVEAT}${units}${band}${estimate}${area}${lowConf}${lowSample}`;
 }
 
-function CsuCompareHero({ csu, listingPc }: { csu?: Listing["csu_compare"]; listingPc?: Listing["price_compare"] }) {
+function CsuCompareHero({
+  csu,
+  listingPc,
+}: {
+  csu?: Listing["csu_compare"];
+  listingPc?: Listing["price_compare"];
+}) {
   if (!csu) return <PriceCompareHero pc={listingPc} />;
   const weak = csu.area_warning || csu.area_low_confidence || csu.benchmark_low_sample;
   return (
-    <div className={`flex flex-col gap-2.5 ${weak ? "text-muted-foreground" : ""}`} title={csuTooltip(csu)}>
+    <div
+      className={`flex flex-col gap-2.5 ${weak ? "text-muted-foreground" : ""}`}
+      title={csuTooltip(csu)}
+    >
       <div className="flex items-start justify-between gap-2">
         <div className="flex flex-col leading-none min-w-0">
-          <span className={`inline-flex items-center gap-1.5 text-lg sm:text-xl font-bold ${weak ? "text-muted-foreground" : PC_TEXT[csu.band]}`}>
-            {weak && <AlertTriangle className="h-4 w-4 shrink-0" aria-label="Orientační srovnání" />}
+          <span
+            className={`inline-flex items-center gap-1.5 text-lg sm:text-xl font-bold ${weak ? "text-muted-foreground" : PC_TEXT[csu.band]}`}
+          >
+            {weak && (
+              <AlertTriangle className="h-4 w-4 shrink-0" aria-label="Orientační srovnání" />
+            )}
             <span className="truncate">{csu.verdict_label}</span>
           </span>
           <span className="mt-1 text-[10px] uppercase tracking-wider text-muted-foreground truncate">
@@ -254,18 +299,22 @@ function CsuCompareHero({ csu, listingPc }: { csu?: Listing["csu_compare"]; list
       </div>
       <div className="grid grid-cols-2 gap-2 border-t border-border/40 pt-2">
         <Metric label="Tento dům" value={`${csu.own_per_m2.toLocaleString("cs-CZ")} Kč/m²`} />
-        <Metric label="Průměr lokality (ČSÚ)" value={`${csu.expected_per_m2.toLocaleString("cs-CZ")} Kč/m²`} />
+        <Metric
+          label="Průměr lokality (ČSÚ)"
+          value={`${csu.expected_per_m2.toLocaleString("cs-CZ")} Kč/m²`}
+        />
       </div>
       <div className="flex items-center justify-between text-[10px] text-muted-foreground gap-1">
         <span className="truncate">Kategorie {csu.size_band_label}</span>
         {listingPc && listingPc.samples >= 5 && (
-          <span className="shrink-0 whitespace-nowrap">Trh: {listingPc.median_per_m2.toLocaleString("cs-CZ")} Kč/m²</span>
+          <span className="shrink-0 whitespace-nowrap">
+            Trh: {listingPc.median_per_m2.toLocaleString("cs-CZ")} Kč/m²
+          </span>
         )}
       </div>
     </div>
   );
 }
-
 
 function PriceCompareBadge({ pc }: { pc?: Listing["price_compare"] }) {
   if (!pc) {
@@ -275,20 +324,33 @@ function PriceCompareBadge({ pc }: { pc?: Listing["price_compare"] }) {
   }
   return (
     <div className="flex flex-wrap items-center gap-1.5 text-[10px] text-muted-foreground">
-      <span className={`rounded-md border px-1.5 py-0.5 font-semibold ${PC_TEXT[pc.band]} ${
-        pc.band === "below" ? "border-emerald-500/40 bg-emerald-500/10"
-          : pc.band === "above" ? "border-red-500/40 bg-red-500/10"
-          : "border-border bg-muted/40"
-      }`}>
+      <span
+        className={`rounded-md border px-1.5 py-0.5 font-semibold ${PC_TEXT[pc.band]} ${
+          pc.band === "below"
+            ? "border-emerald-500/40 bg-emerald-500/10"
+            : pc.band === "above"
+              ? "border-red-500/40 bg-red-500/10"
+              : "border-border bg-muted/40"
+        }`}
+      >
         {pcVs(pc)}
       </span>
-      <span>{PC_LABEL[pc.band]} · medián z {pc.samples} srovnatelných ({pcScope(pc.scope)})</span>
+      <span>
+        {PC_LABEL[pc.band]} · medián z {pc.samples} srovnatelných ({pcScope(pc.scope)})
+      </span>
     </div>
   );
 }
 
-
-export function ListingCard({ listing, density = "card", rank }: { listing: Listing; density?: Density; rank?: number }) {
+export function ListingCard({
+  listing,
+  density = "card",
+  rank,
+}: {
+  listing: Listing;
+  density?: Density;
+  rank?: number;
+}) {
   if (density === "list") return <ListingRow listing={listing} />;
   if (density === "compact") return <ListingCompact listing={listing} />;
   return <ListingFull listing={listing} rank={rank} />;
@@ -336,13 +398,13 @@ function ListingFull({ listing, rank }: { listing: Listing; rank?: number }) {
   const anuity = listing.anuity;
   const badges = [
     ...(fresh && !isFallbackDate ? [fresh] : []),
-    ...(listing.badges || []).filter(b => b !== "NOVÝ" || !fresh),
+    ...(listing.badges || []).filter((b) => b !== "NOVÝ" || !fresh),
   ];
-  const pricePerM2 = listing.price && listing.area_m2 ? Math.round(listing.price / listing.area_m2) : null;
+  const pricePerM2 =
+    listing.price && listing.area_m2 ? Math.round(listing.price / listing.area_m2) : null;
   const tier = tierOf(inv?.stars);
   const trap = hasPriceTrap(listing.flags);
   const isHouse = listing.property_type === "domy";
-
 
   return (
     <a
@@ -372,14 +434,19 @@ function ListingFull({ listing, rank }: { listing: Listing; rank?: number }) {
           <div className="flex flex-wrap justify-end gap-1">
             {anuity?.has_anuity && (
               <span
-                title={anuity.source_phrase || "V popisu zmínka o anuitě / nesplaceném úvěru družstva"}
+                title={
+                  anuity.source_phrase || "V popisu zmínka o anuitě / nesplaceném úvěru družstva"
+                }
                 className="rounded-md border border-red-500/50 bg-red-500/15 px-1.5 py-0.5 text-[9px] font-bold tracking-wider text-red-300"
               >
                 + ANUITA
               </span>
             )}
             {badges.map((b) => (
-              <span key={b} className={`rounded-md px-1.5 py-0.5 text-[9px] font-bold tracking-wider ${badgeClass(b)}`}>
+              <span
+                key={b}
+                className={`rounded-md px-1.5 py-0.5 text-[9px] font-bold tracking-wider ${badgeClass(b)}`}
+              >
                 {b}
               </span>
             ))}
@@ -387,7 +454,9 @@ function ListingFull({ listing, rank }: { listing: Listing; rank?: number }) {
           </div>
         </div>
 
-        <h3 className="line-clamp-2 text-sm font-semibold leading-snug text-foreground">{listing.name}</h3>
+        <h3 className="line-clamp-2 text-sm font-semibold leading-snug text-foreground">
+          {listing.name}
+        </h3>
 
         {/* Lokalita + čas */}
         <div className="flex items-center justify-between gap-2 text-[11px] text-muted-foreground">
@@ -396,10 +465,16 @@ function ListingFull({ listing, rank }: { listing: Listing; rank?: number }) {
               <MapPin className="h-3 w-3 shrink-0" />
               <span className="truncate">{listing.locality}</span>
             </span>
-          ) : <span />}
+          ) : (
+            <span />
+          )}
           {dateText && (
             <span
-              title={isFallbackDate ? "Datum nebylo k dispozici — zobrazen čas skenu" : "Datum zveřejnění"}
+              title={
+                isFallbackDate
+                  ? "Datum nebylo k dispozici — zobrazen čas skenu"
+                  : "Datum zveřejnění"
+              }
               className={`shrink-0 ${isFallbackDate ? "italic opacity-60" : ""}`}
             >
               {isFallbackDate ? `~ ${dateText}` : dateText}
@@ -412,7 +487,9 @@ function ListingFull({ listing, rank }: { listing: Listing; rank?: number }) {
         {/* Cena + plocha + OV/DV chip */}
         <div className="flex flex-wrap items-end justify-between gap-x-2 gap-y-1 pt-1">
           <div className="flex flex-col min-w-0">
-            <span className="font-mono text-lg font-bold text-primary leading-tight whitespace-nowrap">{listing.price_text}</span>
+            <span className="font-mono text-lg font-bold text-primary leading-tight whitespace-nowrap">
+              {listing.price_text}
+            </span>
             {pricePerM2 && (
               <span className="font-mono text-[10px] text-muted-foreground whitespace-nowrap">
                 {pricePerM2.toLocaleString("cs-CZ")} Kč/m²
@@ -452,11 +529,16 @@ function ListingFull({ listing, rank }: { listing: Listing; rank?: number }) {
             </div>
             {anuity.amount && listing.price ? (
               <div className="mt-0.5 font-mono">
-                {fmtMil(listing.price)} + {fmtMil(anuity.amount)} = <span className="font-bold">{fmtMil(anuity.effective_price || listing.price + anuity.amount)} Kč efektivně</span>
+                {fmtMil(listing.price)} + {fmtMil(anuity.amount)} ={" "}
+                <span className="font-bold">
+                  {fmtMil(anuity.effective_price || listing.price + anuity.amount)} Kč efektivně
+                </span>
               </div>
             ) : (
               <div className="mt-0.5 text-red-200/80">
-                {anuity.confidence === "medium" ? "Družstevní byt – ověř výši anuity v inzerátu." : "Částka nebyla v popisu nalezena."}
+                {anuity.confidence === "medium"
+                  ? "Družstevní byt – ověř výši anuity v inzerátu."
+                  : "Částka nebyla v popisu nalezena."}
               </div>
             )}
           </div>
@@ -480,17 +562,23 @@ function ListingFull({ listing, rank }: { listing: Listing; rank?: number }) {
           <div className="flex items-end justify-between gap-2">
             <div className="flex flex-col leading-none">
               {trap ? (
-                <span title="Skrytý náklad — výnos neověřen" className="font-mono text-3xl font-bold text-amber-300">
+                <span
+                  title="Skrytý náklad — výnos neověřen"
+                  className="font-mono text-3xl font-bold text-amber-300"
+                >
                   ověřit
                 </span>
               ) : (
                 <span className={`font-mono text-3xl font-bold ${TIER_YIELD[tier]}`}>
-                  {inv.net_yield.toString().replace(".", ",")}
+                  {inv.gross_yield.toLocaleString("cs-CZ", {
+                    minimumFractionDigits: 1,
+                    maximumFractionDigits: 1,
+                  })}
                   <span className="ml-0.5 text-base font-semibold opacity-80">%</span>
                 </span>
               )}
               <span className="mt-1 text-[10px] uppercase tracking-wider text-muted-foreground">
-                výnos p.a.
+                odhad hrubého výnosu p.a.
               </span>
             </div>
             <div className="flex flex-col items-end gap-1">
@@ -500,8 +588,18 @@ function ListingFull({ listing, rank }: { listing: Listing; rank?: number }) {
           </div>
 
           <div className="grid grid-cols-3 gap-2 border-t border-border/40 pt-2">
-            <Metric label="Výnos p.a." value={trap ? "—" : `${inv.gross_yield.toString().replace(".", ",")} %`} />
-            <Metric label="Nájem/měs." value={`${inv.monthly_rent.toLocaleString("cs-CZ")} Kč`} />
+            <Metric
+              label="Hrubý výnos"
+              value={
+                trap
+                  ? "—"
+                  : `${inv.gross_yield.toLocaleString("cs-CZ", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} %`
+              }
+            />
+            <Metric
+              label="Odhad nájmu/měs."
+              value={`${inv.monthly_rent.toLocaleString("cs-CZ")} Kč`}
+            />
             <Metric label="Návratnost" value={`${inv.payback_years} let`} />
           </div>
 
@@ -511,18 +609,27 @@ function ListingFull({ listing, rank }: { listing: Listing; rank?: number }) {
             <div
               className="text-[10px] text-muted-foreground"
               title={
-                inv.rent_source === "okres_live" ? "Živá tržní data ze Sreality (medián per okres)" :
-                inv.rent_source === "okres_static" ? "Statický odhad okresu (Deloitte / ČSÚ)" :
-                inv.rent_source === "district" ? "Konkrétní městská část" :
-                inv.rent_source === "region" ? "Krajský průměr" :
-                "Národní průměr — orientační"
+                inv.rent_source === "okres_live"
+                  ? "Odhad z nabídkových nájmů; rozsah srovnání uvádí popisek"
+                  : inv.rent_source === "okres_static"
+                    ? "Statický odhad okresu (Deloitte / ČSÚ)"
+                    : inv.rent_source === "district"
+                      ? "Konkrétní městská část"
+                      : inv.rent_source === "region"
+                        ? "Krajský průměr"
+                        : "Národní průměr — orientační"
               }
             >
-              Odhad nájmu: {inv.rent_basis_label}
-              {inv.rent_source === "okres_live" ? " ✓" :
-                inv.rent_source === "district" ? " ✓" :
-                inv.rent_source === "okres_static" ? " ~" :
-                inv.rent_source === "region" ? " (kraj)" : " (ČR)"}
+              Odhad nabídkového nájmu: {inv.rent_basis_label}
+              {inv.rent_source === "okres_live"
+                ? " ✓"
+                : inv.rent_source === "district"
+                  ? " ✓"
+                  : inv.rent_source === "okres_static"
+                    ? " ~"
+                    : inv.rent_source === "region"
+                      ? " (kraj)"
+                      : " (ČR)"}
             </div>
           )}
           {anuity?.effective_price && (
@@ -537,7 +644,6 @@ function ListingFull({ listing, rank }: { listing: Listing; rank?: number }) {
           </div>
         </div>
       )}
-
     </a>
   );
 }
@@ -545,13 +651,18 @@ function ListingFull({ listing, rank }: { listing: Listing; rank?: number }) {
 function Metric({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex flex-col gap-0.5 min-w-0">
-      <span className="truncate text-[9px] uppercase tracking-wider text-muted-foreground" title={label}>{label}</span>
-      <span className="font-mono text-xs font-semibold text-foreground whitespace-nowrap truncate">{value}</span>
+      <span
+        className="truncate text-[9px] uppercase tracking-wider text-muted-foreground"
+        title={label}
+      >
+        {label}
+      </span>
+      <span className="font-mono text-xs font-semibold text-foreground whitespace-nowrap truncate">
+        {value}
+      </span>
     </div>
   );
 }
-
-
 
 function ListingCompact({ listing }: { listing: Listing }) {
   const inv = listing.invest;
@@ -576,10 +687,14 @@ function ListingCompact({ listing }: { listing: Listing }) {
           </span>
         )}
         {fresh && !isFallbackDate && (
-          <span className={`rounded-sm px-1 py-0.5 text-[8px] font-bold ${badgeClass(fresh)}`}>{fresh}</span>
+          <span className={`rounded-sm px-1 py-0.5 text-[8px] font-bold ${badgeClass(fresh)}`}>
+            {fresh}
+          </span>
         )}
       </div>
-      <h3 className="line-clamp-2 text-xs font-semibold leading-snug text-foreground">{listing.name}</h3>
+      <h3 className="line-clamp-2 text-xs font-semibold leading-snug text-foreground">
+        {listing.name}
+      </h3>
       <span
         title={own.full}
         className={`inline-flex w-fit items-center rounded-sm px-1.5 py-0.5 text-[10px] font-bold ${own.cls}`}
@@ -593,7 +708,9 @@ function ListingCompact({ listing }: { listing: Listing }) {
         </div>
       )}
       <div className="mt-auto flex items-end justify-between gap-1 pt-1">
-        <span className="font-mono text-sm font-bold leading-tight text-primary">{listing.price_text}</span>
+        <span className="font-mono text-sm font-bold leading-tight text-primary">
+          {listing.price_text}
+        </span>
         {listing.area && (
           <span className="font-mono text-[10px] text-muted-foreground">{listing.area}</span>
         )}
@@ -605,12 +722,20 @@ function ListingCompact({ listing }: { listing: Listing }) {
         >
           {listing.csu_compare ? (
             <>
-              <span className={`inline-flex items-center gap-1 font-semibold ${listing.csu_compare.area_warning || listing.csu_compare.area_low_confidence || listing.csu_compare.benchmark_low_sample ? "text-muted-foreground" : PC_TEXT[listing.csu_compare.band]}`}>
-                {(listing.csu_compare.area_warning || listing.csu_compare.area_low_confidence || listing.csu_compare.benchmark_low_sample) && <AlertTriangle className="h-3 w-3 shrink-0" aria-label="Orientační srovnání" />}
+              <span
+                className={`inline-flex items-center gap-1 font-semibold ${listing.csu_compare.area_warning || listing.csu_compare.area_low_confidence || listing.csu_compare.benchmark_low_sample ? "text-muted-foreground" : PC_TEXT[listing.csu_compare.band]}`}
+              >
+                {(listing.csu_compare.area_warning ||
+                  listing.csu_compare.area_low_confidence ||
+                  listing.csu_compare.benchmark_low_sample) && (
+                  <AlertTriangle className="h-3 w-3 shrink-0" aria-label="Orientační srovnání" />
+                )}
                 {listing.csu_compare.verdict_label}
               </span>
 
-              <span className="text-muted-foreground">{listing.csu_compare.scope_label.replace("ČSÚ · ", "")}</span>
+              <span className="text-muted-foreground">
+                {listing.csu_compare.scope_label.replace("ČSÚ · ", "")}
+              </span>
             </>
           ) : listing.price_compare ? (
             <>
@@ -623,18 +748,27 @@ function ListingCompact({ listing }: { listing: Listing }) {
             <span className="text-muted-foreground">nedostatek dat pro srovnání</span>
           )}
         </div>
-      ) : inv ? (() => {
-        const t = tierOf(inv.stars);
-        return (
-          <div className={`flex items-center justify-between rounded-sm px-1.5 py-1 text-[10px] ${TIER_VERDICT[t]}`}>
-            <span className={`font-mono font-semibold ${TIER_YIELD[t]}`}>{inv.net_yield}% výnos</span>
-            <span className={`font-mono tracking-wider ${TIER_STARS[t]}`}>
-              {"★".repeat(inv.stars)}
-            </span>
-          </div>
-        );
-      })() : null}
-
+      ) : inv ? (
+        (() => {
+          const t = tierOf(inv.stars);
+          return (
+            <div
+              className={`flex items-center justify-between rounded-sm px-1.5 py-1 text-[10px] ${TIER_VERDICT[t]}`}
+            >
+              <span className={`font-mono font-semibold ${TIER_YIELD[t]}`}>
+                {inv.gross_yield.toLocaleString("cs-CZ", {
+                  minimumFractionDigits: 1,
+                  maximumFractionDigits: 1,
+                })}{" "}
+                % hrubý výnos
+              </span>
+              <span className={`font-mono tracking-wider ${TIER_STARS[t]}`}>
+                {"★".repeat(inv.stars)}
+              </span>
+            </div>
+          );
+        })()
+      ) : null}
     </a>
   );
 }
@@ -702,17 +836,23 @@ function ListingRow({ listing }: { listing: Listing }) {
               className={`inline-flex items-center gap-1 text-[10px] font-semibold ${listing.csu_compare.area_warning || listing.csu_compare.area_low_confidence || listing.csu_compare.benchmark_low_sample ? "text-muted-foreground" : PC_TEXT[listing.csu_compare.band]}`}
               title={csuTooltip(listing.csu_compare)}
             >
-              {(listing.csu_compare.area_warning || listing.csu_compare.area_low_confidence || listing.csu_compare.benchmark_low_sample) && <AlertTriangle className="h-3 w-3 shrink-0" aria-label="Orientační srovnání" />}
+              {(listing.csu_compare.area_warning ||
+                listing.csu_compare.area_low_confidence ||
+                listing.csu_compare.benchmark_low_sample) && (
+                <AlertTriangle className="h-3 w-3 shrink-0" aria-label="Orientační srovnání" />
+              )}
               {listing.csu_compare.verdict_label} vs. ČSÚ
-
             </span>
           )
         ) : inv ? (
           <span className={`font-mono text-[10px] font-semibold ${TIER_YIELD[tierOf(inv.stars)]}`}>
-            {inv.net_yield}% · {"★".repeat(inv.stars)}
+            {inv.gross_yield.toLocaleString("cs-CZ", {
+              minimumFractionDigits: 1,
+              maximumFractionDigits: 1,
+            })}{" "}
+            % hrubý · {"★".repeat(inv.stars)}
           </span>
         ) : null}
-
       </div>
     </a>
   );

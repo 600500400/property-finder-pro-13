@@ -171,7 +171,7 @@ function Pricing() {
             <div className="mt-3 rounded-lg border border-primary/40 bg-primary/5 p-3">
               <div className="text-[11px] font-semibold uppercase tracking-wider text-primary">Po bezplatné registraci</div>
               <ul className="mt-2 space-y-1.5 text-sm">
-                <Bullet>Až 50 výsledků na dotaz</Bullet>
+                <Bullet>Po bezplatné registraci až 50 výsledků na dotaz</Bullet>
                 <Bullet>Ukládání oblíbených inzerátů (neomezeně)</Bullet>
                 <Bullet>1 hlídací pes (denní souhrn 06:00)</Bullet>
                 <Bullet>1× zdarma ukázková AI analýza</Bullet>

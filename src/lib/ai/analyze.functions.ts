@@ -107,7 +107,7 @@ SERVEREM SPOČÍTANÁ FAKTA (nepřepočítávej je):
 - Medián Kč/m² způsobilého vzorku: ${m.median_ppm != null ? m.median_ppm.toLocaleString("cs-CZ") : "neznámé"}
 - Odchylka od mediánu: ${m.pct_vs_median != null ? `${m.pct_vs_median > 0 ? "+" : ""}${m.pct_vs_median} %` : "neznámé"}
 - Počet způsobilých srovnatelných nabídek: ${m.sample_count}
-- Odhad výnosu: ${m.rent_basis_label ?? "neznámý základ"}; čistý ${m.net_yield ?? "?"} %, hrubý ${m.gross_yield ?? "?"} %
+- Odhad výnosu: ${m.rent_basis_label ?? "neznámý základ"}; hrubý ${m.gross_yield ?? "?"} % před náklady a neobsazeností
 
 REPREZENTATIVNÍ VÝBĚR ZE VZORKU (rovnoměrně přes cenové rozložení, ne nejlevnější):
 ${comps.sample.length === 0
@@ -206,7 +206,7 @@ export const analyzeListing = createServerFn({ method: "POST" })
       median_ppm: comps.median_ppm,
       pct_vs_median: comps.pct_vs_median,
       sample_count: comps.sample_count,
-      net_yield: invest?.net_yield ?? null,
+      net_yield: invest?.gross_yield ?? null,
       gross_yield: invest?.gross_yield ?? null,
       rent_basis_label: invest?.rent_basis_label ?? null,
     };
