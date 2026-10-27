@@ -30,13 +30,19 @@ export interface PersonalResult {
 }
 
 function norm(s: string): string {
-  return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+  return s
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
 }
 
 /** Normalised, order-independent representation of a user's rules. */
 export function normalizeRules(rules: InvestorRulesLike): InvestorRulesLike {
   return {
-    excluded_localities: [...new Set(rules.excluded_localities.map(s => norm(s)).filter(Boolean))].sort(),
+    excluded_localities: [
+      ...new Set(rules.excluded_localities.map((s) => norm(s)).filter(Boolean)),
+    ].sort(),
     min_net_yield: rules.min_net_yield ?? null,
     max_price: rules.max_price ?? null,
     require_osobni: !!rules.require_osobni,
@@ -67,10 +73,10 @@ export function evaluateInvestorRules(
 
   const haystack = [subject.city, subject.locality, subject.kraj]
     .filter(Boolean)
-    .map(v => norm(String(v)));
+    .map((v) => norm(String(v)));
 
   for (const loc of r.excluded_localities) {
-    if (haystack.some(h => h.includes(loc) || loc.includes(h))) {
+    if (haystack.some((h) => h.includes(loc) || loc.includes(h))) {
       violations.push(`Lokalita „${loc}" je na tvém seznamu vyloučených lokalit.`);
       break;
     }
@@ -84,21 +90,28 @@ export function evaluateInvestorRules(
 
   if (r.min_net_yield != null) {
     if (subject.net_yield == null) {
-      violations.push(`Čistý výnos nelze spočítat, takže tvůj požadavek min. ${r.min_net_yield} % nelze ověřit.`);
+      violations.push(
+        `Hrubý výnos nelze spočítat, takže tvůj požadavek min. ${r.min_net_yield} % nelze ověřit.`,
+      );
     } else if (subject.net_yield < r.min_net_yield) {
-      violations.push(`Čistý výnos ${subject.net_yield} % je pod tvým minimem ${r.min_net_yield} %.`);
+      violations.push(
+        `Hrubý výnos ${subject.net_yield} % je pod tvým minimem ${r.min_net_yield} %.`,
+      );
     }
   }
 
   if (r.require_osobni && subject.ownership && subject.ownership !== "osobni") {
-    violations.push(`Vlastnictví je „${subject.ownership}", ty požaduješ pouze osobní vlastnictví.`);
+    violations.push(
+      `Vlastnictví je „${subject.ownership}", ty požaduješ pouze osobní vlastnictví.`,
+    );
   }
 
-  const personal_notice = violations.length === 0
-    ? null
-    : violations.length === 1
-      ? "Nabídka porušuje jedno z tvých investičních pravidel."
-      : `Nabídka porušuje ${violations.length} tvá investiční pravidla.`;
+  const personal_notice =
+    violations.length === 0
+      ? null
+      : violations.length === 1
+        ? "Nabídka porušuje jedno z tvých investičních pravidel."
+        : `Nabídka porušuje ${violations.length} tvá investiční pravidla.`;
 
   return { user_rule_violations: violations, personal_notice };
 }

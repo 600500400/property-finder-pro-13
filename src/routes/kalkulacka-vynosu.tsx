@@ -38,7 +38,7 @@ function Calculator() {
   return (
     <PublicGuide
       title="Kalkulačka výnosu z pronájmu"
-      intro="Vlastní scénář bez registrace. Výchozí hodnoty jsou pouze ilustrační příklad, nikoli odhad tržního nájmu nebo doporučení ke koupi. Nahraďte je ověřenými údaji."
+      intro="Vlastní scénář bez registrace. Výchozí hodnoty jsou pouze ilustrační příklad, nikoli odhad nabídkového nájmu nebo doporučení ke koupi. Nahraďte je ověřenými údaji."
     >
       <div className="grid gap-4 sm:grid-cols-2">
         {inputs.map(([label, help], i) => (
@@ -70,12 +70,10 @@ function Calculator() {
         <h2 className="text-xl font-semibold">Výsledek Vašeho scénáře</h2>
         {result ? (
           <div className="mt-3 space-y-3">
-            <p className="text-2xl font-bold">
-              Čistý provozní výnos {number(result.netYield, 1)} % ročně
-            </p>
+            <p className="text-2xl font-bold">Hrubý výnos {number(result.grossYield, 1)} % ročně</p>
             <p>
-              Hrubý výnos {number(result.grossYield, 1)} % ročně · čistý provozní příjem{" "}
-              {number(result.annualNet)} Kč ročně.
+              Čistý provozní výnos vlastního scénáře {number(result.netYield, 1)} % ročně · čistý
+              provozní příjem {number(result.annualNet)} Kč ročně.
             </p>
             <p className="text-sm text-muted-foreground">
               Hrubý: {number(parsed[1])} Kč × 12 = {number(result.annualGross)} Kč ročně ÷{" "}
@@ -101,7 +99,8 @@ function Calculator() {
           po financování. Náklady zadávejte bez neobsazenosti, kterou kalkulačka odečítá zvlášť.
         </p>
         <p className="mt-3 text-muted-foreground">
-          Skener zobrazuje orientační hrubý výnos. Zde ho upřesňujete vlastními náklady a neobsazeností.{" "}
+          Skener zobrazuje orientační hrubý výnos. Zde ho upřesňujete vlastními náklady a
+          neobsazeností.{" "}
           <Link to="/metodika" className="text-primary hover:underline">
             Více v metodice.
           </Link>

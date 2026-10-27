@@ -7,10 +7,7 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { supabase } from "@/integrations/supabase/client";
 import { Toaster } from "@/components/ui/sonner";
 import { OPERATOR, SITE_URL } from "@/lib/site";
-import { emitConversion } from "@/lib/conversion-events";
-
-const GA_MEASUREMENT_ID = (import.meta.env.VITE_GA_MEASUREMENT_ID as string) || "G-HL1FMNLRC9";
-
+import { CookieConsent } from "@/components/CookieConsent";
 
 function NotFoundComponent() {
   return (
@@ -70,19 +67,19 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { title: "RealityScanner — Investiční byty a domy | Výnos z nájmu & ČSÚ ceny" },
       {
         name: "description",
-        content: "Agregátor inzerátů ze Sreality, Bezrealitky a dalších portálů. Okamžitý výpočet čistého výnosu z pronájmu, srovnání cen domů s ČSÚ a automatický hlídací pes.",
+        content: "Agregátor inzerátů ze Sreality, Bezrealitky a dalších portálů. Orientační hrubý výnos z pronájmu, srovnání cen domů s ČSÚ a automatický hlídací pes.",
       },
       { property: "og:title", content: "RealityScanner — Investiční byty a domy | Výnos z nájmu & ČSÚ ceny" },
       {
         property: "og:description",
-        content: "Agregátor inzerátů ze Sreality, Bezrealitky a dalších portálů. Okamžitý výpočet čistého výnosu z pronájmu, srovnání cen domů s ČSÚ a automatický hlídací pes.",
+        content: "Agregátor inzerátů ze Sreality, Bezrealitky a dalších portálů. Orientační hrubý výnos z pronájmu, srovnání cen domů s ČSÚ a automatický hlídací pes.",
       },
       { property: "og:type", content: "website" },
       { property: "og:url", content: "https://www.realityscanner.cz/" },
       { name: "twitter:title", content: "RealityScanner — Investiční byty a domy | Výnos z nájmu & ČSÚ ceny" },
       {
         name: "twitter:description",
-        content: "Agregátor inzerátů ze Sreality, Bezrealitky a dalších portálů. Okamžitý výpočet čistého výnosu z pronájmu, srovnání cen domů s ČSÚ a automatický hlídací pes.",
+        content: "Agregátor inzerátů ze Sreality, Bezrealitky a dalších portálů. Orientační hrubý výnos z pronájmu, srovnání cen domů s ČSÚ a automatický hlídací pes.",
       },
       { property: "og:image", content: "https://www.realityscanner.cz/og-image.jpg" },
       { property: "og:image:width", content: "1200" },
@@ -103,17 +100,6 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       },
     ],
     scripts: [
-      ...(GA_MEASUREMENT_ID
-        ? [
-            {
-              src: `https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`,
-              async: true,
-            },
-            {
-              children: `window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${GA_MEASUREMENT_ID}',{send_page_view:false});`,
-            },
-          ]
-        : []),
       {
         type: "application/ld+json",
         children: JSON.stringify({
@@ -173,54 +159,10 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
-  const router = useRouter();
-
-  useEffect(() => {
-    try {
-      const referrer = new URL(document.referrer);
-      if (/(^|\.)(google\.[a-z.]+|bing\.com|search\.seznam\.cz)$/.test(referrer.hostname)) emitConversion("organic_landing");
-    } catch { /* Direct navigation: no referrer. */ }
-  }, []);
-
-  // GA4 Page View Tracking on initial load and route changes
-  useEffect(() => {
-    if (!GA_MEASUREMENT_ID || typeof window === "undefined") return;
-
-    if (typeof (window as unknown as { gtag?: (...args: unknown[]) => void }).gtag === "function") {
-      (window as unknown as { gtag: (...args: unknown[]) => void }).gtag("event", "page_view", {
-        page_path: window.location.pathname,
-      });
-    }
-
-    const unsub = router.subscribe("onResolved", ({ toLocation }) => {
-      if (typeof (window as unknown as { gtag?: (...args: unknown[]) => void }).gtag === "function") {
-        (window as unknown as { gtag: (...args: unknown[]) => void }).gtag("event", "page_view", {
-          page_path: toLocation.pathname,
-        });
-      }
-    });
-    return () => unsub();
-  }, [router]);
-
-  // Forward custom conversion events to GA4
-  useEffect(() => {
-    const handleConversion = (e: Event) => {
-      const customEvent = e as CustomEvent<{ event: string }>;
-      if (
-        typeof window !== "undefined" &&
-        typeof (window as unknown as { gtag?: (...args: unknown[]) => void }).gtag === "function" &&
-        customEvent.detail?.event
-      ) {
-        (window as unknown as { gtag: (...args: unknown[]) => void }).gtag("event", customEvent.detail.event);
-      }
-    };
-    window.addEventListener("realityscanner:conversion", handleConversion);
-    return () => window.removeEventListener("realityscanner:conversion", handleConversion);
-  }, []);
-
   return (
     <QueryClientProvider client={queryClient}>
       <AuthSync />
+      <CookieConsent />
       <Outlet />
       <Toaster />
     </QueryClientProvider>

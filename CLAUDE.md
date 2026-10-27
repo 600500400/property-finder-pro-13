@@ -46,7 +46,9 @@ Owner: Kamil. Communicate with him in Czech. Code, commit messages and comments 
 ## Yield calculator
 - Max 4 visible inputs: purchase price, monthly rent, owner's monthly costs, vacancy. All prefilled, editable; estimates labelled `odhad` with their source.
 - Gross yield = rent × 12 ÷ price
-- Net yield = Gross yield (no flat deduction applied; use the calculator for custom costs)
+- The scanner shows gross yield only, before owner costs, vacancy, financing and income tax.
+- Legacy `net_yield` / `min_net_yield` fields remain compatibility aliases; never label them as net yield in the scanner, AI or export.
+- The standalone scenario calculator retains its existing net formula with user-entered costs and vacancy; gross yield is the primary result.
 - Owner costs = what is not recharged to the tenant (repair fund, insurance, property tax, management).
 - Always render the calculation in words with the actual numbers, e.g.
   `15 000 Kč × 12 = 180 000 Kč ročně ÷ 4 500 000 Kč = 4,0 %`
@@ -65,3 +67,8 @@ Owner: Kamil. Communicate with him in Czech. Code, commit messages and comments 
 
 ## Legal / go-live state
 - Footer shows `Ceník · Metodika`. `Obchodní podmínky` and `Soukromí` are temporarily hidden from the footer; their routes stay. They must be completed (company ID, address, contact, GDPR) and restored before Stripe goes live.
+
+## Analytics consent
+- GA4 loads only after explicit analytics consent (basic consent mode). Advertising stays denied.
+- Keep allow/deny equally accessible and provide a permanent settings control. Never collect pre-consent events for later replay.
+- Preserve UTM attribution while stripping arbitrary URL queries and auth tokens from analytics.

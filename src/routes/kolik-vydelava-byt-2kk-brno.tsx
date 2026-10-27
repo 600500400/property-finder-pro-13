@@ -9,7 +9,7 @@ export const Route = createFileRoute("/kolik-vydelava-byt-2kk-brno")({
     publicPageHead(
       "/kolik-vydelava-byt-2kk-brno",
       "Kolik vydělává byt 2+kk v Brně — reálná čísla a kalkulace 2026 | RealityScanner",
-      "Konkrétní případová studie bytu 2+kk v Brně. Pořizovací cena, tržní nájem, reálné náklady a přesný výpočet ročního výnosu a návratnosti.",
+      "Konkrétní případová studie bytu 2+kk v Brně. Pořizovací cena, nabídkový nájem, reálné náklady a ilustrační výpočet ročního výnosu a návratnosti.",
     ),
   component: () => (
     <PublicGuide

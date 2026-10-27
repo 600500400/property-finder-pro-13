@@ -135,7 +135,6 @@ const BASE_COLUMNS: Column[] = [
 
 const YIELD_COLUMNS: Column[] = [
   { header: "Hrubý výnos", width: 13, numFmt: '0.0 "%"', value: (l) => l.invest?.gross_yield ?? null },
-  { header: "Čistý výnos", width: 13, numFmt: '0.0 "%"', value: (l) => l.invest?.net_yield ?? null },
   { header: "Návratnost (let)", width: 15, numFmt: "0.0", value: (l) => l.invest?.payback_years ?? null },
   { header: "Hvězdičky", width: 11, numFmt: "0", value: (l) => l.invest?.stars ?? null },
   { header: "Hodnocení", width: 20, value: (l) => l.invest?.verdict ?? null },
